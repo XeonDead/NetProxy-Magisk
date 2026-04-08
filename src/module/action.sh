@@ -1,42 +1,35 @@
 #!/system/bin/sh
 # NetProxy Action Script
-# 用于 Magisk Manager 中的模块操作按钮 (启动/停止切换)
-
+# Used for the module action button in Magisk Manager (toggle start/stop)
 readonly MODDIR="${0%/*}"
 readonly SERVICE_SCRIPT="$MODDIR/scripts/core/service.sh"
 readonly LOG_FILE="$MODDIR/logs/service.log"
 readonly XRAY_BIN="$MODDIR/bin/xray"
-
 . "$MODDIR/scripts/utils/log.sh"
-
 #######################################
-# 检查 Xray 是否运行
+# Check if Xray is running
 #######################################
 is_xray_running() {
-  pidof -s "$XRAY_BIN" > /dev/null 2>&1
+pidof -s "$XRAY_BIN" > /dev/null 2>&1
 }
-
-# 捕获所有输出到  Manager
+# Redirect all output to Manager
 exec 2>&1
-
 echo "==================================="
 echo "       NetProxy Action Script      "
 echo "==================================="
-
-# 主流程
+# Main execution flow
 if is_xray_running; then
-  log "INFO" "检测到 Xray 正在运行，准备执行停止操作..."
-  sh "$SERVICE_SCRIPT" stop
-  echo "==================================="
-  echo " 操作结果: NetProxy 服务已停止"
-  echo "==================================="
+log "INFO" "Xray is running, preparing to stop service..."
+sh "$SERVICE_SCRIPT" stop
+echo "==================================="
+echo " Result: NetProxy service stopped"
+echo "==================================="
 else
-  log "INFO" "检测到 Xray 未运行，准备执行启动操作..."
-  sh "$SERVICE_SCRIPT" start
-  echo "==================================="
-  echo " 操作结果: NetProxy 服务已启动"
-  echo "==================================="
+log "INFO" "Xray is not running, preparing to start service..."
+sh "$SERVICE_SCRIPT" start
+echo "==================================="
+echo " Result: NetProxy service started"
+echo "==================================="
 fi
-
-# 短暂休眠以确保日志显示完整再退出
+# Brief pause to ensure logs are fully displayed before exiting
 sleep 1
