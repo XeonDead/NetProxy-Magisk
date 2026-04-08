@@ -2,9 +2,17 @@
 # NetProxy GeoIP/GeoSite Verification & Auto-Update Script
 # Verifies local files against remote SHA256 and auto-updates if mismatched
 set -e
-readonly MODDIR="${0%/*}"
+readonly MODDIR="/data/adb/modules/netproxy"
 readonly LOG_FILE="$MODDIR/logs/service.log"
 . "$MODDIR/scripts/utils/log.sh"
+#######################################
+# Convert string to lowercase (POSIX-compatible)
+# @param $1: input string
+# @return: lowercase string via stdout
+#######################################
+to_lower() {
+  echo "$1" | tr '[:upper:]' '[:lower:]'
+}
 #######################################
 # Configuration: GeoIP
 #######################################
@@ -75,8 +83,12 @@ verify_and_update_file() {
   fi
   log "DEBUG" "[$label] Remote SHA256: $remote_sha"
   
-  # Compare (case-insensitive)
-  if [ "${local_sha,,}" = "${remote_sha,,}" ]; then
+  # Compare (case-insensitive, POSIX-compatible)
+  local local_sha_lower remote_sha_lower
+  local_sha_lower=$(to_lower "$local_sha")
+  remote_sha_lower=$(to_lower "$remote_sha")
+  
+  if [ "$local_sha_lower" = "$remote_sha_lower" ]; then
     log "INFO" "[$label] ✓ Checksum verified, file is up to date"
     return 0
   else
@@ -93,9 +105,11 @@ verify_and_update_file() {
     fi
     
     # Verify downloaded file before replacing
-    local new_sha
+    local new_sha new_sha_lower
     new_sha=$(sha256sum "$tmp_file" 2>/dev/null | cut -d' ' -f1)
-    if [ "${new_sha,,}" != "${remote_sha,,}" ]; then
+    new_sha_lower=$(to_lower "$new_sha")
+    
+    if [ "$new_sha_lower" != "$remote_sha_lower" ]; then
       log "ERROR" "[$label] Downloaded file checksum mismatch, aborting replacement"
       rm -f "$tmp_file"
       return 1
