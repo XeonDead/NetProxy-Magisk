@@ -2,7 +2,7 @@
 # NetProxy DLC (Domain List Community) Verification & Auto-Update Script
 # Verifies local dlc.dat against remote SHA256 and auto-updates if mismatched
 set -e
-readonly MODDIR="${0%/*}"
+readonly MODDIR="/data/adb/modules/netproxy"
 readonly LOG_FILE="$MODDIR/logs/service.log"
 . "$MODDIR/scripts/utils/log.sh"
 #######################################
