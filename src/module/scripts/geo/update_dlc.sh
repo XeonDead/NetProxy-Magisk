@@ -12,6 +12,14 @@ readonly DLC_FILE="$MODDIR/bin/dlc.dat"
 readonly DLC_SHA_URL="https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat.sha256sum"
 readonly DLC_DL_URL="https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat"
 #######################################
+# Convert string to lowercase (POSIX-compatible)
+# @param $1: input string
+# @return: lowercase string via stdout
+#######################################
+to_lower() {
+  echo "$1" | tr '[:upper:]' '[:lower:]'
+}
+#######################################
 # Verify and update DLC file
 # @return 0 if OK or updated, 1 if error
 #######################################
@@ -60,8 +68,12 @@ verify_and_update_dlc() {
   fi
   log "DEBUG" "[DLC] Remote SHA256: $remote_sha"
   
-  # Compare (case-insensitive)
-  if [ "${local_sha,,}" = "${remote_sha,,}" ]; then
+  # Compare (case-insensitive, POSIX-compatible)
+  local local_sha_lower remote_sha_lower
+  local_sha_lower=$(to_lower "$local_sha")
+  remote_sha_lower=$(to_lower "$remote_sha")
+  
+  if [ "$local_sha_lower" = "$remote_sha_lower" ]; then
     log "INFO" "[DLC] ✓ Checksum verified, file is up to date"
     return 0
   else
@@ -78,9 +90,11 @@ verify_and_update_dlc() {
     fi
     
     # Verify downloaded file before replacing
-    local new_sha
+    local new_sha new_sha_lower
     new_sha=$(sha256sum "$tmp_file" 2>/dev/null | cut -d' ' -f1)
-    if [ "${new_sha,,}" != "${remote_sha,,}" ]; then
+    new_sha_lower=$(to_lower "$new_sha")
+    
+    if [ "$new_sha_lower" != "$remote_sha_lower" ]; then
       log "ERROR" "[DLC] Downloaded file checksum mismatch, aborting replacement"
       rm -f "$tmp_file"
       return 1
