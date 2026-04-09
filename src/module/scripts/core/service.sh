@@ -99,6 +99,9 @@ do_start() {
   # Enable TProxy rules
   "$MODDIR/scripts/network/tproxy.sh" start -d "$MODDIR/config/tproxy" >> "$LOG_FILE" 2>&1
 
+  # Run IPTables API rules
+  "$MODDIR/scripts/network/api_iptables.sh" >> "$LOG_FILE" 2>&1
+
   log "INFO" "========== Xray service started successfully =========="
 }
 
