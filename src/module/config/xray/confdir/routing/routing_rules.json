@@ -27,7 +27,7 @@
   {
     "name": "Block ads (NetProxy list)",
     "type": "field",
-    "domain": ["geosite:category-ads-all"],
+    "domain": ["ext:geosite-ads.dat:awavenue-ads"],
     "outboundTag": "block",
     "enabled": true,
     "visible": true
