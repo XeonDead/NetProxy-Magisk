@@ -144,7 +144,7 @@ write_runtime_outbounds() {
       "type": "block"
     },
     {
-      "tag": "Proxy",
+      "tag": "proxy",
       "type": "selector",
       "outbounds": [
         "Auto-Fastest",

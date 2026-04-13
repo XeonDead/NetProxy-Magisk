@@ -21,63 +21,64 @@
         "path": "./source/proxy.json"
       },
       {
-        "tag": "AWAvenue",
-        "type": "remote",
-        "format": "source",
-        "url": "https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/refs/heads/main/Filters/AWAvenue-Ads-Rule-Singbox.json",
-        "download_detour": "Proxy",
-        "update_interval": "24h",
-        "path": "./source/AWAvenue.json"
-      },
-      {
         "tag": "category-ads-all",
         "type": "remote",
         "format": "binary",
         "url": "https://raw.githubusercontent.com/CHIZI-0618/v2ray-rules-dat/release/singbox_rule_set/geosite-category-ads-all.srs",
-        "download_detour": "Proxy",
+        "download_detour": "direct",
         "update_interval": "24h",
         "path": "./source/category-ads-all.srs"
       },
       {
-        "tag": "alibaba",
+        "tag": "ru-blocked-ip",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-alibaba.srs",
-        "download_detour": "Proxy",
+        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-ru-blocked.srs",
+        "download_detour": "direct",
         "update_interval": "24h",
-        "path": "./source/alibaba.srs"
+        "path": "./source/geoip-ru-blocked.srs"
       },
       {
-        "tag": "category-games@cn",
+        "tag": "ru-blocked-ip-community",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-games@cn.srs",
-        "download_detour": "Proxy",
+        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-ru-blocked-community.srs",
+        "download_detour": "direct",
         "update_interval": "24h",
-        "path": "./source/category-games@cn.srs"
+        "path": "./source/geoip-ru-blocked-community.srs"
       },
       {
-        "tag": "cn-domain",
+        "tag": "ru-blocked-site",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/CHIZI-0618/v2ray-rules-dat/release/singbox_rule_set/geosite-cn.srs",
-        "download_detour": "Proxy",
+        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-ru-blocked-all.srs",
+        "download_detour": "direct",
         "update_interval": "24h",
-        "path": "./source/cn.srs"
+        "path": "./source/geosite-ru-blocked-all.srs"
       },
       {
-        "tag": "cn-ip",
+        "tag": "geo-ads-all",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geoip/cn.srs",
-        "download_detour": "Proxy",
-        "update_interval": "10d",
-        "path": "./source/cn-ip.srs"
+        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-category-ads-all.srs",
+        "download_detour": "direct",
+        "update_interval": "24h",
+        "path": "./source/geosite-category-ads-all.srs"
+      },
+      {
+        "tag": "ru-inside",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-ru-available-only-inside.srs",
+        "download_detour": "direct",
+        "update_interval": "24h",
+        "path": "./source/geosite-ru-inside.srs"
       }
     ],
     "rules": [
       {
-        "action": "sniff"
+        "action": "sniff",
+	"timeout": "1s"
       },
       {
         "type": "logical",
@@ -93,15 +94,8 @@
         "action": "hijack-dns"
       },
       {
-        "clash_mode": "Direct",
-        "action": "route",
-        "outbound": "direct"
-      },
-      {
         "rule_set": [
-          "direct",
-          "alibaba",
-          "category-games@cn"
+          "direct"
         ],
         "action": "route",
         "outbound": "direct"
@@ -111,7 +105,7 @@
           "proxy"
         ],
         "action": "route",
-        "outbound": "Proxy"
+        "outbound": "proxy"
       },
       {
         "type": "logical",
@@ -124,19 +118,23 @@
           {
             "rule_set": [
               "block",
-              "AWAvenue",
-              "category-ads-all"
+              "category-ads-all",
+              "geo-ads-all"
             ]
           }
         ],
         "action": "reject"
       },
       {
-        "rule_set": [
-          "cn-domain"
-        ],
-        "action": "route",
+        "ip_is_private": true,
         "outbound": "direct"
+      },
+      {
+        "domain_suffix": [
+          "local",
+          "lan"
+        ],
+        "outbound": "direct-out"
       },
       {
         "action": "resolve",
@@ -144,16 +142,27 @@
         "strategy": "ipv4_only"
       },
       {
-        "rule_set": "cn-ip",
+        "rule_set": [
+          "ru-inside"
+        ],
         "action": "route",
         "outbound": "direct"
       },
       {
-        "ip_is_private": true,
-        "outbound": "direct"
+        "rule_set": [
+          "ru-blocked-ip",
+          "ru-blocked-ip-community",
+          "ru-blocked-site"
+        ],
+        "action": "route",
+        "outbound": "proxy"
+      },
+      {
+	"protocol": ["bittorrent"],
+	"outbound": "direct"
       }
     ],
     "find_process": true,
-    "final": "Proxy"
+    "final": "direct"
   }
 }
