@@ -11,9 +11,20 @@
       "tag": "tproxy_in",
       "listen": "::",
       "listen_port": 1536,
-      "sniff": true,
-      "sniff_override_destination": true,
-      "sniff_timeout": "1s"
     }
-  ]
+  ],
+  "route": {
+    "rules": [
+      {
+        "inbound": "tproxy_in",
+        "action": "resolve",
+        "strategy": "prefer_ipv4"
+      },
+      {
+        "inbound": "tproxy_in",
+        "action": "sniff",
+        "timeout": "1s"
+      }
+    ]
+  }
 }
