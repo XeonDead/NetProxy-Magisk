@@ -181,7 +181,7 @@ EOF
       "type": "block"
     },
     {
-      "tag": "Proxy",
+      "tag": "proxy",
       "type": "selector",
       "outbounds": [
         "direct",
