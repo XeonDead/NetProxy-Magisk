@@ -73,6 +73,41 @@
         "download_detour": "direct",
         "update_interval": "24h",
         "path": "./source/geosite-ru-inside.srs"
+      },
+      {
+        "tag": "ru-re-filter-geoip",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-re-filter.srs",
+        "download_detour": "direct",
+        "update_interval": "24h",
+        "path": "./source/geoip-refilter.srs"
+      },
+      {
+        "tag": "ru-re-filter-geosite",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-refilter.srs",
+        "download_detour": "direct",
+        "update_interval": "24h",
+        "path": "./source/geosite-refilter.srs"
+      },
+      {
+	"tag": "f-droid",
+	"format": "domain_suffix",
+	"rules": [
+	  {
+	    "domain_suffix": [
+	      "fdroid.org",
+	      "f-droid.org",
+	      "izzyondroid.org",
+	      "izzysoft.de",
+	      "codeberg.org",
+	      "futo.org",
+	      "guardianproject.info"
+	    ]
+	  }
+	]
       }
     ],
     "rules": [
@@ -152,7 +187,10 @@
         "rule_set": [
           "ru-blocked-ip",
           "ru-blocked-ip-community",
-          "ru-blocked-site"
+          "ru-blocked-site",
+	        "ru-re-filter-geoip",
+	        "ru-re-filter-geosite",
+	        "f-droid"
         ],
         "action": "route",
         "outbound": "proxy"
