@@ -93,27 +93,38 @@
         "path": "./source/geosite-refilter.srs"
       },
       {
-	"tag": "f-droid",
-	"format": "domain_suffix",
-	"rules": [
-	  {
-	    "domain_suffix": [
-	      "fdroid.org",
-	      "f-droid.org",
-	      "izzyondroid.org",
-	      "izzysoft.de",
-	      "codeberg.org",
-	      "futo.org",
-	      "guardianproject.info"
-	    ]
-	  }
-	]
+        "tag": "f-droid",
+        "format": "domain_suffix",
+        "rules": [
+          {
+            "domain_suffix": [
+              "fdroid.org",
+              "f-droid.org",
+              "izzyondroid.org",
+              "izzysoft.de",
+              "codeberg.org",
+              "futo.org",
+              "guardianproject.info"
+            ]
+          }
+        ]
       }
     ],
     "rules": [
       {
         "action": "sniff",
-	"timeout": "1s"
+        "timeout": "1s"
+      },
+      {
+        "action": "sniff-override-destination"
+      },
+      {
+        "ip_cidr": [
+          "198.18.0.0/15",
+          "fc00::/18"
+        ],
+        "action": "route",
+        "outbound": "proxy"
       },
       {
         "type": "logical",
@@ -174,7 +185,8 @@
       {
         "action": "resolve",
         "match_only": true,
-        "strategy": "ipv4_only"
+        "strategy": "ipv4_only",
+        "server": "google"
       },
       {
         "rule_set": [
@@ -188,16 +200,18 @@
           "ru-blocked-ip",
           "ru-blocked-ip-community",
           "ru-blocked-site",
-	        "ru-re-filter-geoip",
-	        "ru-re-filter-geosite",
-	        "f-droid"
+          "ru-re-filter-geoip",
+          "ru-re-filter-geosite",
+          "f-droid"
         ],
         "action": "route",
         "outbound": "proxy"
       },
       {
-	"protocol": ["bittorrent"],
-	"outbound": "direct"
+        "protocol": [
+          "bittorrent"
+        ],
+        "outbound": "direct"
       }
     ],
     "find_process": true,
