@@ -108,6 +108,17 @@
             ]
           }
         ]
+      },
+      {
+        "tag": "python",
+        "format": "domain_suffix",
+        "rules": [
+          {
+            "domain_suffix": [
+              "pypi.org"
+            ]
+          }
+        ]
       }
     ],
     "rules": [
@@ -202,7 +213,8 @@
           "ru-blocked-site",
           "ru-re-filter-geoip",
           "ru-re-filter-geosite",
-          "f-droid"
+          "f-droid",
+          "python"
         ],
         "action": "route",
         "outbound": "proxy"
