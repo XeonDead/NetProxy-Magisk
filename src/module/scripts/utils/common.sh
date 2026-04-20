@@ -1,8 +1,8 @@
 #!/system/bin/sh
-# 通用辅助函数
+# Generic helper function
 
 #######################################
-# 写入标准日志
+# Write to standard log
 #######################################
 log() {
   local level="INFO"
@@ -22,7 +22,7 @@ log() {
 }
 
 #######################################
-# 记录错误并退出
+# Log errors and exit
 #######################################
 die() {
   log "ERROR" "$1"
@@ -30,7 +30,7 @@ die() {
 }
 
 #######################################
-# 检测 busybox 路径
+# Detection busybox path
 #######################################
 detect_busybox() {
   for path in "/data/adb/ksu/bin/busybox" "/data/adb/ap/bin/busybox" "/data/adb/magisk/busybox"; do
@@ -43,14 +43,14 @@ detect_busybox() {
 }
 
 #######################################
-# 去除配置值中的双引号
+# Remove double quotes from configuration values
 #######################################
 strip_quotes() {
   echo "${1//\"/}"
 }
 
 #######################################
-# 从出站配置中读取标签
+# Read tags from outbound configuration
 #######################################
 detect_outbound_tag() {
   local config_file="$1"
@@ -61,7 +61,7 @@ detect_outbound_tag() {
 }
 
 #######################################
-# 获取指定进程的 PID
+# Get the specified process PID
 #######################################
 get_pid() {
   local bin="$1"
@@ -71,7 +71,7 @@ get_pid() {
 }
 
 #######################################
-# 获取指定 PID 的运行时间
+# Get specified PID running time
 #######################################
 get_process_uptime() {
   local pid="$1"

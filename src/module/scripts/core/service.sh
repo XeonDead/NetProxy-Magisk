@@ -1,6 +1,6 @@
 #!/system/bin/sh
-# NetProxy sing-box 服务管理脚本
-# 用法: service.sh {start|stop|restart|status}
+# NetProxy sing-box Service management script
+# usage: service.sh {start|stop|restart|status}
 
 set -u
 
@@ -25,74 +25,74 @@ readonly BUSYBOX="$(detect_busybox)"
 
 
 #######################################
-# 启动服务
+# Start service
 #######################################
 do_start() {
-  log "INFO" "========== 开始启动 sing-box 服务 =========="
+  log "INFO" "========== Start booting sing-box Serve =========="
 
-  # 检查当前服务状态
+  # Check current service status
   local pid
   pid="$(get_pid "$SING_BOX_BIN")"
   if [ -n "$pid" ]; then
-    log "WARN" "sing-box 已在运行中 (PID: $pid)"
+    log "WARN" "sing-box Already running (PID: $pid)"
     return 0
   fi
 
-  # 准备启动环境与配置
+  # Prepare startup environment and configuration
   initialize_runtime_context || exit 1
   write_runtime_outbounds || exit 1
   local runtime_outbounds="$RUNTIME_DIR/outbounds.json"
 
-  log "INFO" "路由模式: $CUR_OUTBOUND_MODE"
-  log "INFO" "节点目录: $CUR_OUTBOUND_DIR"
+  log "INFO" "routing mode: $CUR_OUTBOUND_MODE"
+  log "INFO" "node directory: $CUR_OUTBOUND_DIR"
 
-  # 构造最终启动参数
+  # Construct final startup parameters
   set -- run -C "$CONFDIR"
   [ -n "$runtime_outbounds" ] && set -- "$@" -c "$runtime_outbounds"
   eval "set -- \"\$@\" $SCAN_NODE_ARGS"
 
-  [ "$SCAN_NODE_COUNT" -gt 0 ] || die "当前节点目录没有可加载的节点配置: $CUR_OUTBOUND_DIR"
-  log "INFO" "已加载节点: $SCAN_NODE_COUNT，跳过节点: $SCAN_SKIPPED_COUNT"
+  [ "$SCAN_NODE_COUNT" -gt 0 ] || die "There is no loadable node configuration in the current node directory: $CUR_OUTBOUND_DIR"
+  log "INFO" "Node loaded: $SCAN_NODE_COUNT，skip node: $SCAN_SKIPPED_COUNT"
 
-  # 启动 sing-box 进程
-  log "INFO" "正在启动 sing-box 进程..."
-  cd "$SINGBOX_DIR" || die "无法进入配置目录: $SINGBOX_DIR"
+  # start up sing-box process
+  log "INFO" "Starting sing-box process..."
+  cd "$SINGBOX_DIR" || die "Unable to enter configuration directory: $SINGBOX_DIR"
   nohup "$BUSYBOX" setuidgid root:net_admin "$SING_BOX_BIN" "$@" > "$SINGBOX_LOG_FILE" 2>&1 &
   
   local new_pid=$!
   sleep 1
 
-  # 确认进程已稳定运行
+  # Confirm that the process is running stably
   if kill -0 "$new_pid" 2> /dev/null; then
-    log "INFO" "sing-box 启动成功 (PID: $new_pid)"
+    log "INFO" "sing-box Started successfully (PID: $new_pid)"
   else
-    die "sing-box 启动失败，请检查日志: $SINGBOX_LOG_FILE"
+    die "sing-box Startup failed，Please check the logs: $SINGBOX_LOG_FILE"
   fi
 
-  # 同步运行模式并载入透明代理规则
-  sh "$MODDIR/scripts/core/switch.sh" mode "$CUR_OUTBOUND_MODE" >> "$LOG_FILE" 2>&1 || log "WARN" "控制接口失败"
-  log "INFO" "载入透明代理规则..."
+  # Run mode synchronously and load transparent proxy rules
+  sh "$MODDIR/scripts/core/switch.sh" mode "$CUR_OUTBOUND_MODE" >> "$LOG_FILE" 2>&1 || log "WARN" "Control interface failed"
+  log "INFO" "Load transparent proxy rules..."
   "$MODDIR/scripts/network/tproxy.sh" start -d "$TPROXY_CONF_DIR" >> "$LOG_FILE" 2>&1
 
-  log "INFO" "========== sing-box 服务启动完成 =========="
+  log "INFO" "========== sing-box Service startup completed =========="
 }
 
 #######################################
-# 停止服务
+# Stop service
 #######################################
 do_stop() {
-  log "INFO" "========== 开始停止 sing-box 服务 =========="
+  log "INFO" "========== start stop sing-box Serve =========="
 
-  log "INFO" "清理 TProxy 规则..."
+  log "INFO" "clean up TProxy rule..."
   "$MODDIR/scripts/network/tproxy.sh" stop -d "$TPROXY_CONF_DIR" >> "$LOG_FILE" 2>&1 || true
 
   local pid
   pid="$(get_pid "$SING_BOX_BIN")"
 
   if [ -z "$pid" ]; then
-    log "INFO" "未发现运行中的 sing-box 进程"
+    log "INFO" "No running found sing-box process"
   else
-    log "INFO" "正在终止 sing-box 进程 (PID: $pid)..."
+    log "INFO" "Terminating sing-box process (PID: $pid)..."
 
     if kill "$pid" 2> /dev/null; then
       local count=0
@@ -102,66 +102,66 @@ do_stop() {
       done
 
       if kill -0 "$pid" 2> /dev/null; then
-        log "WARN" "进程未响应 SIGTERM，发送 SIGKILL"
+        log "WARN" "Process is not responding SIGTERM，send SIGKILL"
         kill -9 "$pid" 2> /dev/null || true
       fi
     fi
 
-    log "INFO" "sing-box 进程已终止"
+    log "INFO" "sing-box process terminated"
   fi
 
   rm -f "$RUNTIME_DIR/outbounds.json" 2> /dev/null || true
 
-  log "INFO" "========== sing-box 服务停止完成 =========="
+  log "INFO" "========== sing-box Service stop complete =========="
 }
 
 #######################################
-# 重启服务
+# Restart service
 #######################################
 do_restart() {
-  log "INFO" "========== 重启 sing-box 服务 =========="
+  log "INFO" "========== Restart sing-box Serve =========="
   do_stop
   sleep 1
   do_start
 }
 
 #######################################
-# 查看状态
+# View status
 #######################################
 do_status() {
   local pid uptime
   pid="$(get_pid "$SING_BOX_BIN")"
 
   if [ -n "$pid" ]; then
-    echo "sing-box 运行中 (PID: $pid)"
+    echo "sing-box Running (PID: $pid)"
     uptime="$(get_process_uptime "$pid")"
     if [ "$uptime" -gt 0 ]; then
-      echo "运行时间: ${uptime} 秒"
+      echo "running time: ${uptime} Second"
     fi
     return 0
   else
-    echo "sing-box 未运行"
+    echo "sing-box Not running"
     return 1
   fi
 }
 
 #######################################
-# 显示帮助
+# show help
 #######################################
 show_usage() {
   cat << EOF
-用法: $(basename "$0") {start|stop|restart|status}
+usage: $(basename "$0") {start|stop|restart|status}
 
-命令:
-  start     启动 sing-box 服务
-  stop      停止 sing-box 服务
-  restart   重启 sing-box 服务
-  status    查看服务状态
+Order:
+  start     start up sing-box Serve
+  stop      stop sing-box Serve
+  restart   Restart sing-box Serve
+  status    Check service status
 EOF
 }
 
 #######################################
-# 主入口
+# main entrance
 #######################################
 main() {
   case "${1:-}" in

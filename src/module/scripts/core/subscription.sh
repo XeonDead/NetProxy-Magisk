@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# sing-box 节点来源导入脚本
+# sing-box Node source import script
 
 set -e
 set -u
@@ -13,26 +13,26 @@ readonly LOG_FILE="$MODDIR/logs/subscription.log"
 . "$MODDIR/scripts/utils/common.sh"
 
 #######################################
-# 显示帮助
+# show help
 #######################################
 show_help() {
   cat << EOF
-用法: $(basename "$0") <命令> [参数]
+usage: $(basename "$0") <Order> [parameter]
 
-导入节点:
-  parse <节点链接> [目录]       单个链接转 sing-box 节点
-  convert <文件>                sing-box 节点转链接
-  file <文件> [目录]           文件节点或 Clash YAML 转 sing-box 节点
-  sub <订阅链接> [目录]        订阅转 sing-box 节点，每个节点一个文件
+Import node:
+  parse <node link> [Table of contents]       single link transfer sing-box node
+  convert <document>                sing-box node to link
+  file <document> [Table of contents]           file node or Clash YAML change sing-box node
+  sub <Subscription link> [Table of contents]        Subscribe to transfer sing-box node，One file per node
 
-订阅管理:
-  add <名称> <订阅链接>        添加订阅并导入节点
-  update <名称>                更新指定订阅
-  update-all                   更新所有订阅
-  remove <名称>                删除订阅
-  list                         列出订阅
+Subscription management:
+  add <name> <Subscription link>        Add subscription and import node
+  update <name>                Update specified subscription
+  update-all                   Update all subscriptions
+  remove <name>                Delete subscription
+  list                         List subscriptions
 
-示例:
+Example:
   $(basename "$0") parse "vless://..."
   $(basename "$0") file "/sdcard/clash.yaml"
   $(basename "$0") sub "https://example.com/sub" "$OUTBOUNDS_DIR/sub_demo"
@@ -40,104 +40,104 @@ EOF
 }
 
 #######################################
-# 检查 proxylink 环境
+# examine proxylink environment
 #######################################
 check_proxylink() {
-  [ -x "$PROXYLINK_BIN" ] || die "proxylink 不存在或不可执行: $PROXYLINK_BIN"
+  [ -x "$PROXYLINK_BIN" ] || die "proxylink Does not exist or is not enforceable: $PROXYLINK_BIN"
 }
 
 #######################################
-# 清理文件名
+# Clean up filenames
 #######################################
 sanitize_name() {
   echo "$1" | sed 's/[\/\\:*?"<>| ]/_/g'
 }
 
 #######################################
-# 转义 JSON 字符串
+# escape JSON string
 #######################################
 escape_json() {
   printf "%s" "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
 }
 
 #######################################
-# 准备输出目录
+# Prepare output directory
 #######################################
 prepare_output_dir() {
   local target_dir="${1:-$DEFAULT_DIR}"
 
-  mkdir -p "$target_dir" || die "无法创建输出目录: $target_dir"
+  mkdir -p "$target_dir" || die "Unable to create output directory: $target_dir"
   echo "$target_dir"
 }
 
 #######################################
-# 单个链接转 sing-box
+# single link transfer sing-box
 #######################################
 import_parse() {
   local link="$1"
   local target_dir
   local old_pwd
 
-  [ -n "$link" ] || die "用法: $(basename "$0") parse <节点链接> [目录]"
+  [ -n "$link" ] || die "usage: $(basename "$0") parse <node link> [Table of contents]"
   check_proxylink
   target_dir="$(prepare_output_dir "${2:-}")"
 
-  log "INFO" "导入单个节点到: $target_dir"
+  log "INFO" "Import a single node into: $target_dir"
   old_pwd="$(pwd)"
   cd "$target_dir" || die "Cannot enter output directory: $target_dir"
   "$PROXYLINK_BIN" -parse "$link" -insecure -format singbox -auto >> "$LOG_FILE" 2>&1
   cd "$old_pwd" || true
-  log "INFO" "单个节点导入完成"
+  log "INFO" "Single node import completed"
 }
 
 #######################################
-# sing-box 节点转链接
+# sing-box node to link
 #######################################
 export_link() {
   local file="$1"
 
-  [ -n "$file" ] || die "用法: $(basename "$0") convert <文件>"
-  [ -f "$file" ] || die "文件不存在: $file"
+  [ -n "$file" ] || die "usage: $(basename "$0") convert <document>"
+  [ -f "$file" ] || die "File does not exist: $file"
   check_proxylink
 
   "$PROXYLINK_BIN" -singbox "$file" -format uri
 }
 
 #######################################
-# 文件节点转 sing-box
+# File node transfer sing-box
 #######################################
 import_file() {
   local file="$1"
   local target_dir
 
-  [ -n "$file" ] || die "用法: $(basename "$0") file <文件> [目录]"
-  [ -f "$file" ] || die "文件不存在: $file"
+  [ -n "$file" ] || die "usage: $(basename "$0") file <document> [Table of contents]"
+  [ -f "$file" ] || die "File does not exist: $file"
   check_proxylink
   target_dir="$(prepare_output_dir "${2:-}")"
 
-  log "INFO" "导入文件节点到: $target_dir"
+  log "INFO" "Import file node to: $target_dir"
   "$PROXYLINK_BIN" -file "$file" -insecure -format singbox -dir "$target_dir" >> "$LOG_FILE" 2>&1
-  log "INFO" "文件节点导入完成"
+  log "INFO" "File node import completed"
 }
 
 #######################################
-# 订阅转 sing-box
+# Subscribe to transfer sing-box
 #######################################
 import_sub() {
   local url="$1"
   local target_dir
 
-  [ -n "$url" ] || die "用法: $(basename "$0") sub <订阅链接> [目录]"
+  [ -n "$url" ] || die "usage: $(basename "$0") sub <Subscription link> [Table of contents]"
   check_proxylink
   target_dir="$(prepare_output_dir "${2:-}")"
 
-  log "INFO" "导入订阅节点到: $target_dir"
+  log "INFO" "Import the subscription node to: $target_dir"
   "$PROXYLINK_BIN" -sub "$url" -insecure -format singbox -dir "$target_dir" >> "$LOG_FILE" 2>&1
-  log "INFO" "订阅节点导入完成"
+  log "INFO" "Subscription node import completed"
 }
 
 #######################################
-# 写入订阅元信息
+# Write subscription meta information
 #######################################
 write_subscription_meta() {
   local name="$1"
@@ -154,52 +154,52 @@ EOF
 }
 
 #######################################
-# 添加订阅
+# Add subscription
 #######################################
 add_subscription() {
   local name="$1"
   local url="$2"
   local safe_name sub_dir
 
-  [ -n "$name" ] || die "用法: $(basename "$0") add <名称> <订阅链接>"
-  [ -n "$url" ] || die "用法: $(basename "$0") add <名称> <订阅链接>"
+  [ -n "$name" ] || die "usage: $(basename "$0") add <name> <Subscription link>"
+  [ -n "$url" ] || die "usage: $(basename "$0") add <name> <Subscription link>"
 
   safe_name="$(sanitize_name "$name")"
   sub_dir="$OUTBOUNDS_DIR/sub_$safe_name"
 
-  [ ! -d "$sub_dir" ] || die "订阅已存在: $name"
-  mkdir -p "$sub_dir" || die "无法创建订阅目录: $sub_dir"
+  [ ! -d "$sub_dir" ] || die "Subscription already exists: $name"
+  mkdir -p "$sub_dir" || die "Unable to create subscription directory: $sub_dir"
 
   write_subscription_meta "$name" "$url" "$sub_dir"
   import_sub "$url" "$sub_dir"
-  log "INFO" "订阅添加完成: $name"
+  log "INFO" "Subscription added completed: $name"
 }
 
 #######################################
-# 更新订阅
+# Update subscription
 #######################################
 update_subscription() {
   local name="$1"
   local safe_name sub_dir meta_file url
 
-  [ -n "$name" ] || die "用法: $(basename "$0") update <名称>"
+  [ -n "$name" ] || die "usage: $(basename "$0") update <name>"
 
   safe_name="$(sanitize_name "$name")"
   sub_dir="$OUTBOUNDS_DIR/sub_$safe_name"
   meta_file="$sub_dir/_meta.json"
 
-  [ -f "$meta_file" ] || die "订阅不存在: $name"
+  [ -f "$meta_file" ] || die "Subscription does not exist: $name"
   url="$(grep -o '"url"[[:space:]]*:[[:space:]]*"[^"]*"' "$meta_file" | sed 's/.*"url"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')"
-  [ -n "$url" ] || die "无法读取订阅链接: $meta_file"
+  [ -n "$url" ] || die "Unable to read subscription link: $meta_file"
 
   find "$sub_dir" -name "*.json" ! -name "_meta.json" -delete
   import_sub "$url" "$sub_dir"
   write_subscription_meta "$name" "$url" "$sub_dir"
-  log "INFO" "订阅更新完成: $name"
+  log "INFO" "Subscription update completed: $name"
 }
 
 #######################################
-# 更新所有订阅
+# Update all subscriptions
 #######################################
 update_all_subscriptions() {
   local count=0 sub_dir meta_file name
@@ -216,33 +216,33 @@ update_all_subscriptions() {
     count=$((count + 1))
   done
 
-  log "INFO" "所有订阅更新完成，共 $count 个"
+  log "INFO" "All subscription updates completed，common $count indivual"
 }
 
 #######################################
-# 删除订阅
+# Delete subscription
 #######################################
 remove_subscription() {
   local name="$1"
   local safe_name sub_dir
 
-  [ -n "$name" ] || die "用法: $(basename "$0") remove <名称>"
+  [ -n "$name" ] || die "usage: $(basename "$0") remove <name>"
 
   safe_name="$(sanitize_name "$name")"
   sub_dir="$OUTBOUNDS_DIR/sub_$safe_name"
 
-  [ -d "$sub_dir" ] || die "订阅不存在: $name"
+  [ -d "$sub_dir" ] || die "Subscription does not exist: $name"
   rm -rf "$sub_dir"
-  log "INFO" "订阅已删除: $name"
+  log "INFO" "Subscription deleted: $name"
 }
 
 #######################################
-# 列出订阅
+# List subscriptions
 #######################################
 list_subscriptions() {
   local sub_dir meta_file name updated node_count count=0
 
-  echo "订阅列表:"
+  echo "Subscription list:"
   for sub_dir in "$OUTBOUNDS_DIR"/sub_*; do
     [ -d "$sub_dir" ] || continue
     meta_file="$sub_dir/_meta.json"
@@ -252,15 +252,15 @@ list_subscriptions() {
     updated="$(grep -o '"updated"[[:space:]]*:[[:space:]]*"[^"]*"' "$meta_file" | sed 's/.*"updated"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')"
     node_count="$(find "$sub_dir" -name "*.json" ! -name "_meta.json" | wc -l | tr -d ' ')"
 
-    echo "  - ${name:-$(basename "$sub_dir")} ($node_count 个节点, 更新于 ${updated:-未知})"
+    echo "  - ${name:-$(basename "$sub_dir")} ($node_count nodes, updated on ${updated:-unknown})"
     count=$((count + 1))
   done
 
-  [ "$count" -gt 0 ] || echo "  暂无订阅"
+  [ "$count" -gt 0 ] || echo "  No subscription yet"
 }
 
 #######################################
-# 主入口
+# main entrance
 #######################################
 main() {
   local command="${1:-}"

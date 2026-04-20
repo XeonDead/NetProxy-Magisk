@@ -1,22 +1,22 @@
 #!/system/bin/sh
-# sing-box 运行时配置辅助函数
+# sing-box Runtime configuration helper functions
 
 #######################################
-# 获取当前节点所在目录
+# Get the directory where the current node is located
 #######################################
 get_current_outbounds_dir() {
   local current_config="$1"
   local current_dir
 
   current_dir="${current_config%/*}"
-  [ "$current_dir" != "$current_config" ] || die "无法解析当前节点目录: $current_config"
-  [ -d "$current_dir" ] || die "当前节点目录不存在: $current_dir"
+  [ "$current_dir" != "$current_config" ] || die "Unable to resolve current node directory: $current_config"
+  [ -d "$current_dir" ] || die "The current node directory does not exist: $current_dir"
 
   echo "$current_dir"
 }
 
 #######################################
-# 判断是否为节点配置文件
+# Determine whether it is a node configuration file
 #######################################
 is_node_config_file() {
   local file="$1"
@@ -26,14 +26,14 @@ is_node_config_file() {
 }
 
 #######################################
-# 转义 JSON 字符串
+# escape JSON string
 #######################################
 json_escape() {
   printf "%s" "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
 }
 
 #######################################
-# 追加出站标签到 JSON 数组片段
+# Append outbound tags to JSON array fragment
 #######################################
 append_selector_tag() {
   local tags="$1"
@@ -48,48 +48,48 @@ append_selector_tag() {
   fi
 }
 
-# 运行时上下文（由 initialize_runtime_context 填充）
+# runtime context（Depend on initialize_runtime_context filling）
 CUR_OUTBOUND_CONFIG=""
 CUR_OUTBOUND_DIR=""
 CUR_OUTBOUND_MODE=""
 CUR_SELECTOR_MODE=""
 
-# 节点扫描结果（由 write_runtime_outbounds 填充）
+# Node scan results（Depend on write_runtime_outbounds filling）
 SCAN_NODE_ARGS=""
 SCAN_NODE_COUNT=0
 SCAN_SKIPPED_COUNT=0
 
 #######################################
-# 初始化启动环境与基础配置
+# Initialization startup environment and basic configuration
 #######################################
 initialize_runtime_context() {
-  # 基础环境检查
-  [ -x "${SING_BOX_BIN:-}" ] || die "sing-box 二进制不存在或不可执行"
-  [ -f "${MODULE_CONF:-}" ] || die "模块配置文件不存在"
-  [ -f "${TPROXY_CONF_DIR:-}/tproxy.conf" ] || die "透明代理配置文件不存在"
+  # Basic environment check
+  [ -x "${SING_BOX_BIN:-}" ] || die "sing-box Binary does not exist or is not executable"
+  [ -f "${MODULE_CONF:-}" ] || die "Module configuration file does not exist"
+  [ -f "${TPROXY_CONF_DIR:-}/tproxy.conf" ] || die "Transparent proxy configuration file does not exist"
 
-  # 加载模块与透明代理配置
+  # Loading modules and transparent proxy configuration
   . "$MODULE_CONF"
   . "$TPROXY_CONF_DIR/tproxy.conf"
 
-  # 提取并验证当前节点路径
+  # Extract and verify the current node path
   CUR_OUTBOUND_CONFIG="$(strip_quotes "${CURRENT_CONFIG:-}")"
-  [ -n "$CUR_OUTBOUND_CONFIG" ] || die "CURRENT_CONFIG 未定义，请先选择节点"
-  [ -f "$CUR_OUTBOUND_CONFIG" ] || die "指定的节点配置文件不存在: $CUR_OUTBOUND_CONFIG"
+  [ -n "$CUR_OUTBOUND_CONFIG" ] || die "CURRENT_CONFIG undefined，Please select the node first"
+  [ -f "$CUR_OUTBOUND_CONFIG" ] || die "The specified node configuration file does not exist: $CUR_OUTBOUND_CONFIG"
 
-  # 确定运行模式与选择器模式
+  # Determine running mode and selector mode
   CUR_OUTBOUND_MODE="${OUTBOUND_MODE:-rule}"
   CUR_SELECTOR_MODE="${SELECTOR_MODE:-urltest}"
   
-  # 获取当前节点目录
+  # Get the current node directory
   CUR_OUTBOUND_DIR="$(get_current_outbounds_dir "$CUR_OUTBOUND_CONFIG")" || return 1
 }
 
 #######################################
-# 扫描节点并生成运行时出站配置
+# Scan nodes and generate runtime outbound configuration
 #######################################
 write_runtime_outbounds() {
-  local output="${RUNTIME_DIR:?RUNTIME_DIR 未定义}/outbounds.json"
+  local output="${RUNTIME_DIR:?RUNTIME_DIR undefined}/outbounds.json"
   local current_config="${1:-$CUR_OUTBOUND_CONFIG}"
   local current_dir="${CUR_OUTBOUND_DIR:-$(get_current_outbounds_dir "$current_config")}"
   local selector_mode="${2:-$CUR_SELECTOR_MODE}"
@@ -100,14 +100,14 @@ write_runtime_outbounds() {
   SCAN_SKIPPED_COUNT=0
 
   current_tag="$(detect_outbound_tag "$current_config")"
-  [ -n "$current_tag" ] || die "无法从当前出站配置读取标签: $current_config"
+  [ -n "$current_tag" ] || die "Unable to read tag from current outbound configuration: $current_config"
   current_tag_json="$(json_escape "$current_tag")"
 
-  mkdir -p "$RUNTIME_DIR" || die "无法创建运行时配置目录: $RUNTIME_DIR"
+  mkdir -p "$RUNTIME_DIR" || die "Unable to create runtime configuration directory: $RUNTIME_DIR"
 
-  log "INFO" "正在扫描节点目录: $current_dir"
+  log "INFO" "Scanning node directory: $current_dir"
 
-  # 扫描当前节点目录
+  # Scan the current node directory
   for f in "$current_dir"/*.json; do
     is_node_config_file "$f" || continue
     tag="$(detect_outbound_tag "$f")"
@@ -117,21 +117,21 @@ write_runtime_outbounds() {
       continue
     fi
 
-    # 收集启动参数（所有节点都加载）
+    # Collect startup parameters（All nodes are loaded）
     SCAN_NODE_ARGS="$SCAN_NODE_ARGS -c \"$f\""
     SCAN_NODE_COUNT=$((SCAN_NODE_COUNT + 1))
 
-    # 收集可切换标签（过滤掉 default 以防止抢占测速组）
+    # Collection of switchable labels（filter out default To prevent preemption of the speed test group）
     if [ "$tag" != "default" ]; then
       tags="$(append_selector_tag "$tags" "$tag")"
     fi
   done
 
-  # 未发现可切换节点时，至少保留当前节点供测速/选择
+  # When no switchable node is found，At least keep the current node for speed testing/choose
   [ -n "$tags" ] || tags="$(append_selector_tag "" "$current_tag")"
 
   case "$selector_mode" in
-    urltest | auto | 动态测速)
+    urltest | auto | Dynamic_speed_measurement)
       cat > "$output" << EOF
 {
   "outbounds": [
@@ -168,7 +168,7 @@ write_runtime_outbounds() {
 }
 EOF
       ;;
-    manual | selector | 手动选择 | 手动)
+    manual | selector | Manual_selection | Manual)
       cat > "$output" << EOF
 {
   "outbounds": [
@@ -195,7 +195,7 @@ EOF
 EOF
       ;;
     *)
-      die "未知节点选择模式: $selector_mode"
+      die "Unknown node selection mode: $selector_mode"
       ;;
   esac
 
