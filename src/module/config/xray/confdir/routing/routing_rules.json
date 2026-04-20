@@ -172,10 +172,10 @@
     "remarks": "From runetfreedom list"
   },
   {
-    "name": "Default rule: all traffic via proxy",
+    "name": "Default rule: all not matched traffic directly",
     "type": "field",
     "port": "0-65535",
-    "outboundTag": "proxy",
+    "outboundTag": "direct",
     "enabled": true,
     "visible": true,
     "remarks": "Catch-all fallback"

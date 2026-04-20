@@ -126,8 +126,8 @@
       {
         "type": "field",
         "port": "0-65535",
-        "outboundTag": "proxy",
-        "remarks": "Default rule: all traffic via proxy"
+        "outboundTag": "direct",
+        "remarks": "Default rule: all unmatched traffic directly"
       }
     ]
   }
