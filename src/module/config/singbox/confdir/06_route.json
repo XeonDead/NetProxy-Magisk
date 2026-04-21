@@ -93,29 +93,33 @@
         "path": "./source/geosite-refilter.srs"
       },
       {
-        "tag": "f-droid",
-        "format": "domain_suffix",
-        "rules": [
-          {
-            "domain_suffix": [
-              "fdroid.org",
-              "f-droid.org",
-              "izzyondroid.org",
-              "izzysoft.de",
-              "codeberg.org",
-              "futo.org",
-              "guardianproject.info"
-            ]
-          }
-        ]
+        "tag": "geosite-category-dev",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-category-dev.srs",
+        "download_detour": "direct",
+        "update_interval": "24h",
+        "path": "./source/geosite-category-dev.srs"
       },
       {
-        "tag": "python",
+        "tag": "geosite-f-droid",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-f-droid.srs",
+        "download_detour": "direct",
+        "update_interval": "24h",
+        "path": "./source/geosite-f-droid.srs"
+      },
+      {
+        "tag": "f-droid-repos",
         "format": "domain_suffix",
         "rules": [
           {
             "domain_suffix": [
-              "pypi.org"
+              "izzyondroid.org",
+              "izzysoft.de",
+              "futo.org",
+              "guardianproject.info"
             ]
           }
         ]
@@ -213,8 +217,9 @@
           "ru-blocked-site",
           "ru-re-filter-geoip",
           "ru-re-filter-geosite",
-          "f-droid",
-          "python"
+          "geosite-category-dev",
+          "geosite-f-droid",
+          "f-droid-repos"
         ],
         "action": "route",
         "outbound": "proxy"
