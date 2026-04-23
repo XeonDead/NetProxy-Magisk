@@ -6,105 +6,75 @@ set -u
 
 readonly MODDIR="$(cd "$(dirname "$0")/../.." && pwd)"
 readonly MODULE_CONF="$MODDIR/config/module.conf"
-readonly CLASH_API="127.0.0.1:9999"
-readonly CLASH_SECRET="singbox"
+readonly SERVICE_SCRIPT="$MODDIR/scripts/core/service.sh"
+readonly SING_BOX_BIN="$MODDIR/bin/sing-box"
+readonly LOG_FILE="$MODDIR/logs/service.log"
+readonly SWITCH_ALLOW_RESTART="${SWITCH_ALLOW_RESTART:-1}"
 
 . "$MODDIR/scripts/utils/common.sh"
+. "$MODDIR/scripts/utils/config.sh"
+. "$MODDIR/scripts/utils/api.sh"
+. "$MODDIR/scripts/utils/nodes.sh"
 
 #######################################
-# show help
+# 判断 sing-box 是否在运行
 #######################################
-show_usage() {
-  cat << EOF
-usage: $(basename "$0") {config|mode} <parameter>
-
-Order:
-  config <Configuration file>           Switch current node configuration
-  mode <rule|global|direct>   Switch outbound operation mode
-EOF
+is_service_running() {
+  [ -n "$(get_pid "$SING_BOX_BIN")" ]
 }
 
 #######################################
-# Update module configuration items
+# 重启服务使配置生效
 #######################################
-set_module_value() {
-  local key="$1"
-  local value="$2"
-
-  if grep -q "^${key}=" "$MODULE_CONF" 2> /dev/null; then
-    sed -i "s|^${key}=.*|${key}=\"$value\"|" "$MODULE_CONF"
+restart_service_if_allowed() {
+  if [ "$SWITCH_ALLOW_RESTART" = "1" ]; then
+    log "INFO" "正在重启 sing-box 服务以应用配置..."
+    LOG_STDERR=0 sh "$SERVICE_SCRIPT" restart || die "重启 sing-box 服务失败"
   else
-    echo "${key}=\"$value\"" >> "$MODULE_CONF"
+    log "WARN" "当前阶段不允许通过重启应用配置"
+    return 1
   fi
 }
 
 #######################################
-# Convert module mode to control interface mode
-#######################################
-control_mode_for_module_mode() {
-  case "$1" in
-    global) echo "Global" ;;
-    direct) echo "Direct" ;;
-    rule) echo "Rule" ;;
-    *) return 1 ;;
-  esac
-}
-
-#######################################
-# Switch selector nodes through the control interface
-#######################################
-apply_control_node() {
-  local node_tag="$1"
-  command -v curl > /dev/null 2>&1 || return 1
-
-  curl -fsS -X PUT \
-    -H "Authorization: Bearer $CLASH_SECRET" \
-    -H "Content-Type: application/json" \
-    -d "{\"name\":\"$node_tag\"}" \
-    "http://$CLASH_API/proxies/Proxy" > /dev/null 2>&1
-}
-
-#######################################
-# Switching operating mode via control interface
-#######################################
-apply_control_mode() {
-  command -v curl > /dev/null 2>&1 || return 1
-
-  local control_mode
-  control_mode="$(control_mode_for_module_mode "$1")" || return 1
-
-  curl -fsS -X PATCH \
-    -H "Authorization: Bearer $CLASH_SECRET" \
-    -H "Content-Type: application/json" \
-    -d "{\"mode\":\"$control_mode\"}" \
-    "http://$CLASH_API/configs" > /dev/null 2>&1
-}
-
-#######################################
-# Switch node configuration
+# 切换节点配置
 #######################################
 switch_config() {
   local config_file="$1"
+  local target_tag
 
-  [ -f "$config_file" ] || die "Configuration file does not exist: $config_file"
+  require_file "$MODULE_CONF" "模块配置文件不存在: $MODULE_CONF"
+  require_file "$config_file" "节点配置文件不存在: $config_file"
 
-  log "INFO" "========== Switching sing-box Outbound configuration =========="
-  log "INFO" "object file: $config_file"
+  log "INFO" "========== 开始切换 sing-box 节点配置 =========="
+  log "INFO" "目标节点文件: $config_file"
 
-  # Persistence of current node path
-  set_module_value "CURRENT_CONFIG" "$config_file"
+  set_conf "$MODULE_CONF" "CURRENT_CONFIG" "$(quote_conf "$config_file")"
+  target_tag="$(detect_outbound_tag "$config_file" || true)"
 
-  # While the service is running，Try switching the selector node now
-  local tag
-  tag="$(detect_outbound_tag "$config_file")"
-
-  if [ -n "$tag" ] && apply_control_node "$tag"; then
-    log "INFO" "Switched agent group via control interface to: $tag"
-  else
-    log "INFO" "Control interface is unavailable（The service is not running or the node is not loaded），The configuration will take effect on the next startup"
+  if ! is_service_running; then
+    log "INFO" "sing-box 未运行，新的节点配置将在下次启动时生效"
+    log "INFO" "========== 节点配置切换完成 =========="
+    return 0
   fi
 
-  log "INFO" "========== sing-box Outbound configuration switch completed =========="
+  if [ -n "$target_tag" ]; then
+    if api_select_proxy "$target_tag"; then
+      log "INFO" "已通过控制接口切换到节点: $target_tag"
+      log "INFO" "========== 节点配置切换完成 =========="
+      return 0
+    fi
+    log "INFO" "当前运行实例未加载目标节点或控制接口切换失败，准备重启服务"
+  else
+    log "INFO" "无法读取目标节点标签，准备重启服务"
+  fi
+
+  restart_service_if_allowed || {
+    log "WARN" "本次仅完成配置持久化，等待下次服务重启生效"
+    return 1
+  }
+
+  log "INFO" "========== 节点配置切换完成 =========="
 }
 
 #######################################
@@ -116,25 +86,47 @@ switch_mode() {
   case "$target_mode" in
     rule | global | direct) ;;
     *)
-      echo "mistake: Unknown mode: $target_mode"
-      exit 1
+      die "未知模式: $target_mode"
       ;;
   esac
 
-  log "INFO" "========== Switching sing-box outbound mode: $target_mode =========="
+  require_file "$MODULE_CONF" "模块配置文件不存在: $MODULE_CONF"
 
-  # persistence target pattern
-  set_module_value "OUTBOUND_MODE" "$target_mode"
-  log "INFO" "Module configuration updated: outbound mode=$target_mode"
+  log "INFO" "========== 开始切换 sing-box 出站模式: $target_mode =========="
+  set_conf "$MODULE_CONF" "OUTBOUND_MODE" "$target_mode"
 
-  # Switch modes immediately while the service is running
-  if apply_control_mode "$target_mode"; then
-    log "INFO" "The new mode has been applied via the control interface"
-  else
-    log "INFO" "Control interface call failed（Maybe the service is not running），Mode will take effect on next boot"
+  if ! is_service_running; then
+    log "INFO" "sing-box 未运行，新的出站模式将在下次启动时生效"
+    log "INFO" "========== 出站模式切换完成 =========="
+    return 0
   fi
 
-  log "INFO" "========== sing-box Outbound mode switching completed =========="
+  if api_set_mode "$target_mode"; then
+    log "INFO" "已通过控制接口切换出站模式"
+    log "INFO" "========== 出站模式切换完成 =========="
+    return 0
+  fi
+
+  log "WARN" "控制接口切换模式失败，准备重启服务"
+  restart_service_if_allowed || {
+    log "WARN" "本次仅完成模式持久化，等待下次服务重启生效"
+    return 1
+  }
+
+  log "INFO" "========== 出站模式切换完成 =========="
+}
+
+#######################################
+# 显示帮助
+#######################################
+show_usage() {
+  cat << EOF
+用法: $(basename "$0") {config|mode} <参数>
+
+命令:
+  config <配置文件>              切换当前节点配置
+  mode <rule|global|direct>     切换出站模式
+EOF
 }
 
 #######################################

@@ -1,138 +1,129 @@
 #!/system/bin/sh
 # sing-box Runtime configuration helper functions
 
-#######################################
-# Get the directory where the current node is located
-#######################################
-get_current_outbounds_dir() {
-  local current_config="$1"
-  local current_dir
-
-  current_dir="${current_config%/*}"
-  [ "$current_dir" != "$current_config" ] || die "Unable to resolve current node directory: $current_config"
-  [ -d "$current_dir" ] || die "The current node directory does not exist: $current_dir"
-
-  echo "$current_dir"
-}
-
-#######################################
-# Determine whether it is a node configuration file
-#######################################
-is_node_config_file() {
-  local file="$1"
-
-  [ -f "$file" ] || return 1
-  [ "${file##*/}" != "_meta.json" ] || return 1
-}
-
-#######################################
-# escape JSON string
-#######################################
-json_escape() {
-  printf "%s" "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
-}
-
-#######################################
-# Append outbound tags to JSON array fragment
-#######################################
-append_selector_tag() {
-  local tags="$1"
-  local tag="$2"
-  local escaped
-
-  escaped="$(json_escape "$tag")"
-  if [ -n "$tags" ]; then
-    printf "%s, \"%s\"" "$tags" "$escaped"
-  else
-    printf "\"%s\"" "$escaped"
-  fi
-}
-
-# runtime context（Depend on initialize_runtime_context filling）
 CUR_OUTBOUND_CONFIG=""
 CUR_OUTBOUND_DIR=""
 CUR_OUTBOUND_MODE=""
 CUR_SELECTOR_MODE=""
+CUR_CURRENT_TAG=""
 
-# Node scan results（Depend on write_runtime_outbounds filling）
-SCAN_NODE_ARGS=""
-SCAN_NODE_COUNT=0
-SCAN_SKIPPED_COUNT=0
+RUNTIME_OUTBOUNDS_FILE=""
+RUNTIME_NODE_PATHS=""
+RUNTIME_NODE_TAGS_JSON=""
+RUNTIME_NODE_COUNT=0
+RUNTIME_SKIPPED_COUNT=0
 
 #######################################
-# Initialization startup environment and basic configuration
+# 初始化运行时上下文
 #######################################
 initialize_runtime_context() {
-  # Basic environment check
-  [ -x "${SING_BOX_BIN:-}" ] || die "sing-box Binary does not exist or is not executable"
-  [ -f "${MODULE_CONF:-}" ] || die "Module configuration file does not exist"
-  [ -f "${TPROXY_CONF_DIR:-}/tproxy.conf" ] || die "Transparent proxy configuration file does not exist"
+  require_file "${MODULE_CONF:-}" "模块配置文件不存在: ${MODULE_CONF:-未定义}"
+  require_dir "${SINGBOX_DIR:-}" "sing-box 配置目录不存在: ${SINGBOX_DIR:-未定义}"
+  require_dir "${CONFDIR:-}" "通用配置目录不存在: ${CONFDIR:-未定义}"
+  require_dir "${RUNTIME_DIR:-}" "运行时目录不存在: ${RUNTIME_DIR:-未定义}"
 
-  # Loading modules and transparent proxy configuration
-  . "$MODULE_CONF"
-  . "$TPROXY_CONF_DIR/tproxy.conf"
+  CUR_OUTBOUND_CONFIG="$(read_conf "$MODULE_CONF" "CURRENT_CONFIG" "")"
+  CUR_OUTBOUND_MODE="$(read_conf "$MODULE_CONF" "OUTBOUND_MODE" "rule")"
+  CUR_SELECTOR_MODE="$(read_conf "$MODULE_CONF" "SELECTOR_MODE" "urltest")"
 
-  # Extract and verify the current node path
-  CUR_OUTBOUND_CONFIG="$(strip_quotes "${CURRENT_CONFIG:-}")"
-  [ -n "$CUR_OUTBOUND_CONFIG" ] || die "CURRENT_CONFIG undefined，Please select the node first"
-  [ -f "$CUR_OUTBOUND_CONFIG" ] || die "The specified node configuration file does not exist: $CUR_OUTBOUND_CONFIG"
+  [ -n "$CUR_OUTBOUND_CONFIG" ] || die "CURRENT_CONFIG 未定义，请先选择节点"
+  require_file "$CUR_OUTBOUND_CONFIG" "当前节点配置文件不存在: $CUR_OUTBOUND_CONFIG"
 
-  # Determine running mode and selector mode
-  CUR_OUTBOUND_MODE="${OUTBOUND_MODE:-rule}"
-  CUR_SELECTOR_MODE="${SELECTOR_MODE:-urltest}"
-  
-  # Get the current node directory
-  CUR_OUTBOUND_DIR="$(get_current_outbounds_dir "$CUR_OUTBOUND_CONFIG")" || return 1
+  CUR_OUTBOUND_DIR="${CUR_OUTBOUND_CONFIG%/*}"
+  [ "$CUR_OUTBOUND_DIR" != "$CUR_OUTBOUND_CONFIG" ] || die "无法解析当前节点目录: $CUR_OUTBOUND_CONFIG"
+  require_dir "$CUR_OUTBOUND_DIR" "当前节点目录不存在: $CUR_OUTBOUND_DIR"
+
+  CUR_CURRENT_TAG="$(detect_outbound_tag "$CUR_OUTBOUND_CONFIG" || true)"
+  [ -n "$CUR_CURRENT_TAG" ] || die "无法读取当前节点标签: $CUR_OUTBOUND_CONFIG"
+
+  RUNTIME_OUTBOUNDS_FILE="$RUNTIME_DIR/outbounds.json"
 }
 
 #######################################
-# Scan nodes and generate runtime outbound configuration
+# 清空运行时节点缓存
 #######################################
-write_runtime_outbounds() {
-  local output="${RUNTIME_DIR:?RUNTIME_DIR undefined}/outbounds.json"
-  local current_config="${1:-$CUR_OUTBOUND_CONFIG}"
-  local current_dir="${CUR_OUTBOUND_DIR:-$(get_current_outbounds_dir "$current_config")}"
-  local selector_mode="${2:-$CUR_SELECTOR_MODE}"
-  local current_tag current_tag_json tags="" f tag
+reset_runtime_nodes() {
+  RUNTIME_NODE_PATHS=""
+  RUNTIME_NODE_TAGS_JSON=""
+  RUNTIME_NODE_COUNT=0
+  RUNTIME_SKIPPED_COUNT=0
+}
 
-  SCAN_NODE_ARGS=""
-  SCAN_NODE_COUNT=0
-  SCAN_SKIPPED_COUNT=0
+#######################################
+# 追加运行时节点缓存
+#######################################
+append_runtime_node() {
+  local file="$1"
+  local tag="$2"
+  local escaped_tag
 
-  current_tag="$(detect_outbound_tag "$current_config")"
-  [ -n "$current_tag" ] || die "Unable to read tag from current outbound configuration: $current_config"
-  current_tag_json="$(json_escape "$current_tag")"
+  if [ -n "$RUNTIME_NODE_PATHS" ]; then
+    RUNTIME_NODE_PATHS="${RUNTIME_NODE_PATHS}
+$file"
+  else
+    RUNTIME_NODE_PATHS="$file"
+  fi
 
-  mkdir -p "$RUNTIME_DIR" || die "Unable to create runtime configuration directory: $RUNTIME_DIR"
+  if ! is_reserved_outbound_tag "$tag"; then
+    escaped_tag="$(json_escape "$tag")"
+    if [ -n "$RUNTIME_NODE_TAGS_JSON" ]; then
+      RUNTIME_NODE_TAGS_JSON="$RUNTIME_NODE_TAGS_JSON, \"$escaped_tag\""
+    else
+      RUNTIME_NODE_TAGS_JSON="\"$escaped_tag\""
+    fi
+  fi
 
-  log "INFO" "Scanning node directory: $current_dir"
+  RUNTIME_NODE_COUNT=$((RUNTIME_NODE_COUNT + 1))
+}
 
-  # Scan the current node directory
-  for f in "$current_dir"/*.json; do
-    is_node_config_file "$f" || continue
-    tag="$(detect_outbound_tag "$f")"
-    
+#######################################
+# 扫描当前节点目录
+#######################################
+scan_runtime_nodes() {
+  local current_dir="${1:-$CUR_OUTBOUND_DIR}"
+  local file tag
+
+  require_dir "$current_dir" "节点目录不存在: $current_dir"
+  reset_runtime_nodes
+
+  for file in "$current_dir"/*.json; do
+    is_node_config_file "$file" || continue
+    tag="$(detect_outbound_tag "$file" || true)"
+
     if [ -z "$tag" ]; then
-      SCAN_SKIPPED_COUNT=$((SCAN_SKIPPED_COUNT + 1))
+      RUNTIME_SKIPPED_COUNT=$((RUNTIME_SKIPPED_COUNT + 1))
       continue
     fi
 
-    # Collect startup parameters（All nodes are loaded）
-    SCAN_NODE_ARGS="$SCAN_NODE_ARGS -c \"$f\""
-    SCAN_NODE_COUNT=$((SCAN_NODE_COUNT + 1))
-
-    # Collection of switchable labels（filter out default To prevent preemption of the speed test group）
-    if [ "$tag" != "default" ]; then
-      tags="$(append_selector_tag "$tags" "$tag")"
-    fi
+    append_runtime_node "$file" "$tag"
   done
+}
 
-  # When no switchable node is found，At least keep the current node for speed testing/choose
-  [ -n "$tags" ] || tags="$(append_selector_tag "" "$current_tag")"
+#######################################
+# 生成运行时出站配置
+#######################################
+write_runtime_outbounds() {
+  local current_config="${1:-$CUR_OUTBOUND_CONFIG}"
+  local selector_mode="${2:-$CUR_SELECTOR_MODE}"
+  local tags="$RUNTIME_NODE_TAGS_JSON"
+
+  [ -n "$current_config" ] || die "当前节点配置未初始化"
+  [ -n "$selector_mode" ] || selector_mode="urltest"
+
+  if [ "$RUNTIME_NODE_COUNT" -eq 0 ] && [ -z "$RUNTIME_NODE_PATHS" ]; then
+    scan_runtime_nodes "$CUR_OUTBOUND_DIR"
+    tags="$RUNTIME_NODE_TAGS_JSON"
+  fi
+
+  if [ -z "$tags" ] && ! is_reserved_outbound_tag "$CUR_CURRENT_TAG"; then
+    tags="\"$(json_escape "$CUR_CURRENT_TAG")\""
+  fi
+
+  [ -n "$tags" ] || die "当前节点目录没有可用的出站标签: $CUR_OUTBOUND_DIR"
 
   case "$selector_mode" in
-    urltest | auto | Dynamic_speed_measurement)
-      cat > "$output" << EOF
+    urltest | auto | 动态测速)
+      cat > "$RUNTIME_OUTBOUNDS_FILE" << EOF
 {
   "outbounds": [
     {
@@ -168,8 +159,8 @@ write_runtime_outbounds() {
 }
 EOF
       ;;
-    manual | selector | Manual_selection | Manual)
-      cat > "$output" << EOF
+    manual | selector | 手动选择 | 手动)
+      cat > "$RUNTIME_OUTBOUNDS_FILE" << EOF
 {
   "outbounds": [
     {
@@ -187,7 +178,7 @@ EOF
         "direct",
         $tags
       ],
-      "default": "$current_tag_json",
+      "default": "$(json_escape "$CUR_CURRENT_TAG")",
       "interrupt_exist_connections": true
     }
   ]
@@ -199,5 +190,5 @@ EOF
       ;;
   esac
 
-  echo "$output"
+  printf "%s\n" "$RUNTIME_OUTBOUNDS_FILE"
 }
