@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# IPSET 驱动加载脚本
+# IPSET Driver loading script
 
 set -u
 
@@ -11,13 +11,13 @@ readonly KO_LOADER="$MODDIR/bin/IPSET-LKM/ko-loader"
 . "$MODDIR/scripts/utils/common.sh"
 
 #######################################
-# 加载内核驱动
+# Load kernel driver
 #######################################
 load_drivers() {
   local module
 
   if [ ! -d "$NETFILTER_DIR" ]; then
-    log "INFO" "未检测到集成的 IPSET 驱动目录，跳过加载"
+    log "INFO" "Integrated not detected IPSET Driver directory，Skip loading"
     return 0
   fi
 
@@ -28,8 +28,8 @@ load_drivers() {
 
   [ -x "$KO_LOADER" ] || chmod 0755 "$KO_LOADER"
 
-  log "INFO" "开始加载集成 IPSET 内核驱动..."
-  cd "$NETFILTER_DIR" || die "无法进入驱动目录: $NETFILTER_DIR"
+  log "INFO" "Start loading integration IPSET Kernel driver..."
+  cd "$NETFILTER_DIR" || die "Unable to enter driver directory: $NETFILTER_DIR"
 
   load_module() {
     "$KO_LOADER" "$@"
@@ -51,23 +51,23 @@ load_drivers() {
   [ -f "xt_set.ko" ] && load_module "xt_set.ko"
   [ -f "xt_addrtype.ko" ] && load_module "xt_addrtype.ko"
 
-  log "INFO" "IPSET 驱动加载流程执行完成"
+  log "INFO" "IPSET The driver loading process is completed"
 }
 
 #######################################
-# 显示帮助
+# show help
 #######################################
 show_usage() {
   cat << EOF
-用法: $(basename "$0") load
+usage: $(basename "$0") load
 
-命令:
-  load      加载集成的 IPSET 驱动
+Order:
+  load      Load integrated IPSET drive
 EOF
 }
 
 #######################################
-# 主入口
+# main entrance
 #######################################
 main() {
   case "${1:-}" in

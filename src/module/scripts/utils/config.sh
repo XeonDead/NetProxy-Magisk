@@ -1,15 +1,15 @@
 #!/system/bin/sh
-# 配置读写辅助函数
+# Configure read and write helper functions
 
 #######################################
-# 去除配置值中的引号
+# Remove quotes from configuration values
 #######################################
 strip_quotes() {
   printf "%s" "${1:-}" | tr -d '"' | tr -d '\r'
 }
 
 #######################################
-# 读取配置值
+# Read configuration values
 #######################################
 read_conf() {
   local file="$1"
@@ -30,14 +30,14 @@ read_conf() {
 }
 
 #######################################
-# 写入配置值
+# Write configuration values
 #######################################
 set_conf() {
   local file="$1"
   local key="$2"
   local value="$3"
 
-  require_file "$file" "配置文件不存在: $file"
+  require_file "$file" "Configuration file does not exist: $file"
 
   if grep -q "^${key}=" "$file" 2> /dev/null; then
     sed -i "s|^${key}=.*|${key}=${value}|" "$file"
@@ -47,14 +47,14 @@ set_conf() {
 }
 
 #######################################
-# 为配置值补双引号
+# Add double quotes to configuration values
 #######################################
 quote_conf() {
   printf '"%s"' "$1"
 }
 
 #######################################
-# 判断列表是否包含指定值
+# Determine whether the list contains the specified value
 #######################################
 list_contains() {
   local list="$1"
@@ -69,7 +69,7 @@ list_contains() {
 }
 
 #######################################
-# 向列表追加值
+# Append values ​​to list
 #######################################
 list_add() {
   local list="$1"
@@ -85,7 +85,7 @@ list_add() {
 }
 
 #######################################
-# 从列表移除值
+# Remove value from list
 #######################################
 list_remove() {
   local list="$1"

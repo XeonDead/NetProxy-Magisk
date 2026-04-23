@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# 设备兼容性修复脚本
+# Device compatibility fix script
 
 set -u
 
@@ -9,7 +9,7 @@ readonly LOG_FILE="$MODDIR/logs/service.log"
 . "$MODDIR/scripts/utils/common.sh"
 
 #######################################
-# 删除链中的拦截规则
+# Delete blocking rules in the chain
 #######################################
 remove_block_rules_from_chain() {
   local cmd="$1"
@@ -23,24 +23,24 @@ remove_block_rules_from_chain() {
   )"
 
   if [ -z "$line_numbers" ]; then
-    log "INFO" "$cmd: $chain 链中未发现 REJECT 或 DROP 规则"
+    log "INFO" "$cmd: $chain Not found in chain REJECT or DROP rule"
     return 0
   fi
 
   for line_num in $line_numbers; do
     if $cmd -t filter -D "$chain" "$line_num" 2> /dev/null; then
       count=$((count + 1))
-      log "INFO" "已删除 $cmd $chain 链中的第 $line_num 条拦截规则"
+      log "INFO" "Deleted $cmd $chain No. 1 in the chain $line_num interception rules"
     else
-      log "WARN" "删除失败: $cmd $chain 第 $line_num 条规则"
+      log "WARN" "Delete failed: $cmd $chain No. $line_num rules"
     fi
   done
 
-  log "INFO" "$cmd: $chain 链共删除 $count 条拦截规则"
+  log "INFO" "$cmd: $chain Chain deleted $count interception rules"
 }
 
 #######################################
-# 执行设备兼容性修复
+# Perform device compatibility fixes
 #######################################
 fix_by_device() {
   local has_iptables=0
@@ -53,7 +53,7 @@ fix_by_device() {
   command_exists ip6tables && has_ip6tables=1
 
   if [ "$has_iptables" -eq 0 ] && [ "$has_ip6tables" -eq 0 ]; then
-    log "ERROR" "iptables 和 ip6tables 均不存在"
+    log "ERROR" "iptables and ip6tables None exist"
     return 1
   fi
 
@@ -64,13 +64,13 @@ fix_by_device() {
   fi
 
   if [ "$is_redmagic" -eq 1 ]; then
-    log "INFO" "检测到红魔 / ZTE 规则，开始清理 zte_fw_gms"
+    log "INFO" "red devil detected / ZTE rule，Start cleaning zte_fw_gms"
     [ "$has_iptables" -eq 1 ] && remove_block_rules_from_chain "iptables" "zte_fw_gms"
     [ "$has_ip6tables" -eq 1 ] && remove_block_rules_from_chain "ip6tables" "zte_fw_gms"
   fi
 
   if [ "$is_oneplus" -eq 1 ]; then
-    log "INFO" "检测到 OnePlus / ColorOS 规则，开始清理 fw_INPUT 与 fw_OUTPUT"
+    log "INFO" "detected OnePlus / ColorOS rule，Start cleaning fw_INPUT and fw_OUTPUT"
     for chain in fw_INPUT fw_OUTPUT; do
       [ "$has_iptables" -eq 1 ] && remove_block_rules_from_chain "iptables" "$chain"
       [ "$has_ip6tables" -eq 1 ] && remove_block_rules_from_chain "ip6tables" "$chain"
@@ -78,31 +78,31 @@ fix_by_device() {
   fi
 
   if [ "$is_redmagic" -eq 0 ] && [ "$is_oneplus" -eq 0 ]; then
-    log "INFO" "未检测到需要修复的设备规则"
+    log "INFO" "No device rules were detected that require repair"
   fi
 }
 
 #######################################
-# 显示帮助
+# show help
 #######################################
 show_usage() {
   cat << EOF
-用法: $(basename "$0") [run]
+usage: $(basename "$0") [run]
 
-命令:
-  run      执行设备兼容性修复
+Order:
+  run      Perform device compatibility fixes
 EOF
 }
 
 #######################################
-# 主入口
+# main entrance
 #######################################
 main() {
   case "${1:-run}" in
     run)
-      log "INFO" "========== 开始执行设备兼容性修复 =========="
+      log "INFO" "========== Start performing device compatibility fixes =========="
       fix_by_device
-      log "INFO" "========== 设备兼容性修复完成 =========="
+      log "INFO" "========== Device compatibility fix completed =========="
       ;;
     -h | --help | help)
       show_usage

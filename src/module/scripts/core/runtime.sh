@@ -14,33 +14,33 @@ RUNTIME_NODE_COUNT=0
 RUNTIME_SKIPPED_COUNT=0
 
 #######################################
-# 初始化运行时上下文
+# Initialize the runtime context
 #######################################
 initialize_runtime_context() {
-  require_file "${MODULE_CONF:-}" "模块配置文件不存在: ${MODULE_CONF:-未定义}"
-  require_dir "${SINGBOX_DIR:-}" "sing-box 配置目录不存在: ${SINGBOX_DIR:-未定义}"
-  require_dir "${CONFDIR:-}" "通用配置目录不存在: ${CONFDIR:-未定义}"
-  require_dir "${RUNTIME_DIR:-}" "运行时目录不存在: ${RUNTIME_DIR:-未定义}"
+  require_file "${MODULE_CONF:-}" "Module configuration file does not exist: ${MODULE_CONF:-undefined}"
+  require_dir "${SINGBOX_DIR:-}" "sing-box Configuration directory does not exist: ${SINGBOX_DIR:-undefined}"
+  require_dir "${CONFDIR:-}" "Common configuration directory does not exist: ${CONFDIR:-undefined}"
+  require_dir "${RUNTIME_DIR:-}" "Runtime directory does not exist: ${RUNTIME_DIR:-undefined}"
 
   CUR_OUTBOUND_CONFIG="$(read_conf "$MODULE_CONF" "CURRENT_CONFIG" "")"
   CUR_OUTBOUND_MODE="$(read_conf "$MODULE_CONF" "OUTBOUND_MODE" "rule")"
   CUR_SELECTOR_MODE="$(read_conf "$MODULE_CONF" "SELECTOR_MODE" "urltest")"
 
-  [ -n "$CUR_OUTBOUND_CONFIG" ] || die "CURRENT_CONFIG 未定义，请先选择节点"
-  require_file "$CUR_OUTBOUND_CONFIG" "当前节点配置文件不存在: $CUR_OUTBOUND_CONFIG"
+  [ -n "$CUR_OUTBOUND_CONFIG" ] || die "CURRENT_CONFIG undefined，Please select the node first"
+  require_file "$CUR_OUTBOUND_CONFIG" "The current node configuration file does not exist: $CUR_OUTBOUND_CONFIG"
 
   CUR_OUTBOUND_DIR="${CUR_OUTBOUND_CONFIG%/*}"
-  [ "$CUR_OUTBOUND_DIR" != "$CUR_OUTBOUND_CONFIG" ] || die "无法解析当前节点目录: $CUR_OUTBOUND_CONFIG"
-  require_dir "$CUR_OUTBOUND_DIR" "当前节点目录不存在: $CUR_OUTBOUND_DIR"
+  [ "$CUR_OUTBOUND_DIR" != "$CUR_OUTBOUND_CONFIG" ] || die "Unable to resolve current node directory: $CUR_OUTBOUND_CONFIG"
+  require_dir "$CUR_OUTBOUND_DIR" "The current node directory does not exist: $CUR_OUTBOUND_DIR"
 
   CUR_CURRENT_TAG="$(detect_outbound_tag "$CUR_OUTBOUND_CONFIG" || true)"
-  [ -n "$CUR_CURRENT_TAG" ] || die "无法读取当前节点标签: $CUR_OUTBOUND_CONFIG"
+  [ -n "$CUR_CURRENT_TAG" ] || die "Unable to read current node label: $CUR_OUTBOUND_CONFIG"
 
   RUNTIME_OUTBOUNDS_FILE="$RUNTIME_DIR/outbounds.json"
 }
 
 #######################################
-# 清空运行时节点缓存
+# Clear runtime node cache
 #######################################
 reset_runtime_nodes() {
   RUNTIME_NODE_PATHS=""
@@ -50,7 +50,7 @@ reset_runtime_nodes() {
 }
 
 #######################################
-# 追加运行时节点缓存
+# Append runtime node cache
 #######################################
 append_runtime_node() {
   local file="$1"
@@ -77,13 +77,13 @@ $file"
 }
 
 #######################################
-# 扫描当前节点目录
+# Scan the current node directory
 #######################################
 scan_runtime_nodes() {
   local current_dir="${1:-$CUR_OUTBOUND_DIR}"
   local file tag
 
-  require_dir "$current_dir" "节点目录不存在: $current_dir"
+  require_dir "$current_dir" "Node directory does not exist: $current_dir"
   reset_runtime_nodes
 
   for file in "$current_dir"/*.json; do
@@ -100,14 +100,14 @@ scan_runtime_nodes() {
 }
 
 #######################################
-# 生成运行时出站配置
+# Generate runtime outbound configuration
 #######################################
 write_runtime_outbounds() {
   local current_config="${1:-$CUR_OUTBOUND_CONFIG}"
   local selector_mode="${2:-$CUR_SELECTOR_MODE}"
   local tags="$RUNTIME_NODE_TAGS_JSON"
 
-  [ -n "$current_config" ] || die "当前节点配置未初始化"
+  [ -n "$current_config" ] || die "The current node configuration is not initialized"
   [ -n "$selector_mode" ] || selector_mode="urltest"
 
   if [ "$RUNTIME_NODE_COUNT" -eq 0 ] && [ -z "$RUNTIME_NODE_PATHS" ]; then
@@ -119,10 +119,10 @@ write_runtime_outbounds() {
     tags="\"$(json_escape "$CUR_CURRENT_TAG")\""
   fi
 
-  [ -n "$tags" ] || die "当前节点目录没有可用的出站标签: $CUR_OUTBOUND_DIR"
+  [ -n "$tags" ] || die "There are no outbound labels available for the current node directory: $CUR_OUTBOUND_DIR"
 
   case "$selector_mode" in
-    urltest | auto | 动态测速)
+    urltest | auto | Dynamic speed measurement)
       cat > "$RUNTIME_OUTBOUNDS_FILE" << EOF
 {
   "outbounds": [
@@ -159,7 +159,7 @@ write_runtime_outbounds() {
 }
 EOF
       ;;
-    manual | selector | 手动选择 | 手动)
+    manual | selector | Manual selection | Manual)
       cat > "$RUNTIME_OUTBOUNDS_FILE" << EOF
 {
   "outbounds": [

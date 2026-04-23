@@ -1,12 +1,12 @@
 #!/system/bin/sh
-# 节点与订阅辅助函数
+# Node and subscription helper functions
 
 readonly NODE_RECORD_DELIM="$(printf '\t')"
 NODE_SCAN_VALID_COUNT=0
 NODE_SCAN_SKIPPED_COUNT=0
 
 #######################################
-# 判断是否为节点配置文件
+# Determine whether it is a node configuration file
 #######################################
 is_node_config_file() {
   local file="$1"
@@ -16,7 +16,7 @@ is_node_config_file() {
 }
 
 #######################################
-# 读取出站标签
+# Read outbound tag
 #######################################
 detect_outbound_tag() {
   local config_file="$1"
@@ -26,7 +26,7 @@ detect_outbound_tag() {
 }
 
 #######################################
-# 判断是否为选择器保留标签
+# Determine whether to retain labels for selectors
 #######################################
 is_reserved_outbound_tag() {
   case "$1" in
@@ -36,14 +36,14 @@ is_reserved_outbound_tag() {
 }
 
 #######################################
-# 清理订阅名称
+# Clean up subscription names
 #######################################
 sanitize_subscription_name() {
   printf "%s" "$1" | sed 's/[\/\\:*?"<>| ]/_/g'
 }
 
 #######################################
-# 获取订阅目录路径
+# Get subscription directory path
 #######################################
 subscription_dir_from_name() {
   local outbounds_dir="$1"
@@ -53,7 +53,7 @@ subscription_dir_from_name() {
 }
 
 #######################################
-# 读取订阅元数据字段
+# Read subscription metadata fields
 #######################################
 read_subscription_meta_value() {
   local meta_file="$1"
@@ -64,7 +64,7 @@ read_subscription_meta_value() {
 }
 
 #######################################
-# 写入订阅元数据
+# Write subscription metadata
 #######################################
 write_subscription_meta() {
   local target_dir="$1"
@@ -81,7 +81,7 @@ EOF
 }
 
 #######################################
-# 获取订阅显示名称
+# Get subscription display name
 #######################################
 subscription_display_name() {
   local sub_dir="$1"
@@ -97,7 +97,7 @@ subscription_display_name() {
 }
 
 #######################################
-# 重置节点扫描计数
+# Reset node scan count
 #######################################
 reset_node_scan_counters() {
   NODE_SCAN_VALID_COUNT=0
@@ -105,7 +105,7 @@ reset_node_scan_counters() {
 }
 
 #######################################
-# 写入一条节点扫描记录
+# Write a node scan record
 #######################################
 append_node_record() {
   local output_file="$1"
@@ -118,7 +118,7 @@ append_node_record() {
 }
 
 #######################################
-# 扫描单个目录中的节点
+# Scan nodes in a single directory
 #######################################
 scan_nodes_in_dir() {
   local dir="$1"
@@ -150,7 +150,7 @@ scan_nodes_in_dir() {
 }
 
 #######################################
-# 扫描全部节点
+# Scan all nodes
 #######################################
 scan_all_nodes() {
   local outbounds_dir="$1"
@@ -161,17 +161,17 @@ scan_all_nodes() {
   : > "$output_file"
   reset_node_scan_counters
 
-  scan_nodes_in_dir "$outbounds_dir/default" "$current_config" "默认节点" "$output_file" 1
+  scan_nodes_in_dir "$outbounds_dir/default" "$current_config" "default node" "$output_file" 1
 
   for sub_dir in "$outbounds_dir"/sub_*; do
     [ -d "$sub_dir" ] || continue
-    source="订阅: $(subscription_display_name "$sub_dir")"
+    source="subscription: $(subscription_display_name "$sub_dir")"
     scan_nodes_in_dir "$sub_dir" "$current_config" "$source" "$output_file" 1
   done
 }
 
 #######################################
-# 读取当前节点记录
+# Read the current node record
 #######################################
 find_current_node_from_scan() {
   local scan_file="$1"
@@ -187,7 +187,7 @@ find_current_node_from_scan() {
 }
 
 #######################################
-# 解析节点
+# parse node
 #######################################
 resolve_node_from_scan() {
   local scan_file="$1"
@@ -196,7 +196,7 @@ resolve_node_from_scan() {
   local first_match=""
   local path name tag source is_current base
 
-  [ -n "$query" ] || die "请指定节点名称、标签或路径"
+  [ -n "$query" ] || die "Please specify node name、label or path"
 
   if [ -f "$query" ]; then
     printf "%s\n" "$query"
@@ -214,13 +214,13 @@ resolve_node_from_scan() {
 
   case "$match_count" in
     0)
-      die "未找到节点: $query"
+      die "Node not found: $query"
       ;;
     1)
       printf "%s\n" "$first_match"
       ;;
     *)
-      die "找到多个同名节点，请使用更精确的文件名或完整路径"
+      die "Find multiple nodes with the same name，Please use a more precise filename or full path"
       ;;
   esac
 }

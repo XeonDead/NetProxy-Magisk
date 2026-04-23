@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# sing-box 节点与订阅管理脚本
+# sing-box Node and subscription management scripts
 
 set -e
 set -u
@@ -20,18 +20,18 @@ show_help() {
   cat << EOF
 usage: $(basename "$0") <Order> [parameter]
 
-节点导入:
-  parse <节点链接> [目录]        单个链接转 sing-box 节点
-  file <文件> [目录]            文件节点或 Clash YAML 转 sing-box 节点
-  sub <订阅链接> [目录]         订阅转 sing-box 节点，每个节点一个文件
-  convert <节点文件>            sing-box 节点转链接
+Node import:
+  parse <node link> [Table of contents]        single link transfer sing-box node
+  file <document> [Table of contents]            file node or Clash YAML change sing-box node
+  sub <Subscription link> [Table of contents]         Subscribe to transfer sing-box node，One file per node
+  convert <node file>            sing-box node to link
 
-订阅管理:
-  add <名称> <订阅链接>         添加订阅并导入节点
-  update <名称>                 更新指定订阅
-  update-all                    更新全部订阅
-  remove <名称>                 删除订阅
-  list                          列出订阅
+Subscription management:
+  add <name> <Subscription link>         Add subscription and import node
+  update <name>                 Update specified subscription
+  update-all                    Update all subscriptions
+  remove <name>                 Delete subscription
+  list                          List subscriptions
 
 Example:
   $(basename "$0") parse "vless://..."
@@ -45,8 +45,8 @@ EOF
 # examine proxylink environment
 #######################################
 check_proxylink() {
-  require_file "$PROXYLINK_BIN" "proxylink 不存在: $PROXYLINK_BIN"
-  [ -x "$PROXYLINK_BIN" ] || die "proxylink 不可执行: $PROXYLINK_BIN"
+  require_file "$PROXYLINK_BIN" "proxylink does not exist: $PROXYLINK_BIN"
+  [ -x "$PROXYLINK_BIN" ] || die "proxylink Not enforceable: $PROXYLINK_BIN"
 }
 
 #######################################
@@ -55,12 +55,12 @@ check_proxylink() {
 prepare_output_dir() {
   local target_dir="${1:-$DEFAULT_DIR}"
 
-  ensure_dir "$target_dir" "无法创建输出目录: $target_dir"
+  ensure_dir "$target_dir" "Unable to create output directory: $target_dir"
   printf "%s\n" "$target_dir"
 }
 
 #######################################
-# 统一执行 proxylink
+# Uniform execution proxylink
 #######################################
 run_proxylink() {
   local action="$1"
@@ -86,7 +86,7 @@ run_proxylink() {
       "$PROXYLINK_BIN" -singbox "$value" -format uri
       ;;
     *)
-      die "未知 proxylink 操作: $action"
+      die "unknown proxylink operate: $action"
       ;;
   esac
 }
@@ -98,28 +98,28 @@ import_parse() {
   local link="$1"
   local target_dir
 
-  [ -n "$link" ] || die "用法: $(basename "$0") parse <节点链接> [目录]"
+  [ -n "$link" ] || die "usage: $(basename "$0") parse <node link> [Table of contents]"
   target_dir="$(prepare_output_dir "${2:-}")"
 
-  log "INFO" "开始导入单个节点: $target_dir"
-  run_proxylink parse "$link" "$target_dir" || die "单个节点导入失败"
-  log "INFO" "单个节点导入完成"
+  log "INFO" "Start importing a single node: $target_dir"
+  run_proxylink parse "$link" "$target_dir" || die "Single node import failed"
+  log "INFO" "Single node import completed"
 }
 
 #######################################
-# 文件节点转 sing-box
+# File node transfer sing-box
 #######################################
 import_file() {
   local file="$1"
   local target_dir
 
-  [ -n "$file" ] || die "用法: $(basename "$0") file <文件> [目录]"
-  require_file "$file" "文件不存在: $file"
+  [ -n "$file" ] || die "usage: $(basename "$0") file <document> [Table of contents]"
+  require_file "$file" "File does not exist: $file"
   target_dir="$(prepare_output_dir "${2:-}")"
 
-  log "INFO" "开始导入文件节点: $target_dir"
-  run_proxylink file "$file" "$target_dir" || die "文件节点导入失败"
-  log "INFO" "文件节点导入完成"
+  log "INFO" "Start importing file nodes: $target_dir"
+  run_proxylink file "$file" "$target_dir" || die "File node import failed"
+  log "INFO" "File node import completed"
 }
 
 #######################################
@@ -129,28 +129,28 @@ import_sub() {
   local url="$1"
   local target_dir
 
-  [ -n "$url" ] || die "用法: $(basename "$0") sub <订阅链接> [目录]"
+  [ -n "$url" ] || die "usage: $(basename "$0") sub <Subscription link> [Table of contents]"
   target_dir="$(prepare_output_dir "${2:-}")"
 
-  log "INFO" "开始导入订阅节点: $target_dir"
-  run_proxylink sub "$url" "$target_dir" || die "订阅节点导入失败"
-  log "INFO" "订阅节点导入完成"
+  log "INFO" "Start importing subscription nodes: $target_dir"
+  run_proxylink sub "$url" "$target_dir" || die "Subscription node import failed"
+  log "INFO" "Subscription node import completed"
 }
 
 #######################################
-# sing-box 节点转链接
+# sing-box node to link
 #######################################
 export_link() {
   local file="$1"
 
-  [ -n "$file" ] || die "用法: $(basename "$0") convert <节点文件>"
-  require_file "$file" "节点文件不存在: $file"
+  [ -n "$file" ] || die "usage: $(basename "$0") convert <node file>"
+  require_file "$file" "Node file does not exist: $file"
   check_proxylink
   run_proxylink convert "$file"
 }
 
 #######################################
-# 清理订阅目录中的节点
+# Clean up the nodes in the subscription directory
 #######################################
 clear_subscription_nodes() {
   local sub_dir="$1"
@@ -163,7 +163,7 @@ clear_subscription_nodes() {
 }
 
 #######################################
-# 刷新订阅目录
+# Refresh subscription directory
 #######################################
 refresh_subscription_dir() {
   local name="$1"
@@ -187,11 +187,11 @@ add_subscription() {
   [ -n "$url" ] || die "usage: $(basename "$0") add <name> <Subscription link>"
 
   sub_dir="$(subscription_dir_from_name "$OUTBOUNDS_DIR" "$name")"
-  [ ! -d "$sub_dir" ] || die "订阅已存在: $name"
+  [ ! -d "$sub_dir" ] || die "Subscription already exists: $name"
 
-  ensure_dir "$sub_dir" "无法创建订阅目录: $sub_dir"
+  ensure_dir "$sub_dir" "Unable to create subscription directory: $sub_dir"
   refresh_subscription_dir "$name" "$url" "$sub_dir"
-  log "INFO" "订阅添加完成: $name"
+  log "INFO" "Subscription added completed: $name"
 }
 
 #######################################
@@ -206,19 +206,19 @@ update_subscription() {
   sub_dir="$(subscription_dir_from_name "$OUTBOUNDS_DIR" "$name")"
   meta_file="$sub_dir/_meta.json"
 
-  require_file "$meta_file" "订阅不存在: $name"
+  require_file "$meta_file" "Subscription does not exist: $name"
   saved_name="$(read_subscription_meta_value "$meta_file" "name" || true)"
   url="$(read_subscription_meta_value "$meta_file" "url" || true)"
 
-  [ -n "$url" ] || die "无法读取订阅链接: $meta_file"
+  [ -n "$url" ] || die "Unable to read subscription link: $meta_file"
   [ -n "$saved_name" ] || saved_name="$name"
 
   refresh_subscription_dir "$saved_name" "$url" "$sub_dir"
-  log "INFO" "订阅更新完成: $saved_name"
+  log "INFO" "Subscription update completed: $saved_name"
 }
 
 #######################################
-# 更新全部订阅
+# Update all subscriptions
 #######################################
 update_all_subscriptions() {
   local sub_dir meta_file name url count=0
@@ -237,7 +237,7 @@ update_all_subscriptions() {
     count=$((count + 1))
   done
 
-  log "INFO" "全部订阅更新完成，共 $count 个"
+  log "INFO" "All subscription updates completed，common $count indivual"
 }
 
 #######################################
@@ -250,7 +250,7 @@ remove_subscription() {
   [ -n "$name" ] || die "usage: $(basename "$0") remove <name>"
 
   sub_dir="$(subscription_dir_from_name "$OUTBOUNDS_DIR" "$name")"
-  [ -d "$sub_dir" ] || die "订阅不存在: $name"
+  [ -d "$sub_dir" ] || die "Subscription does not exist: $name"
 
   rm -rf "$sub_dir"
   log "INFO" "Subscription deleted: $name"
@@ -262,7 +262,7 @@ remove_subscription() {
 list_subscriptions() {
   local sub_dir meta_file name updated node_count file count=0
 
-  printf "订阅列表:\n"
+  printf "Subscription list:\n"
 
   for sub_dir in "$OUTBOUNDS_DIR"/sub_*; do
     [ -d "$sub_dir" ] || continue
@@ -279,11 +279,11 @@ list_subscriptions() {
       node_count=$((node_count + 1))
     done
 
-    printf "  - %s (%s 个节点，更新于 %s)\n" "$name" "$node_count" "${updated:-未知}"
+    printf "  - %s (%s nodes，updated on %s)\n" "$name" "$node_count" "${updated:-unknown}"
     count=$((count + 1))
   done
 
-  [ "$count" -gt 0 ] || printf "  暂无订阅\n"
+  [ "$count" -gt 0 ] || printf "  No subscription yet\n"
 }
 
 #######################################

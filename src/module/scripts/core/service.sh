@@ -28,21 +28,21 @@ export PATH="$MODDIR/bin:$PATH"
 readonly BUSYBOX="$(detect_busybox)"
 
 #######################################
-# 检查服务运行环境
+# Check the service operating environment
 #######################################
 verify_environment() {
-  require_file "$SING_BOX_BIN" "sing-box 二进制不存在: $SING_BOX_BIN"
-  require_file "$MODULE_CONF" "模块配置文件不存在: $MODULE_CONF"
-  require_file "$TPROXY_CONF_DIR/tproxy.conf" "透明代理配置文件不存在: $TPROXY_CONF_DIR/tproxy.conf"
-  require_dir "$SINGBOX_DIR" "sing-box 配置目录不存在: $SINGBOX_DIR"
-  require_dir "$CONFDIR" "通用配置目录不存在: $CONFDIR"
+  require_file "$SING_BOX_BIN" "sing-box binary does not exist: $SING_BOX_BIN"
+  require_file "$MODULE_CONF" "Module configuration file does not exist: $MODULE_CONF"
+  require_file "$TPROXY_CONF_DIR/tproxy.conf" "Transparent proxy configuration file does not exist: $TPROXY_CONF_DIR/tproxy.conf"
+  require_dir "$SINGBOX_DIR" "sing-box Configuration directory does not exist: $SINGBOX_DIR"
+  require_dir "$CONFDIR" "Common configuration directory does not exist: $CONFDIR"
 
-  ensure_dir "$MODDIR/logs" "无法创建日志目录: $MODDIR/logs"
-  ensure_dir "$RUNTIME_DIR" "无法创建运行时目录: $RUNTIME_DIR"
+  ensure_dir "$MODDIR/logs" "Unable to create log directory: $MODDIR/logs"
+  ensure_dir "$RUNTIME_DIR" "Unable to create runtime directory: $RUNTIME_DIR"
 }
 
 #######################################
-# 清理运行时文件
+# Clean runtime files
 #######################################
 cleanup_runtime_files() {
   rm -f "$RUNTIME_DIR/outbounds.json" 2> /dev/null || true
@@ -55,7 +55,7 @@ do_start() {
   local pid runtime_outbounds new_pid
   local node_path
 
-  log "INFO" "========== 开始启动 sing-box 服务 =========="
+  log "INFO" "========== Start booting sing-box Serve =========="
   verify_environment
 
   pid="$(get_pid "$SING_BOX_BIN")"
@@ -69,12 +69,12 @@ do_start() {
   write_runtime_outbounds > /dev/null
   runtime_outbounds="$RUNTIME_OUTBOUNDS_FILE"
 
-  [ "$RUNTIME_NODE_COUNT" -gt 0 ] || die "当前节点目录没有可加载的节点配置: $CUR_OUTBOUND_DIR"
+  [ "$RUNTIME_NODE_COUNT" -gt 0 ] || die "There is no loadable node configuration in the current node directory: $CUR_OUTBOUND_DIR"
 
-  log "INFO" "当前节点目录: $CUR_OUTBOUND_DIR"
-  log "INFO" "路由模式: $CUR_OUTBOUND_MODE"
-  log "INFO" "选择模式: $CUR_SELECTOR_MODE"
-  log "INFO" "已加载节点: $RUNTIME_NODE_COUNT，跳过无效节点: $RUNTIME_SKIPPED_COUNT"
+  log "INFO" "Current node directory: $CUR_OUTBOUND_DIR"
+  log "INFO" "routing mode: $CUR_OUTBOUND_MODE"
+  log "INFO" "Select mode: $CUR_SELECTOR_MODE"
+  log "INFO" "Node loaded: $RUNTIME_NODE_COUNT，Skip invalid nodes: $RUNTIME_SKIPPED_COUNT"
 
   # Construct final startup parameters
   set -- run -C "$CONFDIR"
@@ -86,8 +86,8 @@ $RUNTIME_NODE_PATHS
 EOF
   set -- "$@" -c "$runtime_outbounds"
 
-  log "INFO" "正在启动 sing-box 进程..."
-  cd "$SINGBOX_DIR" || die "无法进入配置目录: $SINGBOX_DIR"
+  log "INFO" "Starting sing-box process..."
+  cd "$SINGBOX_DIR" || die "Unable to enter configuration directory: $SINGBOX_DIR"
   nohup "$BUSYBOX" setuidgid root:net_admin "$SING_BOX_BIN" "$@" > "$SINGBOX_LOG_FILE" 2>&1 &
 
   new_pid=$!
@@ -100,13 +100,13 @@ EOF
   fi
 
   if api_wait_available 5 1; then
-    LOG_STDERR=0 SWITCH_ALLOW_RESTART=0 sh "$SWITCH_SCRIPT" mode "$CUR_OUTBOUND_MODE" || log "WARN" "运行模式同步失败"
+    LOG_STDERR=0 SWITCH_ALLOW_RESTART=0 sh "$SWITCH_SCRIPT" mode "$CUR_OUTBOUND_MODE" || log "WARN" "Run mode sync failed"
   else
-    log "WARN" "控制接口未就绪，本次未同步运行模式"
+    log "WARN" "Control interface is not ready，Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know."
   fi
 
-  log "INFO" "正在加载透明代理规则..."
-  sh "$TPROXY_SCRIPT" start -d "$TPROXY_CONF_DIR" >> "$LOG_FILE" 2>&1 || die "透明代理规则加载失败"
+  log "INFO" "Loading transparent proxy rules..."
+  sh "$TPROXY_SCRIPT" start -d "$TPROXY_CONF_DIR" >> "$LOG_FILE" 2>&1 || die "Transparent proxy rules failed to load"
 
   log "INFO" "========== sing-box Service startup completed =========="
 }
@@ -117,21 +117,21 @@ EOF
 do_stop() {
   local pid count
 
-  log "INFO" "========== 开始停止 sing-box 服务 =========="
+  log "INFO" "========== start stop sing-box Serve =========="
   verify_environment
 
-  log "INFO" "正在清理透明代理规则..."
+  log "INFO" "Cleaning up transparent proxy rules..."
   sh "$TPROXY_SCRIPT" stop -d "$TPROXY_CONF_DIR" >> "$LOG_FILE" 2>&1 || true
 
   pid="$(get_pid "$SING_BOX_BIN")"
   if [ -z "$pid" ]; then
-    log "INFO" "未发现运行中的 sing-box 进程"
+    log "INFO" "No running found sing-box process"
     cleanup_runtime_files
-    log "INFO" "========== sing-box 服务停止完成 =========="
+    log "INFO" "========== sing-box Service stop complete =========="
     return 0
   fi
 
-  log "INFO" "正在停止 sing-box 进程 (PID: $pid)..."
+  log "INFO" "Stopping sing-box process (PID: $pid)..."
 
   if kill "$pid" 2> /dev/null; then
     count=0
@@ -141,21 +141,21 @@ do_stop() {
     done
 
     if kill -0 "$pid" 2> /dev/null; then
-      log "WARN" "进程未响应 SIGTERM，改用 SIGKILL"
+      log "WARN" "Process is not responding SIGTERM，Use instead SIGKILL"
       kill -9 "$pid" 2> /dev/null || true
     fi
   fi
 
   cleanup_runtime_files
-  log "INFO" "sing-box 进程已停止"
-  log "INFO" "========== sing-box 服务停止完成 =========="
+  log "INFO" "sing-box Process has stopped"
+  log "INFO" "========== sing-box Service stop complete =========="
 }
 
 #######################################
 # Restart service
 #######################################
 do_restart() {
-  log "INFO" "========== 开始重启 sing-box 服务 =========="
+  log "INFO" "========== Start restarting sing-box Serve =========="
   do_stop
   sleep 1
   do_start
@@ -169,15 +169,15 @@ do_status() {
 
   pid="$(get_pid "$SING_BOX_BIN")"
   if [ -n "$pid" ]; then
-    printf "sing-box 运行中 (PID: %s)\n" "$pid"
+    printf "sing-box Running (PID: %s)\n" "$pid"
     uptime="$(get_process_uptime "$pid")"
     if [ "$uptime" -gt 0 ]; then
-      printf "运行时间: %s 秒\n" "$uptime"
+      printf "running time: %s Second\n" "$uptime"
     fi
     return 0
   fi
 
-  printf "sing-box 未运行\n"
+  printf "sing-box Not running\n"
   return 1
 }
 

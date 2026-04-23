@@ -46,44 +46,44 @@ detect_busybox() {
 }
 
 #######################################
-# 判断命令是否存在
+# Determine whether the command exists
 #######################################
 command_exists() {
   command -v "$1" > /dev/null 2>&1
 }
 
 #######################################
-# 检查文件是否存在
+# Check if the file exists
 #######################################
 require_file() {
   local file="$1"
-  local message="${2:-文件不存在: $file}"
+  local message="${2:-File does not exist: $file}"
 
   [ -f "$file" ] || die "$message"
 }
 
 #######################################
-# 检查目录是否存在
+# Check if directory exists
 #######################################
 require_dir() {
   local dir="$1"
-  local message="${2:-目录不存在: $dir}"
+  local message="${2:-Directory does not exist: $dir}"
 
   [ -d "$dir" ] || die "$message"
 }
 
 #######################################
-# 创建目录
+# Create directory
 #######################################
 ensure_dir() {
   local dir="$1"
-  local message="${2:-无法创建目录: $dir}"
+  local message="${2:-Unable to create directory: $dir}"
 
   [ -d "$dir" ] || mkdir -p "$dir" || die "$message"
 }
 
 #######################################
-# 转义 JSON 字符串
+# escape JSON string
 #######################################
 json_escape() {
   printf "%s" "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
@@ -120,7 +120,7 @@ get_process_uptime() {
 }
 
 #######################################
-# 检测设备主要 IPv4 地址
+# Main testing equipment IPv4 address
 #######################################
 detect_primary_ipv4() {
   ip route get 1.1.1.1 2> /dev/null | sed -n 's/.* src \([0-9.]*\).*/\1/p' | head -1
