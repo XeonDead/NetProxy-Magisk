@@ -1,33 +1,33 @@
-# 安装教程
+# Install tutorials
 
-## 前置条件
+## Precondition
 
-- 已解锁 Bootloader
-- 已安装 Magisk 24.0+ 或 KernelSU
-- 设备已 Root
+- Unlocked Bootloader
+- Installed Magisk 24.0+ or KernelSU
+- Device already Root
 
-## 安装步骤
+## Installation Steps
 
-### 通过 Magisk/KernelSU 安装
+### Pass. Magisk/KernelSU Install
 
-1. 从 [GitHub Releases](https://github.com/Fanju6/NetProxy-Magisk/releases) 下载最新的 `NetProxy-vX.X.X.zip`
-2. 打开 Magisk/KernelSU 应用
-3. 进入 **模块** 页面
-4. 点击 **从本地安装**，选择下载的 zip 文件
-5. 等待安装完成后 **重启设备**
+1. From [GitHub Releases](https://github.com/Fanju6/NetProxy-Magisk/releases) Download Recent `NetProxy-vX.X.X.zip`
+2. Open Magisk/KernelSU Apply
+3. Enter **Modules** Page
+4. Click **Install from Local**, select the downloaded zip Documentation
+5. Waiting for installation to complete **Restart Device**
 
-## 安装后配置
+## Install
 
-安装完成后：
+Upon installation:
 
-1. 打开 KernelSU/Magisk 应用
-2. 进入 **模块** 页面
-3. 找到 **NetProxy** 模块，点击右侧的 **WebUI** 图标
-4. 首次使用需要添加节点或订阅
+1. Open KernelSU/Magisk Apply
+2. Enter **Modules** Page
+3. Found it. **NetProxy** module, click on right **WebUI** Icon
+4. First use requires addition of node or subscription
 
-## 卸载模块
+## Unmount module
 
-1. 打开 Magisk/KernelSU
-2. 进入 **模块** 页面
-3. 找到 NetProxy，点击 **删除** 按钮
-4. 重启设备完成卸载
+1. Open Magisk/KernelSU
+2. Enter **Modules** Page
+3. Found it. NetProxy, click **Delete** button
+4. Restart device to unmount

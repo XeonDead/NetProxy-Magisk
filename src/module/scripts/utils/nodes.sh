@@ -1,12 +1,12 @@
 #!/system/bin/sh
-# Node and subscription helper functions
+# Nodes and Subscriptions
 
 readonly NODE_RECORD_DELIM="$(printf '\t')"
 NODE_SCAN_VALID_COUNT=0
 NODE_SCAN_SKIPPED_COUNT=0
 
 #######################################
-# Determine whether it is a node configuration file
+# Determines whether the node profile is available
 #######################################
 is_node_config_file() {
   local file="$1"
@@ -16,7 +16,7 @@ is_node_config_file() {
 }
 
 #######################################
-# Read outbound tag
+# Read Post Tabs
 #######################################
 detect_outbound_tag() {
   local config_file="$1"
@@ -26,7 +26,7 @@ detect_outbound_tag() {
 }
 
 #######################################
-# Determine whether to retain labels for selectors
+# Determines whether to keep tabs for the Chooser
 #######################################
 is_reserved_outbound_tag() {
   case "$1" in
@@ -36,14 +36,14 @@ is_reserved_outbound_tag() {
 }
 
 #######################################
-# Clean up subscription names
+# Clear Subscription Name
 #######################################
 sanitize_subscription_name() {
   printf "%s" "$1" | sed 's/[\/\\:*?"<>| ]/_/g'
 }
 
 #######################################
-# Get subscription directory path
+# Can not open message
 #######################################
 subscription_dir_from_name() {
   local outbounds_dir="$1"
@@ -64,7 +64,7 @@ read_subscription_meta_value() {
 }
 
 #######################################
-# Write subscription metadata
+# Writing subscription metadata
 #######################################
 write_subscription_meta() {
   local target_dir="$1"
@@ -81,7 +81,7 @@ EOF
 }
 
 #######################################
-# Get subscription display name
+# Can not open message
 #######################################
 subscription_display_name() {
   local sub_dir="$1"
@@ -97,7 +97,7 @@ subscription_display_name() {
 }
 
 #######################################
-# Reset node scan count
+# Reset Node Scan Count
 #######################################
 reset_node_scan_counters() {
   NODE_SCAN_VALID_COUNT=0
@@ -105,7 +105,7 @@ reset_node_scan_counters() {
 }
 
 #######################################
-# Write a node scan record
+# Write a node scanned record
 #######################################
 append_node_record() {
   local output_file="$1"
@@ -118,7 +118,7 @@ append_node_record() {
 }
 
 #######################################
-# Scan nodes in a single directory
+# Scan Nodes in Individual Directory
 #######################################
 scan_nodes_in_dir() {
   local dir="$1"
@@ -150,7 +150,7 @@ scan_nodes_in_dir() {
 }
 
 #######################################
-# Scan all nodes
+# Scan All Nodes
 #######################################
 scan_all_nodes() {
   local outbounds_dir="$1"
@@ -161,17 +161,17 @@ scan_all_nodes() {
   : > "$output_file"
   reset_node_scan_counters
 
-  scan_nodes_in_dir "$outbounds_dir/default" "$current_config" "default node" "$output_file" 1
+  scan_nodes_in_dir "$outbounds_dir/default" "$current_config" "Default Node" "$output_file" 1
 
   for sub_dir in "$outbounds_dir"/sub_*; do
     [ -d "$sub_dir" ] || continue
-    source="subscription: $(subscription_display_name "$sub_dir")"
+    source="Subscriptions: $(subscription_display_name "$sub_dir")"
     scan_nodes_in_dir "$sub_dir" "$current_config" "$source" "$output_file" 1
   done
 }
 
 #######################################
-# Read the current node record
+# Read Current Node Record
 #######################################
 find_current_node_from_scan() {
   local scan_file="$1"
@@ -187,7 +187,7 @@ find_current_node_from_scan() {
 }
 
 #######################################
-# parse node
+# Parsing Nodes
 #######################################
 resolve_node_from_scan() {
   local scan_file="$1"
@@ -196,7 +196,7 @@ resolve_node_from_scan() {
   local first_match=""
   local path name tag source is_current base
 
-  [ -n "$query" ] || die "Please specify node name、label or path"
+  [ -n "$query" ] || die "Please specify a node name, label or path"
 
   if [ -f "$query" ]; then
     printf "%s\n" "$query"
@@ -214,13 +214,13 @@ resolve_node_from_scan() {
 
   case "$match_count" in
     0)
-      die "Node not found: $query"
+      die "Node found: $query"
       ;;
     1)
       printf "%s\n" "$first_match"
       ;;
     *)
-      die "Find multiple nodes with the same name，Please use a more precise filename or full path"
+      die "Could not close temporary folder: %s"
       ;;
   esac
 }

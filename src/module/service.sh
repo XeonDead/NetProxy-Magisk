@@ -11,7 +11,7 @@ readonly LOG_FILE="$MODDIR/logs/service.log"
 # Load module configuration
 #######################################
 load_module_config() {
-  # Set startup service defaults
+  # Set the default for startup service
   AUTO_START=1
   GMS_FIX=1
 
@@ -19,71 +19,71 @@ load_module_config() {
     . "$MODULE_CONF"
     log "INFO" "Module configuration loaded"
   else
-    log "WARN" "Module configuration file does not exist，Use default value"
+    log "WARN" "Module profile does not exist, using default"
   fi
 }
 
 #######################################
-# Wait for system startup to complete
+# Waiting for system startup to complete
 #######################################
 wait_for_boot() {
-  log "INFO" "Wait for system startup to complete..."
+  log "INFO" "Waiting for system startup to complete..."
 
-  # Wait for system boot to complete
+  # Waiting for system startup.
   while [ "$(getprop sys.boot_completed)" != "1" ]; do
     sleep 1
   done
-  log "INFO" "System startup completed"
+  log "INFO" "System launch complete."
 
-  # Wait for the storage mount to complete
+  # Waiting for storage to mount complete
   while [ ! -d "/sdcard/Android" ]; do
     sleep 1
   done
-  log "INFO" "Storage mounting completed"
+  log "INFO" "Storage Mount Completed"
 }
 
 #######################################
-# Execute device-specific repair scripts
+# Implementation equipment-specific repair scripts
 #######################################
 check_device_specific() {
-  # Perform device compatibility fixes when enabled
+  # Implement device compatibility restoration on commission
   if [ "$GMS_FIX" = "1" ]; then
-    log "INFO" "GMS Repair is enabled，Execute repair script"
+    log "INFO" "GMS Repairs were activated and the scripts were repaired"
     sh "$MODDIR/scripts/utils/gms_fix.sh"
   fi
 }
 
-# Make sure the log directory exists
+# Ensure log directory exists
 mkdir -p "$MODDIR/logs"
 
 #######################################
-# Record environmental information
+# Recording environmental information
 #######################################
 log_env_info() {
-  log "INFO" "========== Environmental information detection =========="
+  log "INFO" "========== Environmental information testing =========="
 
-  # KernelSU environment
+  # KernelSU Environment
   if [ "$KSU" = "true" ]; then
-    log "INFO" "environment: KernelSU"
-    log "INFO" "KernelSU Version: ${KSU_VER:-unknown}"
-    log "INFO" "KernelSU version number: ${KSU_VER_CODE:-unknown}"
-    log "INFO" "KernelSU Kernel version number: ${KSU_KERNEL_VER_CODE:-unknown}"
+    log "INFO" "Environment: KernelSU"
+    log "INFO" "KernelSU Version: ${KSU_VER:-Unknown}"
+    log "INFO" "KernelSU Version Number: ${KSU_VER_CODE:-Unknown}"
+    log "INFO" "KernelSU kernel version number: ${KSU_KERNEL_VER_CODE:-Unknown}"
   fi
 
-  # APatch / KernelPatch environment
+  # APatch / KernelPatch Environment
   if [ "$APATCH" = "true" ] || [ "$KERNELPATCH" = "true" ]; then
-    log "INFO" "environment: APatch / KernelPatch"
-    log "INFO" "APatch Version: ${APATCH_VER:-unknown}"
-    log "INFO" "APatch version number: ${APATCH_VER_CODE:-unknown}"
-    log "INFO" "Kernel version: ${KERNEL_VERSION:-unknown}"
-    log "INFO" "KernelPatch Version: ${KERNELPATCH_VERSION:-unknown}"
+    log "INFO" "Environment: APatch / KernelPatch"
+    log "INFO" "APatch Version: ${APATCH_VER:-Unknown}"
+    log "INFO" "APatch Version Number: ${APATCH_VER_CODE:-Unknown}"
+    log "INFO" "kernel version: ${KERNEL_VERSION:-Unknown}"
+    log "INFO" "KernelPatch Version: ${KERNELPATCH_VERSION:-Unknown}"
   fi
 
-  # Magisk environment
+  # Magisk Environment
   if [ -n "$MAGISK_VER" ]; then
-    log "INFO" "environment: Magisk"
+    log "INFO" "Environment: Magisk"
     log "INFO" "Magisk Version: $MAGISK_VER"
-    log "INFO" "Magisk version number: $MAGISK_VER_CODE"
+    log "INFO" "Magisk Version Number: $MAGISK_VER_CODE"
   fi
 
   # Module version information
@@ -93,14 +93,14 @@ log_env_info() {
     version="${line#*=}"
     line=$(grep "^versionCode=" "$MODDIR/module.prop")
     local versionCode="${line#*=}"
-    log "INFO" "module version: ${version:-unknown}"
-    log "INFO" "Module version number: ${versionCode:-unknown}"
+    log "INFO" "Module Version: ${version:-Unknown}"
+    log "INFO" "Module Version Number: ${versionCode:-Unknown}"
   fi
 
   log "INFO" "=================================="
 }
 
-# Main process
+# Main Process
 log "INFO" "========== NetProxy Service start =========="
 log_env_info
 load_module_config
@@ -108,16 +108,16 @@ sh "$MODDIR/scripts/utils/ipset.sh" load
 
 wait_for_boot
 
-# Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.
+# Check if startup is enabled
 if [ "$AUTO_START" = "1" ]; then
-  log "INFO" "Start the service..."
+  log "INFO" "Start service...."
   sh "$MODDIR/scripts/core/service.sh" start
-  log "INFO" "Service startup completed"
+  log "INFO" "Service start complete."
 else
-  log "INFO" "Auto-start is disabled，Skip startup"
+  log "INFO" "Starter is disabled. Skip start."
 fi
 
-# Perform device compatibility fixes
+# Implementation of equipment compatibility repairs
 check_device_specific
 
-log "INFO" "========== The service startup process ends =========="
+log "INFO" "========== Service start-up process completed =========="

@@ -1,6 +1,6 @@
 name: Sync to KernelSU Repo
 
-# 触发条件
+# Trigger condition
 on:
   push:
     branches:
@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0 
-          # 关键修复：禁止 checkout 插件接管 Git 凭据
+          # Critical repairs: Ban checkout Plugin Takeover Git Evidence
           persist-credentials: false 
 
       - name: Sync Source Code and Tags
@@ -30,36 +30,36 @@ jobs:
           
           git push downstream --tags || true
           
-          echo "源代码推送完成！已跳过受保护的标签。"
+          echo "Source is complete! The protected label has been bypassed."
 
       - name: Sync Latest Release
-        # 仅在发布新 Release 或手动触发时运行此步骤
+        # Only publish new Release Or run this step on manual trigger
         if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ secrets.SYNC_PAT }}
-          UPSTREAM_REPO: ${{ github.repository }} # 当前仓库 (Fanju6/NetProxy-Magisk)
-          DEST_REPO: "KernelSU-Modules-Repo/netproxy" # 目标仓库
+          UPSTREAM_REPO: ${{ github.repository }} # Current repository (Fanju6/NetProxy-Magisk)
+          DEST_REPO: "KernelSU-Modules-Repo/netproxy" # Target warehouse
         run: |
-          # 1. 获取主仓库最新 Release 的标签名
+          # 1. Get the main warehouse up to date Release tab name
           LATEST_TAG=$(gh release view --repo $UPSTREAM_REPO --json tagName -q .tagName)
-          echo "主仓库最新 Release 标签: $LATEST_TAG"
+          echo "Main repository update Release Label: $LATEST_TAG"
           
-          # 2. 检查下游仓库是否已经存在该 Release
+          # 2. Check if the downstream warehouse is already there. Release
           if gh release view $LATEST_TAG --repo $DEST_REPO &>/dev/null; then
-            echo "下游仓库已存在 Release $LATEST_TAG，无需重复同步。"
+            echo "An downstream warehouse already exists. Release $LATEST_TAG, no need to repeat sync."
           else
-            echo "下游仓库缺失 Release $LATEST_TAG，开始同步..."
+            echo "Missing downstream warehouse Release $LATEST_TAGOther Organiser..."
             
-            # 3. 创建临时目录并下载主仓库的所有附件
+            # 3. Create a temporary directory and download all attachments from the main repository
             mkdir -p release_assets
             gh release download $LATEST_TAG --repo $UPSTREAM_REPO --dir release_assets
             
-            # 4. 获取主仓库 Release 的标题和更新日志
+            # 4. Fetch main warehouse Release Title and update log
             TITLE=$(gh release view $LATEST_TAG --repo $UPSTREAM_REPO --json name -q .name)
             NOTES=$(gh release view $LATEST_TAG --repo $UPSTREAM_REPO --json body -q .body)
             
-            # 5. 在下游仓库创建相同的 Release 并上传附件
+            # 5. Create the same in downstream warehouses Release Other Organiser
             gh release create $LATEST_TAG ./release_assets/* --repo $DEST_REPO --title "$TITLE" --notes "$NOTES"
             
-            echo "Release $LATEST_TAG 同步成功！"
+            echo "Release $LATEST_TAG Synchronized!"
           fi

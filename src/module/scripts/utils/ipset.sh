@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# IPSET Driver loading script
+# IPSET Driver Load Script
 
 set -u
 
@@ -17,19 +17,19 @@ load_drivers() {
   local module
 
   if [ ! -d "$NETFILTER_DIR" ]; then
-    log "INFO" "Integrated not detected IPSET Driver directory，Skip loading"
+    log "INFO" "Not detected IPSET Driver Directory, Skip Load"
     return 0
   fi
 
   if [ -d /sys/module/ip_set ]; then
-    log "INFO" "The kernel is already built in or loaded IPSET module"
+    log "INFO" "kernel is built or loaded IPSET Modules"
     return 0
   fi
 
   [ -x "$KO_LOADER" ] || chmod 0755 "$KO_LOADER"
 
-  log "INFO" "Start loading integration IPSET Kernel driver..."
-  cd "$NETFILTER_DIR" || die "Unable to enter driver directory: $NETFILTER_DIR"
+  log "INFO" "Start loading integration IPSET kernel driver..."
+  cd "$NETFILTER_DIR" || die "Could not enter driver directory: $NETFILTER_DIR"
 
   load_module() {
     "$KO_LOADER" "$@"
@@ -51,23 +51,23 @@ load_drivers() {
   [ -f "xt_set.ko" ] && load_module "xt_set.ko"
   [ -f "xt_addrtype.ko" ] && load_module "xt_addrtype.ko"
 
-  log "INFO" "IPSET The driver loading process is completed"
+  log "INFO" "IPSET Driver loading process complete"
 }
 
 #######################################
-# show help
+# Show Help
 #######################################
 show_usage() {
   cat << EOF
-usage: $(basename "$0") load
+Usage: $(basename "$0") load
 
-Order:
-  load      Load integrated IPSET drive
+Command:
+  load      Load integrated IPSET Driver
 EOF
 }
 
 #######################################
-# main entrance
+# Main entrance
 #######################################
 main() {
   case "${1:-}" in

@@ -5,8 +5,8 @@
 <h1 align="center">NetProxy</h1>
 
 <p align="center">
-  <strong>Android 系统级 Xray 透明代理模块</strong><br>
-  支持 TPROXY、UDP、IPv6、分应用代理、订阅管理
+  <strong>Android System Level Xray Transparent proxy module</strong><br>
+  Support TPROXY、UDP、IPv6, sub-appliance agent, subscription management
 </p>
 
 <p align="center">
@@ -20,53 +20,53 @@
 </p>
 
 <p align="center">
-  中文 | <a href="README.md">English</a>
+  Chinese | <a href="README.md">English</a>
 </p>
 
 ---
 
-## 功能特性
+## Functional characteristics
 
-| 功能 | 描述 |
+| Functions | Description |
 |------|------|
-| **APP管理** | Miuix 现代化界面，支持莫奈取色 |
-| **透明代理** | 支持 TPROXY / REDIRECT 两种模式，TCP + UDP 全接管 |
-| **分应用代理** | 黑名单 / 白名单模式，精准控制代理范围 |
-| **路由设置** | 自定义域名、IP、端口等路由规则 |
-| **DNS 设置** | 自定义 DNS 服务器和静态 Hosts 映射 |
-| **订阅管理** | 在线添加、更新订阅，自动解析节点 |
-| **热点共享** | 支持代理 WiFi 热点和 USB 共享的流量 |
-| **热切换配置** | 无需重启即可切换节点 |
+| **APPManagement** | Miuix Modern interface to support Monet colouring |
+| **Transparent Agent** | Support TPROXY / REDIRECT Two models.TCP + UDP Take over. |
+| **Subappliance Proxy** | Blacklist / White list mode, precise control of proxy range |
+| **Route Settings** | Custom domain name,IPRoute rules, port etc. |
+| **DNS Settings** | Custom DNS Servers and static Hosts Map |
+| **Subscription Management** | Add, update and automatically resolve nodes online |
+| **Hotspot Sharing** | Supporting Agent WiFi Hotspots and USB Shared traffic |
+| **Hot Toggle Configuration** | Switch Nodes without restart |
 
 ---
 
-## 界面预览
+## Interface Preview
 
 <div align="center">
-  <img src="image/Screenshot.jpg" width="60%" alt="界面预览" />
+  <img src="image/Screenshot.jpg" width="60%" alt="Interface Preview" />
 </div>
 
 ---
 
-## 安装
+## Install
 
-1. 从 [Releases](https://github.com/Fanju6/NetProxy-Magisk/releases) 下载最新版 ZIP
-2. 在 **Magisk / KernelSU / APatch** 中刷入模块
-3. 重启设备
-4. 打开模块管理器的 WebUI 进行配置
+1. From [Releases](https://github.com/Fanju6/NetProxy-Magisk/releases) Download Update ZIP
+2. Yes. **Magisk / KernelSU / APatch** Middlebrush Module
+3. Restart Device
+4. Open module manager WebUI Configure
 
 ---
 
-## 目录结构
+## Contents structure
 
 ```
 /data/adb/modules/netproxy/
-├── bin/                      # Xray 二进制文件
+├── bin/                      # Xray Binary File
 ├── config/
 │   ├── xray/
-│   │   ├── confdir/          # Xray 核心配置
-│   │   │   ├── routing/      # 路由分流配置
-│   │   │   │   ├── internal/ # 内部系统配置
+│   │   ├── confdir/          # Xray Core Configuration
+│   │   │   ├── routing/      # Route Subtract Configuration
+│   │   │   │   ├── internal/ # Internal System Configuration
 │   │   │   │   ├── direct.json
 │   │   │   │   ├── global.json
 │   │   │   │   ├── rule.json
@@ -77,37 +77,37 @@
 │   │   │   ├── 03_inbounds.json
 │   │   │   ├── 04_outbounds.json
 │   │   │   └── 05_policy.json
-│   │   └── outbounds/        # 出站节点分组目录
-│   │       ├── default/      # 默认节点分组
-│   │       └── sub_xxx/      # 订阅分组目录
+│   │   └── outbounds/        # Outstation Group Directory
+│   │       ├── default/      # Default Node Grouping
+│   │       └── sub_xxx/      # Subscribe Group Directory
 │   ├── tproxy/
-│   │   └── tproxy.conf       # 透明代理配置
-│   └── module.conf           # 模块设置（开机自启等）
-├── logs/                     # 运行日志
-├── scripts/                  # 启动、停止、订阅等脚本
-├── webroot/                  # WebUI 静态资源
-└── service.sh                # 模块启动入口
+│   │   └── tproxy.conf       # Transparent proxy configuration
+│   └── module.conf           # Module settings (start-up, etc.)
+├── logs/                     # Run Log
+├── scripts/                  # Script Start, Stop, Subscription etc.
+├── webroot/                  # WebUI Static resources
+└── service.sh                # Module Launch Entry
 ```
 
 ---
 
-## 快速开始
+## Quick Start
 
-### 方式一：节点链接导入（推荐）
+### Mode I: Node Link Import (recommended)
 
-在 APP节点页面点击 **从剪切板导入**，直接导入节点链接：
+Yes. APPNode Page Click **Import from Clipboard**, directly import node links:
 
 ```
-vless://... 或 vmess://... 或 trojan://... 等
+vless://... or vmess://... or trojan://... Wait.
 ```
 
-### 方式二：订阅导入
+### Mode II: Subscription Import
 
-在 APP节点页面点击 **添加订阅**，输入订阅名称和地址，自动解析全部节点。
+Yes. APPNode Page Click **Add Subscription**, enter the subscribe name and address, and automatically resolve all nodes.
 
-### 方式三：手动配置
+### Mode 3: Manual Configuration
 
- 在 `outbounds/default` 目录创建 JSON 配置文件，格式示例：
+ Yes. `outbounds/default` Directory Create JSON , for example:
 
 ```json
 {
@@ -123,42 +123,42 @@ vless://... 或 vmess://... 或 trojan://... 等
 
 
 
-## 交流群组
+## Exchange Cluster
 
 <p align="center">
   <a href="https://t.me/NetProxy_Magisk">
-    <img src="https://img.shields.io/badge/Telegram-加入群组-blue?style=for-the-badge&logo=telegram" alt="Telegram Group" />
+    <img src="https://img.shields.io/badge/Telegram-Join Group-blue?style=for-the-badge&logo=telegram" alt="Telegram Group" />
   </a>
 </p>
 
 ---
 
-## 贡献
+## Contribution
 
-欢迎参与项目！
+Welcome to the project!
 
-- 提交 Issue 反馈 BUG
-- 提出功能建议
-- 提交 Pull Request
-- Star 支持项目！
+- Submit Issue Feedback BUG
+- Functional recommendations
+- Submit Pull Request
+- Star Support project!
 
 ---
 
-## 鸣谢
+## Acknowledgements
 
-本项目的开发离不开以下优秀的开源项目：
+The project was developed with the following excellent open-source projects:
 
-| 项目 | 说明 |
+| Item | Annotations |
 |------|------|
-| [Xray-core](https://github.com/XTLS/Xray-core) | 核心代理引擎，支持 VLESS、XTLS、REALITY 等先进协议 |
-| [v2rayNG](https://github.com/2dust/v2rayNG) | 节点链接解析逻辑参考 |
-| [AndroidTProxyShell](https://github.com/CHIZI-0618/AndroidTProxyShell) | Android TProxy 透明代理实现参考 |
-| [KsuWebUIStandalone](https://github.com/KOWX712/KsuWebUIStandalone) | WebUI 独立运行方案参考 |
-| [Proxylink](https://github.com/Fanju6/Proxylink) | 代理链接解析器，用于订阅解析和配置生成 |
+| [Xray-core](https://github.com/XTLS/Xray-core) | Core proxy engine, support VLESS、XTLS、REALITY Wait for an advanced agreement. |
+| [v2rayNG](https://github.com/2dust/v2rayNG) | Node Link Parsing Logic Reference |
+| [AndroidTProxyShell](https://github.com/CHIZI-0618/AndroidTProxyShell) | Android TProxy Transparent proxy for reference |
+| [KsuWebUIStandalone](https://github.com/KOWX712/KsuWebUIStandalone) | WebUI Independent Operational Programme Reference |
+| [Proxylink](https://github.com/Fanju6/Proxylink) | Proxy Link Resolutionr to subscribe to resolution and configure generation |
 
 ---
 
-## 许可证
+## Licence
 
 [GPL-3.0 License](LICENSE)
 

@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# sing-box Runtime configuration helper functions
+# sing-box Run-time Configure Assistive Functions
 
 CUR_OUTBOUND_CONFIG=""
 CUR_OUTBOUND_DIR=""
@@ -14,33 +14,33 @@ RUNTIME_NODE_COUNT=0
 RUNTIME_SKIPPED_COUNT=0
 
 #######################################
-# Initialize the runtime context
+# Initialize the context
 #######################################
 initialize_runtime_context() {
-  require_file "${MODULE_CONF:-}" "Module configuration file does not exist: ${MODULE_CONF:-undefined}"
-  require_dir "${SINGBOX_DIR:-}" "sing-box Configuration directory does not exist: ${SINGBOX_DIR:-undefined}"
-  require_dir "${CONFDIR:-}" "Common configuration directory does not exist: ${CONFDIR:-undefined}"
-  require_dir "${RUNTIME_DIR:-}" "Runtime directory does not exist: ${RUNTIME_DIR:-undefined}"
+  require_file "${MODULE_CONF:-}" "The module profile does not exist: ${MODULE_CONF:-Undefined}"
+  require_dir "${SINGBOX_DIR:-}" "sing-box Profile directory does not exist: ${SINGBOX_DIR:-Undefined}"
+  require_dir "${CONFDIR:-}" "Common configuration directory does not exist: ${CONFDIR:-Undefined}"
+  require_dir "${RUNTIME_DIR:-}" "Run-time directory does not exist: ${RUNTIME_DIR:-Undefined}"
 
   CUR_OUTBOUND_CONFIG="$(read_conf "$MODULE_CONF" "CURRENT_CONFIG" "")"
   CUR_OUTBOUND_MODE="$(read_conf "$MODULE_CONF" "OUTBOUND_MODE" "rule")"
   CUR_SELECTOR_MODE="$(read_conf "$MODULE_CONF" "SELECTOR_MODE" "urltest")"
 
-  [ -n "$CUR_OUTBOUND_CONFIG" ] || die "CURRENT_CONFIG undefined，Please select the node first"
-  require_file "$CUR_OUTBOUND_CONFIG" "The current node configuration file does not exist: $CUR_OUTBOUND_CONFIG"
+  [ -n "$CUR_OUTBOUND_CONFIG" ] || die "CURRENT_CONFIG Undefined, select nodes first"
+  require_file "$CUR_OUTBOUND_CONFIG" "Current node profile does not exist: $CUR_OUTBOUND_CONFIG"
 
   CUR_OUTBOUND_DIR="${CUR_OUTBOUND_CONFIG%/*}"
-  [ "$CUR_OUTBOUND_DIR" != "$CUR_OUTBOUND_CONFIG" ] || die "Unable to resolve current node directory: $CUR_OUTBOUND_CONFIG"
-  require_dir "$CUR_OUTBOUND_DIR" "The current node directory does not exist: $CUR_OUTBOUND_DIR"
+  [ "$CUR_OUTBOUND_DIR" != "$CUR_OUTBOUND_CONFIG" ] || die "Could not close temporary folder: %s: $CUR_OUTBOUND_CONFIG"
+  require_dir "$CUR_OUTBOUND_DIR" "Current Node Directory does not exist: $CUR_OUTBOUND_DIR"
 
   CUR_CURRENT_TAG="$(detect_outbound_tag "$CUR_OUTBOUND_CONFIG" || true)"
-  [ -n "$CUR_CURRENT_TAG" ] || die "Unable to read current node label: $CUR_OUTBOUND_CONFIG"
+  [ -n "$CUR_CURRENT_TAG" ] || die "Could not read current node tab: $CUR_OUTBOUND_CONFIG"
 
   RUNTIME_OUTBOUNDS_FILE="$RUNTIME_DIR/outbounds.json"
 }
 
 #######################################
-# Clear runtime node cache
+# Clear node cache for air operations
 #######################################
 reset_runtime_nodes() {
   RUNTIME_NODE_PATHS=""
@@ -50,7 +50,7 @@ reset_runtime_nodes() {
 }
 
 #######################################
-# Append runtime node cache
+# Append runtime cache
 #######################################
 append_runtime_node() {
   local file="$1"
@@ -77,13 +77,13 @@ $file"
 }
 
 #######################################
-# Scan the current node directory
+# Scan Current Node Directory
 #######################################
 scan_runtime_nodes() {
   local current_dir="${1:-$CUR_OUTBOUND_DIR}"
   local file tag
 
-  require_dir "$current_dir" "Node directory does not exist: $current_dir"
+  require_dir "$current_dir" "Node Directory does not exist: $current_dir"
   reset_runtime_nodes
 
   for file in "$current_dir"/*.json; do
@@ -100,14 +100,14 @@ scan_runtime_nodes() {
 }
 
 #######################################
-# Generate runtime outbound configuration
+# Generate Runtime Outstation Configuration
 #######################################
 write_runtime_outbounds() {
   local current_config="${1:-$CUR_OUTBOUND_CONFIG}"
   local selector_mode="${2:-$CUR_SELECTOR_MODE}"
   local tags="$RUNTIME_NODE_TAGS_JSON"
 
-  [ -n "$current_config" ] || die "The current node configuration is not initialized"
+  [ -n "$current_config" ] || die "Current Node Configuration Not Initialized"
   [ -n "$selector_mode" ] || selector_mode="urltest"
 
   if [ "$RUNTIME_NODE_COUNT" -eq 0 ] && [ -z "$RUNTIME_NODE_PATHS" ]; then
@@ -119,10 +119,10 @@ write_runtime_outbounds() {
     tags="\"$(json_escape "$CUR_CURRENT_TAG")\""
   fi
 
-  [ -n "$tags" ] || die "There are no outbound labels available for the current node directory: $CUR_OUTBOUND_DIR"
+  [ -n "$tags" ] || die "No stop tab available in the current node directory: $CUR_OUTBOUND_DIR"
 
   case "$selector_mode" in
-    urltest | auto | Dynamic speed measurement)
+    urltest | auto | Dynamic Speed)
       cat > "$RUNTIME_OUTBOUNDS_FILE" << EOF
 {
   "outbounds": [
@@ -135,7 +135,7 @@ write_runtime_outbounds() {
       "type": "block"
     },
     {
-      "tag": "proxy",
+      "tag": "Proxy",
       "type": "selector",
       "outbounds": [
         "Auto-Fastest",
@@ -159,7 +159,7 @@ write_runtime_outbounds() {
 }
 EOF
       ;;
-    manual | selector | Manual selection | Manual)
+    manual | selector | Manual Selection | Manual)
       cat > "$RUNTIME_OUTBOUNDS_FILE" << EOF
 {
   "outbounds": [
@@ -172,7 +172,7 @@ EOF
       "type": "block"
     },
     {
-      "tag": "proxy",
+      "tag": "Proxy",
       "type": "selector",
       "outbounds": [
         "direct",
@@ -186,7 +186,7 @@ EOF
 EOF
       ;;
     *)
-      die "Unknown node selection mode: $selector_mode"
+      die "Unknown Node Selection Mode: $selector_mode"
       ;;
   esac
 

@@ -1,43 +1,43 @@
 #!/system/bin/sh
-# Clash API Helper function
+# Clash API 辅助函数
 
 #######################################
-# Read controller address
+# 读取控制器地址
 #######################################
 api_controller() {
   printf "%s" "${CLASH_API:-127.0.0.1:9999}"
 }
 
 #######################################
-# Read controller key
+# 读取控制器密钥
 #######################################
 api_secret() {
   printf "%s" "${CLASH_SECRET:-singbox}"
 }
 
 #######################################
-# Read main selector name
+# 读取主选择器名称
 #######################################
 api_selector_group() {
   printf "%s" "${SELECTOR_GROUP:-Proxy}"
 }
 
 #######################################
-# Read speed test address
+# 读取测速地址
 #######################################
 api_delay_url() {
   printf "%s" "${DELAY_URL:-https://www.gstatic.com/generate_204}"
 }
 
 #######################################
-# Simple URL coding
+# 简单 URL 编码
 #######################################
 url_encode_simple() {
   printf "%s" "$1" | sed 's/%/%25/g; s/ /%20/g; s/#/%23/g; s/?/%3F/g; s/&/%26/g; s/\//%2F/g; s/+/%2B/g'
 }
 
 #######################################
-# extract JSON string field
+# 提取 JSON 字符串字段
 #######################################
 json_get_string() {
   local text="$1"
@@ -47,7 +47,7 @@ json_get_string() {
 }
 
 #######################################
-# initiate Clash API ask
+# 发起 Clash API 请求
 #######################################
 api_request() {
   local method="$1"
@@ -76,14 +76,14 @@ api_request() {
 }
 
 #######################################
-# Determine whether the control interface is available
+# 判断控制接口是否可用
 #######################################
 api_is_available() {
   api_request GET "/configs" > /dev/null 2>&1
 }
 
 #######################################
-# Wait for the control interface to be ready
+# 等待控制接口就绪
 #######################################
 api_wait_available() {
   local retries="${1:-5}"
@@ -100,7 +100,7 @@ api_wait_available() {
 }
 
 #######################################
-# Module mode switch Clash model
+# 模块模式转 Clash 模式
 #######################################
 module_mode_to_clash_mode() {
   case "$1" in
@@ -112,7 +112,7 @@ module_mode_to_clash_mode() {
 }
 
 #######################################
-# Read the current operating mode
+# 读取当前运行模式
 #######################################
 api_get_mode() {
   local result
@@ -122,7 +122,7 @@ api_get_mode() {
 }
 
 #######################################
-# Set current operating mode
+# 设置当前运行模式
 #######################################
 api_set_mode() {
   local mode="$1"
@@ -135,14 +135,14 @@ api_set_mode() {
 }
 
 #######################################
-# Read agent group data
+# 读取代理组数据
 #######################################
 api_get_proxies() {
   api_request GET "/proxies"
 }
 
 #######################################
-# Extract proxy group raw fragments
+# 提取代理组原始片段
 #######################################
 api_selector_block() {
   local text="$1"
@@ -154,7 +154,7 @@ api_selector_block() {
 }
 
 #######################################
-# Read the current node of the agent group
+# 读取代理组当前节点
 #######################################
 api_selector_current() {
   local text="$1"
@@ -167,7 +167,7 @@ api_selector_current() {
 }
 
 #######################################
-# List optional nodes for agent group
+# 列出代理组可选节点
 #######################################
 api_selector_options() {
   local text="$1"
@@ -184,7 +184,7 @@ api_selector_options() {
 }
 
 #######################################
-# Switch nodes through the control interface
+# 通过控制接口切换节点
 #######################################
 api_select_proxy() {
   local tag="$1"
@@ -196,7 +196,7 @@ api_select_proxy() {
 }
 
 #######################################
-# Test node latency
+# 测试节点延迟
 #######################################
 api_test_delay() {
   local tag="$1"
@@ -207,14 +207,14 @@ api_test_delay() {
 }
 
 #######################################
-# Get connection information
+# 获取连接信息
 #######################################
 api_get_connections() {
   api_request GET "/connections"
 }
 
 #######################################
-# Close specified connection
+# 关闭指定连接
 #######################################
 api_close_connection() {
   local connection_id="$1"
@@ -223,7 +223,7 @@ api_close_connection() {
 }
 
 #######################################
-# Close all connections
+# 关闭全部连接
 #######################################
 api_close_all_connections() {
   api_request DELETE "/connections" > /dev/null 2>&1

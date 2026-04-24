@@ -1,15 +1,15 @@
 #!/system/bin/sh
-# Configure read and write helper functions
+# Configure reading and writing support functions
 
 #######################################
-# Remove quotes from configuration values
+# Remove quotes from the configuration value
 #######################################
 strip_quotes() {
   printf "%s" "${1:-}" | tr -d '"' | tr -d '\r'
 }
 
 #######################################
-# Read configuration values
+# Read Configuration Values
 #######################################
 read_conf() {
   local file="$1"
@@ -30,14 +30,14 @@ read_conf() {
 }
 
 #######################################
-# Write configuration values
+# Write Configuration Value
 #######################################
 set_conf() {
   local file="$1"
   local key="$2"
   local value="$3"
 
-  require_file "$file" "Configuration file does not exist: $file"
+  require_file "$file" "Profile does not exist: $file"
 
   if grep -q "^${key}=" "$file" 2> /dev/null; then
     sed -i "s|^${key}=.*|${key}=${value}|" "$file"
@@ -47,14 +47,14 @@ set_conf() {
 }
 
 #######################################
-# Add double quotes to configuration values
+# Double quotes for configuration values
 #######################################
 quote_conf() {
   printf '"%s"' "$1"
 }
 
 #######################################
-# Determine whether the list contains the specified value
+# Judge whether the list contains specified values
 #######################################
 list_contains() {
   local list="$1"
@@ -69,7 +69,7 @@ list_contains() {
 }
 
 #######################################
-# Append values ​​to list
+# Add Value to List
 #######################################
 list_add() {
   local list="$1"

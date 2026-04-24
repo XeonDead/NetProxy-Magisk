@@ -1,6 +1,6 @@
 #!/system/bin/sh
-# NetProxy Module operation script
-# Used for action buttons in the module manager
+# NetProxy 模块操作脚本
+# 用于模块管理器中的操作按钮
 
 readonly MODDIR="${0%/*}"
 readonly SERVICE_SCRIPT="$MODDIR/scripts/core/service.sh"
@@ -10,33 +10,33 @@ readonly SING_BOX_BIN="$MODDIR/bin/sing-box"
 . "$MODDIR/scripts/utils/common.sh"
 
 #######################################
-# examine sing-box Whether to run
+# 检查 sing-box 是否运行
 #######################################
 is_sing_box_running() {
   pidof -s "$SING_BOX_BIN" > /dev/null 2>&1
 }
 
-# Pass the output to the module manager for display
+# 将输出交给模块管理器显示
 exec 2>&1
 
 echo "==================================="
-echo "        NetProxy Module operation         "
+echo "        NetProxy 模块操作         "
 echo "==================================="
 
-# Start or stop based on current status
+# 根据当前状态执行启动或停止
 if is_sing_box_running; then
-  log "INFO" "detected sing-box Running，Prepare to perform stop operation..."
+  log "INFO" "检测到 sing-box 正在运行，准备执行停止操作..."
   sh "$SERVICE_SCRIPT" stop
   echo "==================================="
-  echo " Operation result: NetProxy Service has stopped"
+  echo " 操作结果: NetProxy 服务已停止"
   echo "==================================="
 else
-  log "INFO" "detected sing-box Not running，Prepare to perform startup operations..."
+  log "INFO" "检测到 sing-box 未运行，准备执行启动操作..."
   sh "$SERVICE_SCRIPT" start
   echo "==================================="
-  echo " Operation result: NetProxy Service has started"
+  echo " 操作结果: NetProxy 服务已启动"
   echo "==================================="
 fi
 
-# Hibernate briefly to ensure that the log is displayed completely before exiting
+# 短暂休眠以确保日志显示完整再退出
 sleep 1

@@ -1,6 +1,6 @@
-## 版本 6.0.1（2026-04-11）
+## Version 6.0.1（2026-04-11）
 
-### 核心更新
-修复了一些已知问题
+### Core update
+Fixed some known problems.
 
 ---

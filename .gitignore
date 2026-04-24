@@ -1,5 +1,5 @@
 *.zip
 
-# IDE 配置
+# IDE Configure
 .idea/
 *.iml

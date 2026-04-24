@@ -1,4 +1,4 @@
-# 构建 VitePress 站点并将其部署到 GitHub Pages
+# Build VitePress Sites and deployments GitHub Pages
 name: Deploy VitePress site to Pages
 
 on:
@@ -50,7 +50,7 @@ jobs:
         with:
           path: docs/.vitepress/dist
 
-  # 部署工作
+  # Deployment
   deploy:
     environment:
       name: github-pages

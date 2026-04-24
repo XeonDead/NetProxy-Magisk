@@ -1,39 +1,39 @@
-# 快速开始
+# Quick Start
 
-本指南帮助您在 5 分钟内完成 NetProxy 的基本配置。
+This guide helps you in 5 Completion in minutes NetProxy .
 
-## 第一步：添加节点
+## Step 1: Add Node
 
-有两种方式添加代理节点：
+Add proxy nodes in two ways:
 
-### 方式一：导入节点链接
+### Mode I: Import node links
 
-1. 打开 WebUI，进入 **节点** 页面
-2. 点击右上角 **导入链接** 按钮
-3. 粘贴节点链接（支持 vless://、vmess://、trojan:// 等）
-4. 点击 **导入**
+1. Open WebUIGet in. **Nodes** Page
+2. Click Top Right **Import Link** button
+3. Paste node link (support) vless://、vmess://、trojan:// Wait
+4. Click **Import**
 
-### 方式二：添加订阅
+### Mode 2: Add Subscription
 
-1. 进入 **节点** 页面
-2. 点击右上角 **添加订阅** 按钮
-3. 输入订阅名称和 URL
-4. 点击 **添加**，等待导入完成
+1. Enter **Nodes** Page
+2. Click Top Right **Add Subscription** button
+3. Enter Subscription Name and URL
+4. Click **Add**waiting for import to complete
 
-## 第二步：选择节点
+## Step 2: Select Node
 
-1. 在节点列表中找到要使用的节点
-2. 点击节点卡片进行切换
-3. 当前选中的节点会显示高亮状态
+1. Finds the node to be used in the node list
+2. Click Node Card to Switch
+3. The currently selected nodes will be highlighted
 
-## 第三步：启动代理
+## Step 3: Activation agent
 
-1. 进入 **状态** 页面（首页）
-2. 点击大的 **启动/停止** 按钮
-3. 服务启动完成
+1. Enter **Status** Page (first page)
+2. Click Big **Start/Stop** button
+3. Service start complete.
 
-## 下一步
+## Next
 
-- [模块配置](/config/module) - 了解更多配置选项
-- [路由规则](/config/routing) - 自定义分流规则
-- [常见问题](/guide/faq) - 遇到问题时查阅
+- [Module Configuration](/config/module) - Know More Configuration Options
+- [Route rules](/config/routing) - Custom Shunt Rule
+- [Common problems](/guide/faq) - Access in case of problems

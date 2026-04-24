@@ -1,77 +1,77 @@
-# 模块理念
+# Module concept
 
-NetProxy 是一个基于现代代理内核打造的 Android 模块，致力于用最简单的方式，解决最复杂的网络问题。
+NetProxy It's based on a modern agent kernel. Android Modules, which aim to solve the most complex network problems in the simplest way.
 
-我希望改变一个现状：**代理工具不应该只是“高手专属”，而应该人人可用。**
-
----
-
-## 我的理念
-
-在传统认知中，代理模块往往意味着：
-- 繁琐的配置
-- 晦涩的参数
-- 高学习成本
-
-NetProxy 的目标只有一个：
-**让小白像使用普通 VPN 一样使用代理模块，同时让高手拥有完全的控制权。**
-
-也就是说：
-- **新手**：打开就能用
-- **老手**：想怎么玩就怎么玩
+I want to change one thing:**Agent tools should not be just“The best.”and should be available to everyone.**
 
 ---
 
-## 核心特点
+## My philosophy.
 
-### 简单 (Simple)
-- 无需复杂配置，开箱即用。
-- 默认配置覆盖大多数使用场景。
-- **流程**：安装 → 启动 → 直接使用。
+In traditional perceptions, proxy modules often mean:
+- Heavy Configuration
+- Dark Parameters
+- High learning costs
 
-### 易用 (Easy)
-- 操作逻辑接近传统 VPN 软件。
-- 一键启停，无需理解底层原理。
-- 自动处理规则、路由与分流。
+NetProxy There's only one goal:
+**Let white elephants use normal VPN Similarly, proxy modules are used, with full control of the master.**
 
-### 美观 (Elegant)
-- 现代化 UI 设计，信息展示清晰直观。
-- 告别“配置文件地狱”。
-- **目标**：好用，也要好看。
-
-### 智能默认 (Out-of-the-box)
-- 内置优化配置，自动适配大多数网络环境。
-- 合理的分流策略（直连 / 代理 / 拦截）。
-- **体验**：不需要折腾，也能获得良好体验。
-
-### 高级可玩性 (Advanced)
-为进阶用户保留完整能力：
-- 自定义内核配置（sing-box/Xray）。
-- 精细化路由控制与多策略支持。
-- 可扩展的模块架构。
-- **宗旨**：不限制你，只是帮你降低门槛。
-
-### 前沿技术 (Modern Tech)
-- 持续跟进最新代理技术栈。
-- 优先保证稳定性与兼容性。
-- **承诺**：不只是能用，还要长期可用。
+That means:
+- **Freshman.**: Open to use
+- **Old man.**: Play as you like.
 
 ---
 
-## 我们解决什么问题
+## Core characteristics
 
-- 不会写配置，也能用。
-- 不懂规则，也能跑。
-- 不想折腾，也能稳定。
+### Simple (Simple)
+- Use the box without complex configuration.
+- Default configuration covers most of the used scenes.
+- **Process**: Install → Start → Directly.
 
-同时：
-- **想深度定制** → 完全支持。
-- **想极致性能** → 可以优化。
+### Easy to use. (Easy)
+- Operating logic close to tradition. VPN Software.
+- One key to stop without understanding the underlying principles.
+- Automatic treatment rules, route and diversion.
+
+### Beautiful. (Elegant)
+- Modernization UI Design, display clear visual.
+- Goodbye.“Profile Hell”。
+- **Objective**: Good, good, good.
+
+### Smart Default (Out-of-the-box)
+- Embedded optimized configuration to automate most network environments.
+- Reasonable diversion strategy ( straight chain) / Proxy / Intercept.
+- **Experience**: There is no need to make a fuss and to get a good experience.
+
+### Advanced Playability (Advanced)
+Keep complete capability for progressive users:
+- Custom kernel configurationsing-box/Xray）。
+- Finely refined route control and multi-strategy support.
+- An extended modular structure.
+- **Purpose**: No restrictions on you, just lowers your threshold.
+
+### Frontline technology (Modern Tech)
+- Following up on the latest proxy technology.
+- Priority is given to ensuring stability and compatibility.
+- **Commitments**: Not only can it be used, but it will be available for a long time.
 
 ---
 
-## 一句话总结
+## What do we solve?
 
-> **NetProxy = 小白可用 + 大佬可玩 + 默认即强**
+- It doesn't write configurations, it works.
+- You don't know the rules, you can run.
+- If you don't want to mess with it, you can stabilize it.
 
-我们不是在做一个更复杂的代理工具，而是在做一个更简单的代理体验。
+Meanwhile:
+- **I'm trying to customize it.** → Full support.
+- **I'm trying to be highly effective.** → It can be optimized.
+
+---
+
+## Summary
+
+> **NetProxy = White is available + Big guy. + Default is strong**
+
+We are not doing a more complex proxy tool, but a simpler proxy experience.

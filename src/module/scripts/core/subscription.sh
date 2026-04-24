@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# sing-box Node and subscription management scripts
+# sing-box Node and Subscription Management Script
 
 set -e
 set -u
@@ -14,26 +14,26 @@ readonly LOG_FILE="$MODDIR/logs/subscription.log"
 . "$MODDIR/scripts/utils/nodes.sh"
 
 #######################################
-# show help
+# Show Help
 #######################################
 show_help() {
   cat << EOF
-usage: $(basename "$0") <Order> [parameter]
+Usage: $(basename "$0") <Command> [Parameters]
 
-Node import:
-  parse <node link> [Table of contents]        single link transfer sing-box node
-  file <document> [Table of contents]            file node or Clash YAML change sing-box node
-  sub <Subscription link> [Table of contents]         Subscribe to transfer sing-box node，One file per node
-  convert <node file>            sing-box node to link
+Node Import:
+  parse <Node Link> [Contents]        Single Link Rotate sing-box Nodes
+  file <Documentation> [Contents]            File node or Clash YAML Turn sing-box Nodes
+  sub <Subscription Link> [Contents]         Subscriptions sing-box Node, one file per node
+  convert <Node File>            sing-box Node Transfer Link
 
-Subscription management:
-  add <name> <Subscription link>         Add subscription and import node
-  update <name>                 Update specified subscription
-  update-all                    Update all subscriptions
-  remove <name>                 Delete subscription
-  list                          List subscriptions
+Subscription Management:
+  add <Name> <Subscription Link>         Add Subscription and Import Node
+  update <Name>                 Update specified subscriptions
+  update-all                    Update All Subscriptions
+  remove <Name>                 Delete Subscription
+  list                          List Subscriptions
 
-Example:
+Example::
   $(basename "$0") parse "vless://..."
   $(basename "$0") file "/sdcard/clash.yaml"
   $(basename "$0") sub "https://example.com/sub" "$OUTBOUNDS_DIR/sub_demo"
@@ -42,25 +42,25 @@ EOF
 }
 
 #######################################
-# examine proxylink environment
+# Inspection proxylink Environment
 #######################################
 check_proxylink() {
   require_file "$PROXYLINK_BIN" "proxylink does not exist: $PROXYLINK_BIN"
-  [ -x "$PROXYLINK_BIN" ] || die "proxylink Not enforceable: $PROXYLINK_BIN"
+  [ -x "$PROXYLINK_BIN" ] || die "proxylink Unenforceable: $PROXYLINK_BIN"
 }
 
 #######################################
-# Prepare output directory
+# Prepare Output Directory
 #######################################
 prepare_output_dir() {
   local target_dir="${1:-$DEFAULT_DIR}"
 
-  ensure_dir "$target_dir" "Unable to create output directory: $target_dir"
+  ensure_dir "$target_dir" "Could not create output directory: $target_dir"
   printf "%s\n" "$target_dir"
 }
 
 #######################################
-# Uniform execution proxylink
+# Unified implementation proxylink
 #######################################
 run_proxylink() {
   local action="$1"
@@ -86,71 +86,71 @@ run_proxylink() {
       "$PROXYLINK_BIN" -singbox "$value" -format uri
       ;;
     *)
-      die "unknown proxylink operate: $action"
+      die "Unknown proxylink Operation: $action"
       ;;
   esac
 }
 
 #######################################
-# single link transfer sing-box
+# Single Link Rotate sing-box
 #######################################
 import_parse() {
   local link="$1"
   local target_dir
 
-  [ -n "$link" ] || die "usage: $(basename "$0") parse <node link> [Table of contents]"
+  [ -n "$link" ] || die "Usage: $(basename "$0") parse <Node Link> [Contents]"
   target_dir="$(prepare_output_dir "${2:-}")"
 
-  log "INFO" "Start importing a single node: $target_dir"
-  run_proxylink parse "$link" "$target_dir" || die "Single node import failed"
-  log "INFO" "Single node import completed"
+  log "INFO" "Start importing single nodes: $target_dir"
+  run_proxylink parse "$link" "$target_dir" || die "Import of single node failed"
+  log "INFO" "Import completed by single node"
 }
 
 #######################################
-# File node transfer sing-box
+# File nodes sing-box
 #######################################
 import_file() {
   local file="$1"
   local target_dir
 
-  [ -n "$file" ] || die "usage: $(basename "$0") file <document> [Table of contents]"
+  [ -n "$file" ] || die "Usage: $(basename "$0") file <Documentation> [Contents]"
   require_file "$file" "File does not exist: $file"
   target_dir="$(prepare_output_dir "${2:-}")"
 
-  log "INFO" "Start importing file nodes: $target_dir"
+  log "INFO" "Start import of file nodes: $target_dir"
   run_proxylink file "$file" "$target_dir" || die "File node import failed"
-  log "INFO" "File node import completed"
+  log "INFO" "File node import complete"
 }
 
 #######################################
-# Subscribe to transfer sing-box
+# Subscriptions sing-box
 #######################################
 import_sub() {
   local url="$1"
   local target_dir
 
-  [ -n "$url" ] || die "usage: $(basename "$0") sub <Subscription link> [Table of contents]"
+  [ -n "$url" ] || die "Usage: $(basename "$0") sub <Subscription Link> [Contents]"
   target_dir="$(prepare_output_dir "${2:-}")"
 
-  log "INFO" "Start importing subscription nodes: $target_dir"
-  run_proxylink sub "$url" "$target_dir" || die "Subscription node import failed"
-  log "INFO" "Subscription node import completed"
+  log "INFO" "Start importing subscription node: $target_dir"
+  run_proxylink sub "$url" "$target_dir" || die "Subscription import failed"
+  log "INFO" "Subscription node import complete"
 }
 
 #######################################
-# sing-box node to link
+# sing-box Node Transfer Link
 #######################################
 export_link() {
   local file="$1"
 
-  [ -n "$file" ] || die "usage: $(basename "$0") convert <node file>"
+  [ -n "$file" ] || die "Usage: $(basename "$0") convert <Node File>"
   require_file "$file" "Node file does not exist: $file"
   check_proxylink
   run_proxylink convert "$file"
 }
 
 #######################################
-# Clean up the nodes in the subscription directory
+# Clear Node in Subscription Directory
 #######################################
 clear_subscription_nodes() {
   local sub_dir="$1"
@@ -163,7 +163,7 @@ clear_subscription_nodes() {
 }
 
 #######################################
-# Refresh subscription directory
+# Refresh Subscriptions
 #######################################
 refresh_subscription_dir() {
   local name="$1"
@@ -176,32 +176,32 @@ refresh_subscription_dir() {
 }
 
 #######################################
-# Add subscription
+# Add Subscription
 #######################################
 add_subscription() {
   local name="$1"
   local url="$2"
   local sub_dir
 
-  [ -n "$name" ] || die "usage: $(basename "$0") add <name> <Subscription link>"
-  [ -n "$url" ] || die "usage: $(basename "$0") add <name> <Subscription link>"
+  [ -n "$name" ] || die "Usage: $(basename "$0") add <Name> <Subscription Link>"
+  [ -n "$url" ] || die "Usage: $(basename "$0") add <Name> <Subscription Link>"
 
   sub_dir="$(subscription_dir_from_name "$OUTBOUNDS_DIR" "$name")"
-  [ ! -d "$sub_dir" ] || die "Subscription already exists: $name"
+  [ ! -d "$sub_dir" ] || die "Subscription Exists: $name"
 
-  ensure_dir "$sub_dir" "Unable to create subscription directory: $sub_dir"
+  ensure_dir "$sub_dir" "Cannot create subscription directory: $sub_dir"
   refresh_subscription_dir "$name" "$url" "$sub_dir"
-  log "INFO" "Subscription added completed: $name"
+  log "INFO" "Subscription completion: $name"
 }
 
 #######################################
-# Update subscription
+# Update Subscription
 #######################################
 update_subscription() {
   local name="$1"
   local sub_dir meta_file url saved_name
 
-  [ -n "$name" ] || die "usage: $(basename "$0") update <name>"
+  [ -n "$name" ] || die "Usage: $(basename "$0") update <Name>"
 
   sub_dir="$(subscription_dir_from_name "$OUTBOUNDS_DIR" "$name")"
   meta_file="$sub_dir/_meta.json"
@@ -210,7 +210,7 @@ update_subscription() {
   saved_name="$(read_subscription_meta_value "$meta_file" "name" || true)"
   url="$(read_subscription_meta_value "$meta_file" "url" || true)"
 
-  [ -n "$url" ] || die "Unable to read subscription link: $meta_file"
+  [ -n "$url" ] || die "Unable to read subscription links: $meta_file"
   [ -n "$saved_name" ] || saved_name="$name"
 
   refresh_subscription_dir "$saved_name" "$url" "$sub_dir"
@@ -218,7 +218,7 @@ update_subscription() {
 }
 
 #######################################
-# Update all subscriptions
+# Update All Subscriptions
 #######################################
 update_all_subscriptions() {
   local sub_dir meta_file name url count=0
@@ -237,17 +237,17 @@ update_all_subscriptions() {
     count=$((count + 1))
   done
 
-  log "INFO" "All subscription updates completed，common $count indivual"
+  log "INFO" "All subscription updates completed, all $count individual"
 }
 
 #######################################
-# Delete subscription
+# Delete Subscription
 #######################################
 remove_subscription() {
   local name="$1"
   local sub_dir
 
-  [ -n "$name" ] || die "usage: $(basename "$0") remove <name>"
+  [ -n "$name" ] || die "Usage: $(basename "$0") remove <Name>"
 
   sub_dir="$(subscription_dir_from_name "$OUTBOUNDS_DIR" "$name")"
   [ -d "$sub_dir" ] || die "Subscription does not exist: $name"
@@ -257,12 +257,12 @@ remove_subscription() {
 }
 
 #######################################
-# List subscriptions
+# List Subscriptions
 #######################################
 list_subscriptions() {
   local sub_dir meta_file name updated node_count file count=0
 
-  printf "Subscription list:\n"
+  printf "Subscriptions List:\n"
 
   for sub_dir in "$OUTBOUNDS_DIR"/sub_*; do
     [ -d "$sub_dir" ] || continue
@@ -279,15 +279,15 @@ list_subscriptions() {
       node_count=$((node_count + 1))
     done
 
-    printf "  - %s (%s nodes，updated on %s)\n" "$name" "$node_count" "${updated:-unknown}"
+    printf "  - %s (%s Node update on %s)\n" "$name" "$node_count" "${updated:-Unknown}"
     count=$((count + 1))
   done
 
-  [ "$count" -gt 0 ] || printf "  No subscription yet\n"
+  [ "$count" -gt 0 ] || printf "  Not Subscription\n"
 }
 
 #######################################
-# main entrance
+# Main entrance
 #######################################
 main() {
   local command="${1:-}"

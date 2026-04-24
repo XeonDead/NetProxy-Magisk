@@ -1,74 +1,74 @@
-# 常见问题
+# Common problems
 
-## 安装问题
+## Installation issues
 
-### Q: 安装后模块未生效
+### Q: Module not effective after installation
 
-**A:** 请确保：
-1. 已完成重启
-2. 在 Magisk/KernelSU 模块页面确认模块已启用
-3. 检查模块日志：`/data/adb/modules/netproxy/logs/`
+**A:** Ensure that:
+1. Finished restart
+2. Yes. Magisk/KernelSU Module page confirmation module enabled
+3. Check module log:`/data/adb/modules/netproxy/logs/`
 
-### Q: WebUI 无法打开
+### Q: WebUI Unable to open
 
-**A:** 可能原因：
-1. 模块未正确安装，重新刷入
-2. WebUI 文件缺失，检查 `/data/adb/modules/netproxy/webroot/` 目录
+**A:** Possible causes:
+1. Module not installed correctly, repainted
+2. WebUI File Missing, Check `/data/adb/modules/netproxy/webroot/` Contents
 
 ---
 
-## 使用问题
+## Use
 
-### Q: 代理启动失败
+### Q: Proxy startup failed
 
-**A:** 常见原因：
-1. **未添加节点**：请先添加代理节点
-2. **配置错误**：检查节点配置是否正确
-3. **端口冲突**：其他 VPN 或代理应用可能占用端口
+**A:** Common causes:
+1. **Node added**: Add proxy node first
+2. **Configure Error**: Check if node configuration is correct
+3. **Port Conflict**: Other VPN or proxy application mouth
 
-查看详细错误：
+View details error:
 ```bash
 cat /data/adb/modules/netproxy/logs/xray.log
 ```
 
-### Q: 部分应用无法联网
+### Q: Partial application cannot be connected
 
-**A:** 可能原因：
-1. 检查分应用代理设置，是否误将应用加入黑名单
-2. 检查路由规则，是否有规则阻断了该应用的流量
+**A:** Possible causes:
+1. Check to apply sub-agent settings and whether the blacklist application is wrong
+2. Check the routing rules.
 
-### Q: DNS 解析失败
+### Q: DNS Parsing failed
 
-**A:** 尝试：
-1. 确保 DNS 配置正确
-2. 检查 DNS 服务器是否可达
-3. 清除系统 DNS 缓存
-
----
-
-## 性能问题
-
-### Q: 网络速度慢
-
-**A:** 建议：
-1. 切换到延迟更低的节点
-2. 使用 WebUI 的延迟测试功能筛选节点
+**A:** Try:
+1. Ensure DNS Configure correctly
+2. Inspection DNS Server availability
+3. Clear System DNS Cache
 
 ---
 
-## 其他问题
+## Performance issues
 
-### Q: 如何查看日志
+### Q: Network speed slow
 
-**A:** 日志位于 `/data/adb/modules/netproxy/logs/` 目录：
-- `service.log` - 服务启停日志
-- `xray.log` - Xray 核心日志
-- `subscription.log` - 订阅更新日志
+**A:** Recommendations:
+1. Switch to Lower Delay Node
+2. Use WebUI Section for delayed testing Points
 
-### Q: 如何完全卸载
+---
+
+## Other issues
+
+### Q: How to View Logs
+
+**A:** Log in `/data/adb/modules/netproxy/logs/` Contents
+- `service.log` - Service Stop Log
+- `xray.log` - Xray Core Log
+- `subscription.log` - Subscription to Update Log
+
+### Q: How to fully unmount
 
 **A:** 
-1. 停止代理服务
-2. 在 Magisk/KernelSU 中删除模块
-3. 重启设备
-4. (可选) 删除残留数据：`rm -rf /data/adb/modules/netproxy`
+1. Stop proxy services
+2. Yes. Magisk/KernelSU Remove Module
+3. Restart Device
+4. (Optional) Delete residual data:`rm -rf /data/adb/modules/netproxy`

@@ -1,123 +1,123 @@
-# 模块配置
+# Module Configuration
 
-## 配置文件位置
+## Configure File Location
 
-模块配置文件位于 `/data/adb/modules/netproxy/config/` 目录下：
+The module profile is located in `/data/adb/modules/netproxy/config/` Under the table of contents:
 
 ```
 config/
-├── module.conf          # 模块主配置
-├── tproxy.conf          # TProxy 透明代理配置
-├── routing_rules.json   # 路由规则配置
-└── xray/                # Xray 配置目录
-    ├── confdir/         # Xray 模块化配置
-    └── outbounds/       # 节点配置
+├── module.conf          # Module master configuration
+├── tproxy.conf          # TProxy Transparent proxy configuration
+├── routing_rules.json   # Route Configuration
+└── xray/                # Xray Configure Directory
+    ├── confdir/         # Xray Modular Configuration
+    └── outbounds/       # Node Configuration
 ```
 
 ---
 
 ## module.conf
 
-模块主配置文件，控制基本行为。
+Module master profile to control basic behavior.
 
 ```bash
-# NetProxy 模块设置
+# NetProxy Module Settings
 
-# 开机自动启动服务 (1=启用, 0=禁用)
+# Autostart service. (1=Enable, 0=Disable)
 AUTO_START=1
 
-# 出站模式 (rule=规则分流, global=全局代理, direct=全局直连)
+# Out of station mode (rule=Rules diverting, global=Global Agent, direct=Global Straight Company)
 OUTBOUND_MODE=rule
 
-# OnePlus Android 16 修复 (1=启用, 0=禁用)
+# OnePlus Android 16 Rehabilitation (1=Enable, 0=Disable)
 ONEPLUS_A16_FIX=0
 
-# 当前使用的配置文件路径
+# Current Profile Path
 CURRENT_CONFIG="/data/adb/modules/netproxy/config/xray/outbounds/default.json"
 ```
 
-| 配置项 | 说明 | 可选值 |
+| Configure Item | Annotations | Optional value |
 |--------|------|--------|
-| `AUTO_START` | 开机自启 | `1` / `0` |
-| `OUTBOUND_MODE` | 出站模式 | `rule` / `global` / `direct` |
-| `ONEPLUS_A16_FIX` | 一加 A16 修复 | `1` / `0` |
-| `CURRENT_CONFIG` | 当前节点配置路径 | 文件路径 |
+| `AUTO_START` | Turn yourself on. | `1` / `0` |
+| `OUTBOUND_MODE` | Out of station mode | `rule` / `global` / `direct` |
+| `ONEPLUS_A16_FIX` | One. A16 Rehabilitation | `1` / `0` |
+| `CURRENT_CONFIG` | Current Node Configuration Path | File Path |
 
 ---
 
 ## tproxy.conf
 
-TProxy 透明代理详细配置。
+TProxy Transparent proxy detailed configuration.
 
-### 代理核心配置
+### Proxy Core Configuration
 
 ```bash
-# 代理进程运行用户和组
+# Proxy Process Run Users and Groups
 CORE_USER_GROUP="root:net_admin"
 
-# 透明代理监听端口
+# Transparent proxy listening port
 PROXY_TCP_PORT="12345"
 PROXY_UDP_PORT="12345"
 
-# 代理模式: 0=自动检测, 1=强制TPROXY, 2=强制REDIRECT
+# Proxy Mode: 0=Autodetect, 1=ForceTPROXY, 2=ForceREDIRECT
 PROXY_MODE=0
 ```
 
-### DNS 配置
+### DNS Configure
 
 ```bash
-# DNS 劫持方式 (0: 禁用, 1: tproxy, 2: redirect)
+# DNS Hijacking methods (0: Disable, 1: tproxy, 2: redirect)
 DNS_HIJACK_ENABLE=1
 
-# DNS 监听端口
+# DNS Listen Port
 DNS_PORT="1053"
 ```
 
-### 网络接口
+### Network Interface
 
 ```bash
-# 移动数据接口
+# Mobile Data Interface
 MOBILE_INTERFACE="rmnet_data+"
 
-# WiFi 接口
+# WiFi Interface
 WIFI_INTERFACE="wlan0"
 
-# 热点接口
+# Hotspot Interface
 HOTSPOT_INTERFACE="wlan2"
 
-# USB 共享接口
+# USB Shared interface
 USB_INTERFACE="rndis+"
 ```
 
-### 代理开关
+### Proxy Switch
 
 ```bash
-PROXY_MOBILE=1    # 代理移动数据
-PROXY_WIFI=1      # 代理 WiFi
-PROXY_HOTSPOT=0   # 代理热点
-PROXY_USB=0       # 代理 USB 共享
-PROXY_TCP=1       # 代理 TCP
-PROXY_UDP=1       # 代理 UDP
-PROXY_IPV6=0      # 代理 IPv6
+PROXY_MOBILE=1    # Proxy Move Data
+PROXY_WIFI=1      # Proxy WiFi
+PROXY_HOTSPOT=0   # Proxy Hotspot
+PROXY_USB=0       # Proxy USB Share
+PROXY_TCP=1       # Proxy TCP
+PROXY_UDP=1       # Proxy UDP
+PROXY_IPV6=0      # Proxy IPv6
 ```
 
-### 分应用代理
+### Subappliance Proxy
 
 ```bash
-# 启用分应用代理 (0: 禁用, 1: 启用)
+# Enable sub-application agent (0: Disable, 1: Enable)
 APP_PROXY_ENABLE=1
 
-# 代理应用列表 (空格分隔)
+# Proxy Apply List (Space Separator)
 PROXY_APPS_LIST=""
 
-# 绕过应用列表 (空格分隔)
+# Skip the application list (Space Separator)
 BYPASS_APPS_LIST=""
 
-# 分应用模式
-APP_PROXY_MODE="blacklist"  # blacklist 或 whitelist
+# Subapplication Mode
+APP_PROXY_MODE="blacklist"  # blacklist or whitelist
 ```
 
-### 中国 IP 绕过
+### China IP Around
 
 ```bash
 BYPASS_CN_IP=0
@@ -128,8 +128,8 @@ CN_IP_URL="https://raw.githubusercontent.com/Hackl0us/GeoIP2-CN/release/CN-ip-ci
 
 ---
 
-## 修改配置
+## Modify Configuration
 
-### 通过 WebUI
+### Pass. WebUI
 
-大部分配置可通过 WebUI 的 **设置** 页面修改。
+Most configurations can be used WebUI Yes. **Settings** page change.

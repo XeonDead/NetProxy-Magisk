@@ -1,8 +1,8 @@
 #!/system/bin/sh
-# Generic helper function
+# General Auxiliary Functions
 
 #######################################
-# Write to standard log
+# Writing Standard Log
 #######################################
 log() {
   local level="INFO"
@@ -22,7 +22,7 @@ log() {
 }
 
 #######################################
-# Log errors and exit
+# Record error and exit
 #######################################
 die() {
   log "ERROR" "$1"
@@ -30,7 +30,7 @@ die() {
 }
 
 #######################################
-# Detection busybox path
+# Test busybox Path
 #######################################
 detect_busybox() {
   local path
@@ -46,7 +46,7 @@ detect_busybox() {
 }
 
 #######################################
-# Determine whether the command exists
+# To determine whether an order exists.
 #######################################
 command_exists() {
   command -v "$1" > /dev/null 2>&1
@@ -63,7 +63,7 @@ require_file() {
 }
 
 #######################################
-# Check if directory exists
+# Check if the directory exists
 #######################################
 require_dir() {
   local dir="$1"
@@ -73,17 +73,17 @@ require_dir() {
 }
 
 #######################################
-# Create directory
+# Create Directory
 #######################################
 ensure_dir() {
   local dir="$1"
-  local message="${2:-Unable to create directory: $dir}"
+  local message="${2:-Cannot create directory: $dir}"
 
   [ -d "$dir" ] || mkdir -p "$dir" || die "$message"
 }
 
 #######################################
-# escape JSON string
+# Conversion JSON String
 #######################################
 json_escape() {
   printf "%s" "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
@@ -100,7 +100,7 @@ get_pid() {
 }
 
 #######################################
-# Get specified PID running time
+# Get Assigned PID Run time
 #######################################
 get_process_uptime() {
   local pid="$1"
@@ -120,7 +120,7 @@ get_process_uptime() {
 }
 
 #######################################
-# Main testing equipment IPv4 address
+# Major detection equipment IPv4 Address
 #######################################
 detect_primary_ipv4() {
   ip route get 1.1.1.1 2> /dev/null | sed -n 's/.* src \([0-9.]*\).*/\1/p' | head -1

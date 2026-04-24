@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# NetProxy 命令行工具
+# NetProxy Command Line Tool
 
 set -e
 set -u
@@ -52,18 +52,18 @@ else
 fi
 
 #######################################
-# 终端输出
+# Terminal Output
 #######################################
 info() {
-  printf "%s[info]%s %s\n" "$GREEN" "$NC" "$1"
+  printf "%s[Information]%s %s\n" "$GREEN" "$NC" "$1"
 }
 
 warn() {
-  printf "%s[warn]%s %s\n" "$YELLOW" "$NC" "$1"
+  printf "%s[Warning]%s %s\n" "$YELLOW" "$NC" "$1"
 }
 
 die_cli() {
-  printf "%s[错误]%s %s\n" "$RED" "$NC" "$1" >&2
+  printf "%s[Error]%s %s\n" "$RED" "$NC" "$1" >&2
   exit 1
 }
 
@@ -72,16 +72,16 @@ section() {
 }
 
 #######################################
-# 基础辅助
+# Basic support
 #######################################
 is_running() {
   [ -n "$(get_pid "$SING_BOX_BIN")" ]
 }
 
 ensure_cli_dirs() {
-  ensure_dir "$LOG_DIR" "无法创建日志目录: $LOG_DIR"
-  ensure_dir "$DEFAULT_NODES_DIR" "无法创建默认节点目录: $DEFAULT_NODES_DIR"
-  ensure_dir "$RUNTIME_DIR" "无法创建运行时目录: $RUNTIME_DIR"
+  ensure_dir "$LOG_DIR" "Cannot create log directory: $LOG_DIR"
+  ensure_dir "$DEFAULT_NODES_DIR" "Cannot create default node directory: $DEFAULT_NODES_DIR"
+  ensure_dir "$RUNTIME_DIR" "Could not create run-time directory: $RUNTIME_DIR"
 }
 
 prepare_node_scan() {
@@ -111,98 +111,98 @@ print_node_line() {
 
 show_service_help() {
   cat << EOF
-用法:
-  cli service status                  查看服务状态
-  cli service start                   启动服务
-  cli service stop                    停止服务
-  cli service restart                 重启服务
-  cli service logs [service|core|sub] [行数]
-                                      查看日志
+Usage:
+  cli service status                  View service status
+  cli service start                   Start service
+  cli service stop                    Stop Service
+  cli service restart                 Restart Service
+  cli service logs [service|core|sub] [Lines]
+                                      View Log
 EOF
 }
 
 show_node_help() {
   cat << EOF
-用法:
-  cli node list                       列出全部节点
-  cli node current                    查看当前节点
-  cli node use <名称|标签|路径>       切换节点
-  cli node add <节点链接>             添加单个节点
-  cli node import <文件>              导入节点文件或 Clash YAML
-  cli node export <节点文件>          将 sing-box 节点转为链接
-  cli node show <名称|标签|路径>      查看节点配置
-  cli node remove <名称|标签|路径>    删除节点
-  cli node delay [名称|标签|all]      测试节点延迟
+Usage:
+  cli node list                       List All Nodes
+  cli node current                    View Current Node
+  cli node use <Name|Label|Path>       Toggle Nodes
+  cli node add <Node Link>             Add a single node
+  cli node import <Documentation>              Import Node File or Clash YAML
+  cli node export <Node File>          Will sing-box Node to Link
+  cli node show <Name|Label|Path>      View Node Configuration
+  cli node remove <Name|Label|Path>    Delete Node
+  cli node delay [Name|Label|all]      Test Node Delay
 EOF
 }
 
 show_mode_help() {
   cat << EOF
-用法:
-  cli mode                            查看当前模式
-  cli mode <rule|global|direct>       切换出站模式
+Usage:
+  cli mode                            View Current Mode
+  cli mode <rule|global|direct>       Switch Out Station Mode
 EOF
 }
 
 show_sub_help() {
   cat << EOF
-用法:
-  cli sub list                        列出订阅
-  cli sub add <名称> <链接>           添加订阅
-  cli sub update <名称>               更新指定订阅
-  cli sub update-all                  更新全部订阅
-  cli sub remove <名称>               删除订阅
+Usage:
+  cli sub list                        List Subscriptions
+  cli sub add <Name> <Link>           Add Subscription
+  cli sub update <Name>               Update specified subscriptions
+  cli sub update-all                  Update All Subscriptions
+  cli sub remove <Name>               Delete Subscription
 EOF
 }
 
 show_api_help() {
   cat << EOF
-用法:
-  cli api groups                      查看代理组
-  cli api conns                       查看连接
-  cli api close <连接ID>              关闭指定连接
-  cli api close-all                   关闭全部连接
-  cli api ui                          查看控制器与面板地址
+Usage:
+  cli api groups                      View proxy groups
+  cli api conns                       View Connections
+  cli api close <ConnectionID>              Close specified connection
+  cli api close-all                   Close All Connections
+  cli api ui                          View controller and panel address
 EOF
 }
 
 show_app_help() {
   cat << EOF
-用法:
-  cli app list                        查看分应用代理配置
-  cli app mode <blacklist|whitelist>  设置分应用模式
-  cli app add <包名>                  添加应用
-  cli app remove <包名>               移除应用
-  cli app enable                      启用分应用代理
-  cli app disable                     禁用分应用代理
+Usage:
+  cli app list                        View subapplying proxy configuration
+  cli app mode <blacklist|whitelist>  Set sub-application mode
+  cli app add <Package Name>                  Add Apply
+  cli app remove <Package Name>               Remove Application
+  cli app enable                      Enable sub-application agent
+  cli app disable                     Disable subappliance proxy
 EOF
 }
 
 show_tproxy_help() {
   cat << EOF
-用法:
-  cli tproxy status                   查看透明代理配置
-  cli tproxy reload                   重载透明代理规则
-  cli tproxy quic <on|off>            开关 QUIC 阻断
-  cli tproxy cnip <on|off>            开关中国 IP 绕过
+Usage:
+  cli tproxy status                   View transparent proxy configuration
+  cli tproxy reload                   Reload Transparent Agent Rules
+  cli tproxy quic <on|off>            Switches QUIC Block
+  cli tproxy cnip <on|off>            Switch China IP Around
 EOF
 }
 
 #######################################
-# service 命令
+# service Command
 #######################################
 cmd_service_status() {
   local pid current mode version api_mode tcp_port udp_port dns_port
 
-  section "服务状态"
+  section "Service Status"
   pid="$(get_pid "$SING_BOX_BIN")"
 
   if [ -n "$pid" ]; then
-    printf "运行状态: %s运行中%s\n" "$GREEN" "$NC"
-    printf "进程 PID: %s\n" "$pid"
-    printf "运行时间: %s 秒\n" "$(get_process_uptime "$pid")"
+    printf "Run Status: %sRunning%s\n" "$GREEN" "$NC"
+    printf "Process PID: %s\n" "$pid"
+    printf "Run Time: %s sec\n" "$(get_process_uptime "$pid")"
   else
-    printf "运行状态: %s未运行%s\n" "$RED" "$NC"
+    printf "Run Status: %sNot Run%s\n" "$RED" "$NC"
   fi
 
   current="$(read_conf "$MODULE_CONF" "CURRENT_CONFIG" "")"
@@ -211,36 +211,36 @@ cmd_service_status() {
   udp_port="$(read_conf "$TPROXY_CONF" "PROXY_UDP_PORT" "-")"
   dns_port="$(read_conf "$TPROXY_CONF" "DNS_PORT" "-")"
 
-  [ -n "$current" ] && printf "当前节点: %s\n" "$(basename "$current")"
-  printf "出站模式: %s\n" "$mode"
-  printf "透明代理端口: TCP=%s UDP=%s DNS=%s\n" "$tcp_port" "$udp_port" "$dns_port"
+  [ -n "$current" ] && printf "Current Node: %s\n" "$(basename "$current")"
+  printf "Out of station mode: %s\n" "$mode"
+  printf "Transparent proxy port: TCP=%s UDP=%s DNS=%s\n" "$tcp_port" "$udp_port" "$dns_port"
 
   if [ -n "$pid" ]; then
     api_mode="$(api_get_mode 2> /dev/null || true)"
-    [ -n "$api_mode" ] && printf "运行模式: %s\n" "$api_mode"
+    [ -n "$api_mode" ] && printf "Run Mode: %s\n" "$api_mode"
   fi
 
   if [ -x "$SING_BOX_BIN" ]; then
     version="$("$SING_BOX_BIN" version 2> /dev/null | head -1 || true)"
-    [ -n "$version" ] && printf "内核版本: %s\n" "$version"
+    [ -n "$version" ] && printf "kernel version: %s\n" "$version"
   fi
 }
 
 cmd_service_start() {
   ensure_cli_dirs
-  info "正在启动服务..."
+  info "Starting service..."
   sh "$SERVICE_SCRIPT" start
 }
 
 cmd_service_stop() {
   ensure_cli_dirs
-  info "正在停止服务..."
+  info "Stopping service..."
   sh "$SERVICE_SCRIPT" stop
 }
 
 cmd_service_restart() {
   ensure_cli_dirs
-  info "正在重启服务..."
+  info "Restarting service..."
   sh "$SERVICE_SCRIPT" restart
 }
 
@@ -253,10 +253,10 @@ cmd_service_logs() {
     service) file="$SERVICE_LOG" ;;
     core | sing-box | singbox) file="$CORE_LOG" ;;
     sub | subscription) file="$SUB_LOG" ;;
-    *) die_cli "未知日志类型: $target" ;;
+    *) die_cli "Unknown log type: $target" ;;
   esac
 
-  [ -f "$file" ] || die_cli "日志文件不存在: $file"
+  [ -f "$file" ] || die_cli "Log file does not exist: $file"
   tail -n "$lines" "$file"
 }
 
@@ -271,12 +271,12 @@ cmd_service() {
     restart) cmd_service_restart "$@" ;;
     logs) cmd_service_logs "$@" ;;
     help | -h | --help) show_service_help ;;
-    *) die_cli "用法错误，使用 cli service help 查看帮助" ;;
+    *) die_cli "Misuse, use cli service help View Help" ;;
   esac
 }
 
 #######################################
-# node 命令
+# node Command
 #######################################
 cmd_node_list() {
   local path name tag source is_current current_source="" count=0
@@ -292,7 +292,7 @@ cmd_node_list() {
     count=$((count + 1))
   done < "$CLI_NODE_SCAN_FILE"
 
-  [ "$count" -gt 0 ] || printf "暂无节点\n"
+  [ "$count" -gt 0 ] || printf "No Points\n"
 }
 
 cmd_node_current() {
@@ -300,53 +300,53 @@ cmd_node_current() {
 
   current="$(read_conf "$MODULE_CONF" "CURRENT_CONFIG" "")"
   if [ -z "$current" ]; then
-    printf "当前未设置节点\n"
+    printf "Node is currently not set\n"
     return 0
   fi
 
   tag="$(detect_outbound_tag "$current" || true)"
 
-  section "当前节点"
-  printf "文件名: %s\n" "$(basename "$current")"
-  [ -n "$tag" ] && printf "标签: %s\n" "$tag"
-  printf "路径: %s\n" "$current"
+  section "Current Node"
+  printf "Filename: %s\n" "$(basename "$current")"
+  [ -n "$tag" ] && printf "Label: %s\n" "$tag"
+  printf "Path: %s\n" "$current"
 }
 
 cmd_node_use() {
   local query="${1:-}"
   local node
 
-  [ -n "$query" ] || die_cli "用法: cli node use <名称|标签|路径>"
+  [ -n "$query" ] || die_cli "Usage: cli node use <Name|Label|Path>"
   prepare_node_scan
   node="$(resolve_node_from_scan "$CLI_NODE_SCAN_FILE" "$query")"
-  info "正在切换节点: $(basename "$node")"
+  info "Switching Nodes: $(basename "$node")"
   sh "$SWITCH_SCRIPT" config "$node"
 }
 
 cmd_node_add() {
   local link="${1:-}"
 
-  [ -n "$link" ] || die_cli "用法: cli node add <节点链接>"
-  info "正在导入节点..."
+  [ -n "$link" ] || die_cli "Usage: cli node add <Node Link>"
+  info "Importing Nodes..."
   sh "$SUB_SCRIPT" parse "$link" "$DEFAULT_NODES_DIR"
-  info "Node import completed"
+  info "Node Import Finished"
 }
 
 cmd_node_import() {
   local file="${1:-}"
 
-  [ -n "$file" ] || die_cli "用法: cli node import <文件>"
-  [ -f "$file" ] || die_cli "文件不存在: $file"
-  info "正在导入文件..."
+  [ -n "$file" ] || die_cli "Usage: cli node import <Documentation>"
+  [ -f "$file" ] || die_cli "File does not exist: $file"
+  info "Importing files..."
   sh "$SUB_SCRIPT" file "$file" "$DEFAULT_NODES_DIR"
-  info "File import completed"
+  info "File import complete."
 }
 
 cmd_node_export() {
   local query="${1:-}"
   local node
 
-  [ -n "$query" ] || die_cli "用法: cli node export <节点文件>"
+  [ -n "$query" ] || die_cli "Usage: cli node export <Node File>"
   prepare_node_scan
   if [ -f "$query" ]; then
     node="$query"
@@ -360,10 +360,10 @@ cmd_node_show() {
   local query="${1:-}"
   local node
 
-  [ -n "$query" ] || die_cli "用法: cli node show <名称|标签|路径>"
+  [ -n "$query" ] || die_cli "Usage: cli node show <Name|Label|Path>"
   prepare_node_scan
   node="$(resolve_node_from_scan "$CLI_NODE_SCAN_FILE" "$query")"
-  printf "文件: %s\n" "$node"
+  printf "Documentation: %s\n" "$node"
   printf -- "--------------------------------\n"
   cat "$node"
 }
@@ -372,14 +372,14 @@ cmd_node_remove() {
   local query="${1:-}"
   local node current
 
-  [ -n "$query" ] || die_cli "用法: cli node remove <名称|标签|路径>"
+  [ -n "$query" ] || die_cli "Usage: cli node remove <Name|Label|Path>"
   prepare_node_scan
   node="$(resolve_node_from_scan "$CLI_NODE_SCAN_FILE" "$query")"
   current="$(read_conf "$MODULE_CONF" "CURRENT_CONFIG" "")"
 
-  [ "$node" != "$current" ] || die_cli "不能删除当前正在使用的节点"
+  [ "$node" != "$current" ] || die_cli "Could not close temporary folder: %s"
   rm -f "$node"
-  info "Node deleted: $(basename "$node")"
+  info "Deleted Node: $(basename "$node")"
 }
 
 delay_one() {
@@ -392,7 +392,7 @@ delay_one() {
   if [ -n "$delay" ]; then
     printf "%-24s %s ms\n" "$tag" "$delay"
   else
-    printf "%-24s %s\n" "$tag" "失败"
+    printf "%-24s %s\n" "$tag" "Failed"
   fi
 }
 
@@ -418,11 +418,11 @@ cmd_node_delay() {
     fi
   else
     node="$(read_conf "$MODULE_CONF" "CURRENT_CONFIG" "")"
-    [ -n "$node" ] || die_cli "当前未设置节点"
+    [ -n "$node" ] || die_cli "Node is currently not set"
     tag="$(detect_outbound_tag "$node" || true)"
   fi
 
-  [ -n "$tag" ] || die_cli "无法读取节点标签"
+  [ -n "$tag" ] || die_cli "Could not read node label"
   delay_one "$tag"
 }
 
@@ -441,12 +441,12 @@ cmd_node() {
     remove | rm) cmd_node_remove "$@" ;;
     delay) cmd_node_delay "$@" ;;
     help | -h | --help) show_node_help ;;
-    *) die_cli "用法错误，使用 cli node help 查看帮助" ;;
+    *) die_cli "Misuse, use cli node help View Help" ;;
   esac
 }
 
 #######################################
-# mode 命令
+# mode Command
 #######################################
 cmd_mode() {
   local mode="${1:-}"
@@ -454,10 +454,10 @@ cmd_mode() {
 
   if [ -z "$mode" ]; then
     current="$(read_conf "$MODULE_CONF" "OUTBOUND_MODE" "rule")"
-    printf "持久化模式: %s\n" "$current"
+    printf "Enduring Mode: %s\n" "$current"
     if is_running; then
       api_mode="$(api_get_mode 2> /dev/null || true)"
-      [ -n "$api_mode" ] && printf "运行模式: %s\n" "$api_mode"
+      [ -n "$api_mode" ] && printf "Run Mode: %s\n" "$api_mode"
     fi
     return 0
   fi
@@ -469,7 +469,7 @@ cmd_mode() {
       return 0
       ;;
     *)
-      die_cli "未知模式: $mode"
+      die_cli "Unknown Mode: $mode"
       ;;
   esac
 
@@ -477,7 +477,7 @@ cmd_mode() {
 }
 
 #######################################
-# sub 命令
+# sub Command
 #######################################
 cmd_sub() {
   local subcmd="${1:-list}"
@@ -490,27 +490,27 @@ cmd_sub() {
     update-all) sh "$SUB_SCRIPT" update-all ;;
     remove | rm) sh "$SUB_SCRIPT" remove "${1:-}" ;;
     help | -h | --help) show_sub_help ;;
-    *) die_cli "用法错误，使用 cli sub help 查看帮助" ;;
+    *) die_cli "Misuse, use cli sub help View Help" ;;
   esac
 }
 
 #######################################
-# api 命令
+# api Command
 #######################################
 cmd_api_groups() {
   local json now item has_output=0
 
-  json="$(api_get_proxies 2> /dev/null)" || die_cli "控制接口不可用，请确认服务正在运行"
+  json="$(api_get_proxies 2> /dev/null)" || die_cli "Control interface not available. Please confirm service is running"
   now="$(api_selector_current "$json" "$(api_selector_group)" || true)"
 
-  section "代理组"
+  section "Acting Group"
   [ -n "$now" ] && printf "%s: %s\n" "$(api_selector_group)" "$now"
 
   while IFS= read -r item; do
     [ -n "$item" ] || continue
     [ "$item" = "$now" ] && continue
     if [ "$has_output" -eq 0 ]; then
-      printf "可选节点:\n"
+      printf "Optional Nodes:\n"
       has_output=1
     fi
     printf "  - %s\n" "$item"
@@ -518,19 +518,19 @@ cmd_api_groups() {
 $(api_selector_options "$json" "$(api_selector_group)" 2> /dev/null || true)
 EOF
 
-  [ "$has_output" -eq 1 ] || printf "暂无可选节点信息\n"
+  [ "$has_output" -eq 1 ] || printf "Can not open message\n"
 }
 
 cmd_api_conns() {
   local json total ids id count=0
 
-  json="$(api_get_connections 2> /dev/null)" || die_cli "控制接口不可用，请确认服务正在运行"
+  json="$(api_get_connections 2> /dev/null)" || die_cli "Control interface not available. Please confirm service is running"
   total="$(printf "%s" "$json" | sed -n 's/.*"downloadTotal"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p')"
-  [ -n "$total" ] && printf "下载总量: %s bytes\n" "$total"
+  [ -n "$total" ] && printf "Total downloads: %s bytes\n" "$total"
 
   ids="$(printf "%s" "$json" | grep -o '"id"[[:space:]]*:[[:space:]]*"[^"]*"' | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' || true)"
   if [ -n "$ids" ]; then
-    printf "连接列表:\n"
+    printf "Connection List:\n"
     for id in $ids; do
       printf "  - %s\n" "$id"
       count=$((count + 1))
@@ -544,25 +544,25 @@ cmd_api_conns() {
 cmd_api_close() {
   local id="${1:-}"
 
-  [ -n "$id" ] || die_cli "用法: cli api close <连接ID>"
-  api_close_connection "$id" || die_cli "关闭连接失败"
-  info "连接已关闭: $id"
+  [ -n "$id" ] || die_cli "Usage: cli api close <ConnectionID>"
+  api_close_connection "$id" || die_cli "Closing connection failed"
+  info "Connection closed: $id"
 }
 
 cmd_api_close_all() {
-  api_close_all_connections || die_cli "关闭全部连接失败"
-  info "全部连接已关闭"
+  api_close_all_connections || die_cli "Failed to close all connections"
+  info "All connections closed"
 }
 
 cmd_api_ui() {
   local ip
 
   ip="$(detect_primary_ipv4)"
-  [ -n "$ip" ] || ip="<设备IP>"
+  [ -n "$ip" ] || ip="<EquipmentIP>"
 
-  printf "控制地址: http://%s:9999\n" "$ip"
-  printf "面板地址: http://%s:9999/ui\n" "$ip"
-  printf "密钥: %s\n" "$(api_secret)"
+  printf "Control Address: http://%s:9999\n" "$ip"
+  printf "Panel Address: http://%s:9999/ui\n" "$ip"
+  printf "Key: %s\n" "$(api_secret)"
 }
 
 cmd_api() {
@@ -576,28 +576,28 @@ cmd_api() {
     close-all) cmd_api_close_all "$@" ;;
     ui) cmd_api_ui "$@" ;;
     help | -h | --help) show_api_help ;;
-    *) die_cli "用法错误，使用 cli api help 查看帮助" ;;
+    *) die_cli "Misuse, use cli api help View Help" ;;
   esac
 }
 
 #######################################
-# app 命令
+# app Command
 #######################################
 reload_tproxy_if_running() {
   if is_running; then
-    info "正在重载透明代理规则..."
-    sh "$TPROXY_SCRIPT" restart -d "$TPROXY_DIR" > /dev/null 2>&1 || die_cli "透明代理规则重载失败"
-    info "透明代理规则已重载"
+    info "Reloading Transparent Agent Rules..."
+    sh "$TPROXY_SCRIPT" restart -d "$TPROXY_DIR" > /dev/null 2>&1 || die_cli "Reloading Transparent Proxy failed"
+    info "Transparent proxy rule loaded"
   else
-    info "Service is not running，The configuration will take effect on the next startup"
+    info "Service not running, configuration will take effect at next startup"
   fi
 }
 
 cmd_app_list() {
-  printf "分应用代理: %s\n" "$(read_conf "$TPROXY_CONF" "APP_PROXY_ENABLE" "0")"
-  printf "应用模式: %s\n" "$(read_conf "$TPROXY_CONF" "APP_PROXY_MODE" "blacklist")"
-  printf "代理列表: %s\n" "$(read_conf "$TPROXY_CONF" "PROXY_APPS_LIST" "")"
-  printf "绕过列表: %s\n" "$(read_conf "$TPROXY_CONF" "BYPASS_APPS_LIST" "")"
+  printf "Subappliance Proxy: %s\n" "$(read_conf "$TPROXY_CONF" "APP_PROXY_ENABLE" "0")"
+  printf "Apply Mode: %s\n" "$(read_conf "$TPROXY_CONF" "APP_PROXY_MODE" "blacklist")"
+  printf "Proxy List: %s\n" "$(read_conf "$TPROXY_CONF" "PROXY_APPS_LIST" "")"
+  printf "Around list: %s\n" "$(read_conf "$TPROXY_CONF" "BYPASS_APPS_LIST" "")"
 }
 
 cmd_app_mode() {
@@ -605,12 +605,12 @@ cmd_app_mode() {
 
   case "$mode" in
     blacklist | whitelist) ;;
-    *) die_cli "用法: cli app mode <blacklist|whitelist>" ;;
+    *) die_cli "Usage: cli app mode <blacklist|whitelist>" ;;
   esac
 
   set_conf "$TPROXY_CONF" "APP_PROXY_ENABLE" "1"
   set_conf "$TPROXY_CONF" "APP_PROXY_MODE" "$(quote_conf "$mode")"
-  info "应用模式已设置为: $mode"
+  info "Application mode set to: $mode"
   reload_tproxy_if_running
 }
 
@@ -618,7 +618,7 @@ cmd_app_add() {
   local package="${1:-}"
   local mode current_list new_list
 
-  [ -n "$package" ] || die_cli "用法: cli app add <包名>"
+  [ -n "$package" ] || die_cli "Usage: cli app add <Package Name>"
 
   set_conf "$TPROXY_CONF" "APP_PROXY_ENABLE" "1"
   mode="$(read_conf "$TPROXY_CONF" "APP_PROXY_MODE" "blacklist")"
@@ -633,7 +633,7 @@ cmd_app_add() {
     set_conf "$TPROXY_CONF" "BYPASS_APPS_LIST" "$(quote_conf "$new_list")"
   fi
 
-  info "已添加应用: $package"
+  info "Added Apply: $package"
   reload_tproxy_if_running
 }
 
@@ -641,26 +641,26 @@ cmd_app_remove() {
   local package="${1:-}"
   local proxy_list bypass_list
 
-  [ -n "$package" ] || die_cli "用法: cli app remove <包名>"
+  [ -n "$package" ] || die_cli "Usage: cli app remove <Package Name>"
 
   proxy_list="$(list_remove "$(read_conf "$TPROXY_CONF" "PROXY_APPS_LIST" "")" "$package")"
   bypass_list="$(list_remove "$(read_conf "$TPROXY_CONF" "BYPASS_APPS_LIST" "")" "$package")"
   set_conf "$TPROXY_CONF" "PROXY_APPS_LIST" "$(quote_conf "$proxy_list")"
   set_conf "$TPROXY_CONF" "BYPASS_APPS_LIST" "$(quote_conf "$bypass_list")"
 
-  info "已移除应用: $package"
+  info "Removed application: $package"
   reload_tproxy_if_running
 }
 
 cmd_app_enable() {
   set_conf "$TPROXY_CONF" "APP_PROXY_ENABLE" "1"
-  info "分应用代理已启用"
+  info "Sub-application agent enabled"
   reload_tproxy_if_running
 }
 
 cmd_app_disable() {
   set_conf "$TPROXY_CONF" "APP_PROXY_ENABLE" "0"
-  info "分应用代理已禁用"
+  info "The sub-application agent is disabled"
   reload_tproxy_if_running
 }
 
@@ -676,22 +676,22 @@ cmd_app() {
     enable) cmd_app_enable "$@" ;;
     disable) cmd_app_disable "$@" ;;
     help | -h | --help) show_app_help ;;
-    *) die_cli "用法错误，使用 cli app help 查看帮助" ;;
+    *) die_cli "Misuse, use cli app help View Help" ;;
   esac
 }
 
 #######################################
-# tproxy 命令
+# tproxy Command
 #######################################
 cmd_tproxy_status() {
-  section "透明代理配置"
-  printf "TCP 端口: %s\n" "$(read_conf "$TPROXY_CONF" "PROXY_TCP_PORT" "-")"
-  printf "UDP 端口: %s\n" "$(read_conf "$TPROXY_CONF" "PROXY_UDP_PORT" "-")"
-  printf "DNS 端口: %s\n" "$(read_conf "$TPROXY_CONF" "DNS_PORT" "-")"
-  printf "代理模式: %s\n" "$(read_conf "$TPROXY_CONF" "PROXY_MODE" "0")"
-  printf "分应用代理: %s\n" "$(read_conf "$TPROXY_CONF" "APP_PROXY_ENABLE" "0")"
-  printf "阻断 QUIC: %s\n" "$(read_conf "$TPROXY_CONF" "BLOCK_QUIC" "0")"
-  printf "绕过中国 IP: %s\n" "$(read_conf "$TPROXY_CONF" "BYPASS_CN_IP" "0")"
+  section "Transparent proxy configuration"
+  printf "TCP Port: %s\n" "$(read_conf "$TPROXY_CONF" "PROXY_TCP_PORT" "-")"
+  printf "UDP Port: %s\n" "$(read_conf "$TPROXY_CONF" "PROXY_UDP_PORT" "-")"
+  printf "DNS Port: %s\n" "$(read_conf "$TPROXY_CONF" "DNS_PORT" "-")"
+  printf "Proxy Mode: %s\n" "$(read_conf "$TPROXY_CONF" "PROXY_MODE" "0")"
+  printf "Subappliance Proxy: %s\n" "$(read_conf "$TPROXY_CONF" "APP_PROXY_ENABLE" "0")"
+  printf "Block QUIC: %s\n" "$(read_conf "$TPROXY_CONF" "BLOCK_QUIC" "0")"
+  printf "Around China. IP: %s\n" "$(read_conf "$TPROXY_CONF" "BYPASS_CN_IP" "0")"
 }
 
 cmd_tproxy_reload() {
@@ -704,10 +704,10 @@ cmd_tproxy_quic() {
   case "$value" in
     on) set_conf "$TPROXY_CONF" "BLOCK_QUIC" "1" ;;
     off) set_conf "$TPROXY_CONF" "BLOCK_QUIC" "0" ;;
-    *) die_cli "用法: cli tproxy quic <on|off>" ;;
+    *) die_cli "Usage: cli tproxy quic <on|off>" ;;
   esac
 
-  info "QUIC 设置已更新: $value"
+  info "QUIC Settings updated: $value"
   reload_tproxy_if_running
 }
 
@@ -717,10 +717,10 @@ cmd_tproxy_cnip() {
   case "$value" in
     on) set_conf "$TPROXY_CONF" "BYPASS_CN_IP" "1" ;;
     off) set_conf "$TPROXY_CONF" "BYPASS_CN_IP" "0" ;;
-    *) die_cli "用法: cli tproxy cnip <on|off>" ;;
+    *) die_cli "Usage: cli tproxy cnip <on|off>" ;;
   esac
 
-  info "中国 IP 绕过已更新: $value"
+  info "China IP Skip updated: $value"
   reload_tproxy_if_running
 }
 
@@ -734,72 +734,72 @@ cmd_tproxy() {
     quic) cmd_tproxy_quic "$@" ;;
     cnip) cmd_tproxy_cnip "$@" ;;
     help | -h | --help) show_tproxy_help ;;
-    *) die_cli "用法错误，使用 cli tproxy help 查看帮助" ;;
+    *) die_cli "Misuse, use cli tproxy help View Help" ;;
   esac
 }
 
 #######################################
-# 总帮助
+# Total help
 #######################################
 show_help() {
   cat << EOF
 NetProxy CLI
 
-服务:
-  cli service status                  查看服务状态
-  cli service start                   启动服务
-  cli service stop                    停止服务
-  cli service restart                 重启服务
-  cli service logs [service|core|sub] [行数]
-                                      查看日志
+Services:
+  cli service status                  View service status
+  cli service start                   Start service
+  cli service stop                    Stop Service
+  cli service restart                 Restart Service
+  cli service logs [service|core|sub] [Lines]
+                                      View Log
 
-节点:
-  cli node list                       列出全部节点
-  cli node current                    查看当前节点
-  cli node use <名称|标签|路径>       切换节点
-  cli node add <节点链接>             添加单个节点
-  cli node import <文件>              导入节点文件或 Clash YAML
-  cli node export <节点文件>          将 sing-box 节点转为链接
-  cli node show <名称|标签|路径>      查看节点配置
-  cli node remove <名称|标签|路径>    删除节点
-  cli node delay [名称|标签|all]      测试节点延迟
+Nodes:
+  cli node list                       List All Nodes
+  cli node current                    View Current Node
+  cli node use <Name|Label|Path>       Toggle Nodes
+  cli node add <Node Link>             Add a single node
+  cli node import <Documentation>              Import Node File or Clash YAML
+  cli node export <Node File>          Will sing-box Node to Link
+  cli node show <Name|Label|Path>      View Node Configuration
+  cli node remove <Name|Label|Path>    Delete Node
+  cli node delay [Name|Label|all]      Test Node Delay
 
-模式:
-  cli mode                            查看当前模式
-  cli mode <rule|global|direct>       切换出站模式
+Mode:
+  cli mode                            View Current Mode
+  cli mode <rule|global|direct>       Switch Out Station Mode
 
-订阅:
-  cli sub list                        列出订阅
-  cli sub add <名称> <链接>           添加订阅
-  cli sub update <名称>               更新指定订阅
-  cli sub update-all                  更新全部订阅
-  cli sub remove <名称>               删除订阅
+Subscriptions:
+  cli sub list                        List Subscriptions
+  cli sub add <Name> <Link>           Add Subscription
+  cli sub update <Name>               Update specified subscriptions
+  cli sub update-all                  Update All Subscriptions
+  cli sub remove <Name>               Delete Subscription
 
-控制接口:
-  cli api groups                      查看代理组
-  cli api conns                       查看连接
-  cli api close <连接ID>              关闭指定连接
-  cli api close-all                   关闭全部连接
-  cli api ui                          查看控制器与面板地址
+Control interface:
+  cli api groups                      View proxy groups
+  cli api conns                       View Connections
+  cli api close <ConnectionID>              Close specified connection
+  cli api close-all                   Close All Connections
+  cli api ui                          View controller and panel address
 
-分应用代理:
-  cli app list                        查看分应用代理配置
-  cli app mode <blacklist|whitelist>  设置分应用模式
-  cli app add <包名>                  添加应用
-  cli app remove <包名>               移除应用
-  cli app enable                      启用分应用代理
-  cli app disable                     禁用分应用代理
+Subappliance Proxy:
+  cli app list                        View subapplying proxy configuration
+  cli app mode <blacklist|whitelist>  Set sub-application mode
+  cli app add <Package Name>                  Add Apply
+  cli app remove <Package Name>               Remove Application
+  cli app enable                      Enable sub-application agent
+  cli app disable                     Disable subappliance proxy
 
-透明代理:
-  cli tproxy status                   查看透明代理配置
-  cli tproxy reload                   重载透明代理规则
-  cli tproxy quic <on|off>            开关 QUIC 阻断
-  cli tproxy cnip <on|off>            开关中国 IP 绕过
+Transparent Agent:
+  cli tproxy status                   View transparent proxy configuration
+  cli tproxy reload                   Reload Transparent Agent Rules
+  cli tproxy quic <on|off>            Switches QUIC Block
+  cli tproxy cnip <on|off>            Switch China IP Around
 EOF
 }
 
 #######################################
-# main entrance
+# Main entrance
 #######################################
 main() {
   local group="${1:-help}"
@@ -816,7 +816,7 @@ main() {
     app) cmd_app "$@" ;;
     tproxy) cmd_tproxy "$@" ;;
     help | -h | --help) show_help ;;
-    *) die_cli "未知命令组: $group，使用 cli help 查看帮助" ;;
+    *) die_cli "Unknown Command Group: $group,use cli help View Help" ;;
   esac
 }
 

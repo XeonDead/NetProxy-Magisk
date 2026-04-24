@@ -1,10 +1,10 @@
 #!/system/bin/sh
-# NetProxy Magisk Module installation script
+# NetProxy Magisk Module Install Script
 
 SKIPUNZIP=1
 
 ################################################################################
-# constant definition
+# Constant definition
 ################################################################################
 
 readonly MODULE_ID="netproxy"
@@ -14,17 +14,17 @@ readonly BACKUP_DIR="$TMPDIR/netproxy_backup"
 readonly LEGACY_CORE_NAME="x""ray"
 readonly LEGACY_WEB_DIR_NAME="web""root"
 
-# global state: Is the proxy service running?
+# Global Status: Whether the proxy service is running
 PROXY_WAS_RUNNING=false
 
-# Configuration files that need to be retained/Table of contents (relative to config/)
+# Profile to keep/Contents (Relative to config/)
 readonly PRESERVE_CONFIGS="
     module.conf
     tproxy/
     singbox/
 "
 
-# Files that require executable permissions
+# File to set enforceable permissions
 readonly EXECUTABLE_FILES="
     bin/sing-box
     bin/proxylink
@@ -41,10 +41,10 @@ readonly EXECUTABLE_FILES="
 "
 
 ################################################################################
-# Utility function
+# Tool Functions
 ################################################################################
 
-# Print separated titles
+# Print Title with Separator
 print_title() {
   ui_print ""
   ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -52,45 +52,45 @@ print_title() {
   ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 }
 
-# Printing steps
+# Print Steps
 print_step() {
   ui_print "▶ $1"
 }
 
-# Print successfully
+# Print succeeded
 print_ok() {
   ui_print "  ✓ $1"
 }
 
-# Print warning
+# Print Warning
 print_warn() {
   ui_print "  ⚠ $1"
 }
 
-# printing error
+# Print error
 print_error() {
   ui_print "  ✗ $1"
 }
 
-# Check if the directory is not empty
+# Check if the directory is empty
 dir_not_empty() {
   [ -d "$1" ] && [ "$(ls -A "$1" 2> /dev/null)" ]
 }
 
 ################################################################################
-# core function
+# Core Functions
 ################################################################################
 
-# Back up existing configuration
+# Backup existing configuration
 backup_config() {
-  print_step "Check existing configuration..."
+  print_step "Check Current Configuration..."
 
   if ! dir_not_empty "$CONFIG_DIR"; then
-    print_ok "fresh install，No backup required"
+    print_ok "New installation, no backup"
     return 0
   fi
 
-  print_step "Back up existing configuration..."
+  print_step "Backup existing configuration..."
   mkdir -p "$BACKUP_DIR"
 
   local config_item
@@ -101,9 +101,9 @@ backup_config() {
     if [ -e "$src" ]; then
       mkdir -p "$(dirname "$dst")"
       if cp -r "$src" "$dst" 2> /dev/null; then
-        print_ok "Backed up: $config_item"
+        print_ok "Backup: $config_item"
       else
-        print_warn "Backup failed: $config_item"
+        print_warn "Backup Failed: $config_item"
       fi
     fi
   done
@@ -111,27 +111,27 @@ backup_config() {
   return 0
 }
 
-# Unzip module files
+# Unpressure module files
 extract_module() {
-  print_step "Unzip module files..."
+  print_step "Unpressure module files..."
 
-  # Unzip to the installation temporary directory，exclude META-INF Table of contents
+  # Depress to install temporary directory, exclude META-INF Contents
   if ! unzip -o "$ZIPFILE" -x "META-INF/*" -d "$MODPATH" > /dev/null 2>&1; then
-    print_error "Decompression failed"
+    print_error "Unpressure failed"
     return 1
   fi
 
-  print_ok "Module file has been decompressed"
+  print_ok "Module file depressed"
   return 0
 }
 
-# restore configuration file
+# Restore Profile
 restore_config() {
   if ! dir_not_empty "$BACKUP_DIR"; then
     return 0
   fi
 
-  print_step "restore configuration file..."
+  print_step "Restore Profile..."
 
   local config_item
   for config_item in $PRESERVE_CONFIGS; do
@@ -139,15 +139,15 @@ restore_config() {
     local dst="$MODPATH/config/$config_item"
 
     if [ -e "$src" ]; then
-      # Create parent directory
+      # Create Parent Directory
       mkdir -p "$(dirname "$dst")"
-      # Delete target (Prevent directory nesting)
+      # Remove Target (Prevent directory nesting)
       rm -rf "$dst" 2> /dev/null
-      # copy
+      # Copy
       if cp -r "$src" "$dst" 2> /dev/null; then
         print_ok "Restored: $config_item"
       else
-        print_warn "Recovery failed: $config_item"
+        print_warn "Restore Failed: $config_item"
       fi
     fi
   done
@@ -155,35 +155,35 @@ restore_config() {
   return 0
 }
 
-# Stop proxy service (If running)
+# Stop proxy services (If running)
 stop_proxy_if_running() {
-  # if LIVE_DIR does not exist，no need to stop
+  # If LIVE_DIR It doesn't exist. It doesn't have to stop.
   if [ ! -d "$LIVE_DIR" ]; then
     return 0
   fi
 
   if pidof -s "$LIVE_DIR/bin/sing-box" > /dev/null 2>&1 || pidof -s "$LIVE_DIR/bin/$LEGACY_CORE_NAME" > /dev/null 2>&1; then
     PROXY_WAS_RUNNING=true
-    print_step "Detected that proxy service is running，Stop service..."
+    print_step "Detecting agent service running. Stop service..."
     sh "$LIVE_DIR/scripts/core/service.sh" stop > /dev/null 2>&1
-    print_ok "Service has stopped"
+    print_ok "Service stopped"
   fi
 
   return 0
 }
 
-# Sync to runtime directory (Hot update support)
+# Sync to Runtime Directory (Hot Update Support)
 sync_to_live() {
-  print_step "Sync to runtime directory..."
+  print_step "Sync to Runtime Directory..."
 
-  # if LIVE_DIR does not exist，No synchronization required for first time installation
+  # If LIVE_DIR Cannot initialise Evolution's mail component.
   if [ ! -d "$LIVE_DIR" ]; then
-    print_ok "First time installation，Skip sync"
+    print_ok "First installation, skip sync"
     return 0
   fi
 
 
-  # Synchronize program files and scripts
+  # Sync Program Files and Scripts
   local sync_dirs="bin scripts action.sh service.sh module.prop"
 
   for item in $sync_dirs; do
@@ -193,73 +193,73 @@ sync_to_live() {
     if [ -e "$src" ]; then
       rm -rf "$dst" 2> /dev/null
       if cp -r "$src" "$dst" 2> /dev/null; then
-        print_ok "Synced: $item"
+        print_ok "Synchronized: $item"
       else
         print_warn "Sync failed: $item"
       fi
     fi
   done
 
-  # Synchronize new files in configuration directory (incremental update)
+  # Synchronize new files in the configuration directory (Incremental Update)
   if [ -d "$MODPATH/config" ]; then
-    print_step "Incremental update configuration..."
+    print_step "Incremental Update Configuration..."
 
-    # Copy the new configuration file (Do not overwrite existing)
+    # Copy the new profile (Do Not Overwrite Existing)
     cp -rn "$MODPATH/config/"* "$LIVE_DIR/config/" 2> /dev/null
-    print_ok "Configuration directory has been incrementally updated"
+    print_ok "Profile directory updated incrementally"
   fi
 
   return 0
 }
 
-# Restart proxy service (If it was running before)
+# Restart Agent Service (If you were running before)
 restart_proxy_if_needed() {
   if [ "$PROXY_WAS_RUNNING" = true ]; then
-    print_step "Restart proxy service..."
+    print_step "Restart Agent Service..."
     sh "$LIVE_DIR/scripts/core/service.sh" start > /dev/null 2>&1
-    print_ok "Service has started"
+    print_ok "Service started"
   fi
 
   return 0
 }
 
-# Set file permissions
+# Set File Permissions
 set_permissions() {
-  print_step "Set file permissions..."
+  print_step "Set File Permissions..."
 
   local file
   for file in $EXECUTABLE_FILES; do
     local path="$MODPATH/$file"
     if [ -e "$path" ]; then
       chmod 0755 "$path" 2> /dev/null
-      # Synchronously set permissions in the runtime directory
+      # Synchronizes permissions in running-time directories
       [ -e "$LIVE_DIR/$file" ] && chmod 0755 "$LIVE_DIR/$file" 2> /dev/null
     fi
   done
 
-  # Set directory permissions
+  # Set directory privileges
   set_perm_recursive "$MODPATH" 0 0 0755 0755
 
-  print_ok "Permission settings completed"
+  print_ok "Permission Settings Completed"
   return 0
 }
 
-# Ask the user whether to install the companion app
+# Ask the user if to install the application
 ask_install_app() {
   ui_print ""
   ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  ui_print "  Whether to install NetProxy Companion app？"
+  ui_print "  Install NetProxy Auxiliary application?"
   ui_print "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   ui_print ""
-  ui_print "  [volume+] Install (Open Google Play)"
-  ui_print "  [volume-] jump over"
+  ui_print "  [Volume+] Install (Open Google Play)"
+  ui_print "  [Volume-] Skip"
   ui_print ""
 
   local timeout=10
   local choice=""
 
   while [ $timeout -gt 0 ]; do
-    # Read volume keys
+    # Read Volume Keys
     local key=$(getevent -lqc 1 2> /dev/null | grep -E "KEY_VOLUME(UP|DOWN)" | head -1)
 
     if echo "$key" | grep -q "VOLUMEUP"; then
@@ -277,47 +277,47 @@ ask_install_app() {
   if [ "$choice" = "install" ]; then
     print_step "Opening Google Play..."
     am start -a android.intent.action.VIEW -d "https://play.google.com/store/apps/details?id=com.fanjv.netproxy" > /dev/null 2>&1
-    print_ok "Opened Google Play"
+    print_ok "Open Google Play"
   else
-    print_step "Installation skipped"
+    print_step "Skipped installation"
   fi
 
   return 0
 }
 
-# integrated IPSET LKM Driver installation
+# Integration IPSET LKM Driver Installation
 install_ipset_lkm() {
-  print_title "integrated IPSET Driver installation"
+  print_title "Integration IPSET Driver Installation"
 
-  # If the installation package does not include IPSET components，Skip the entire process
+  # If install package does not contain IPSET Component, skip the whole process
   if [ ! -d "$MODPATH/bin/IPSET-LKM" ] && [ ! -f "$MODPATH/bin/ipset" ]; then
-      print_ok "The installation package does not include IPSET components，jump over"
+      print_ok "Install package not included IPSET Component, Skip"
       return 0
   fi
 
   local skip_lkm=false
 
-  # 1. Check if the kernel has built-in IP_SET support
-  print_step "Checking system IPSET state..."
+  # 1. Check if kernel is built in IP_SET Support
+  print_step "Checking system IPSET Status..."
   if [ -f /proc/config.gz ] && zcat /proc/config.gz | grep -q "CONFIG_IP_SET=y"; then
       skip_lkm=true
   fi
 
   if [ "$skip_lkm" = "true" ]; then
       if command -v ipset >/dev/null 2>&1; then
-          print_ok "Kernel support and tools are complete，No installation required。"
-          # Clean up to prevent taking up space
+          print_ok "The kernel support and tools are complete and need not be installed."
+          # Clean-up of space
           rm -rf "$MODPATH/bin/IPSET-LKM/netfilter"
           return 0
       else
-          print_ok "The kernel has built-in support，Only binary tools will be installed。"
+          print_ok "The kernel has built-in support and only binary tools will be installed."
       fi
   fi
 
-  # 2. Detect kernel version and select driver
+  # 2. Test kernel version and select driver
   if [ "$skip_lkm" = "false" ]; then
       local kernel_ver=$(uname -r | cut -d. -f1,2)
-      print_step "Kernel version detected: $kernel_ver"
+      print_step "kernel version detected: $kernel_ver"
 
       local src=""
       case "$kernel_ver" in
@@ -328,7 +328,7 @@ install_ipset_lkm() {
           6.12) src="6.12" ;;
           *) 
               print_warn "Unsupported kernel version: $kernel_ver"
-              print_warn "will be skipped IPSET Driver installation"
+              print_warn "will skip IPSET Driver Installation"
               skip_lkm=true
               ;;
       esac
@@ -336,37 +336,37 @@ install_ipset_lkm() {
       if [ "$skip_lkm" = "false" ]; then
           local driver_source="$MODPATH/bin/IPSET-LKM/netfilter/$src"
           if [ -d "$driver_source" ]; then
-              print_step "Installing for kernel $src driver..."
+              print_step "Installing for kernel $src Driver..."
               rm -rf "/data/adb/netfilter"
               mkdir -p "/data/adb/netfilter"
               if cp -rf "$driver_source/"* "/data/adb/netfilter/" 2> /dev/null; then
                   set_perm_recursive "/data/adb/netfilter" 0 0 0755 0755
-                  print_ok "IPSET LKM The driver has been deployed to /data/adb/netfilter"
+                  print_ok "IPSET LKM Drivers deployed /data/adb/netfilter"
               else
-                  print_error "Driver deployment failed"
+                  print_error "Driver Deployment Failed"
               fi
           else
-              print_warn "Missing kernel in module $src driver file"
+              print_warn "Missing kernel in module $src Driver"
           fi
       fi
   fi
 
-  # 3. Configuration IPSET Binary tool environment
+  # 3. Configure IPSET Binary Tool Environment
   if [ -f "$MODPATH/bin/ipset" ]; then
-      print_step "Configuration IPSET Binary tool environment..."
+      print_step "Configure IPSET Binary Tool Environment..."
 
       if [ "$KSU" ] || [ "$APATCH" ]; then
-          print_ok "detected KernelSU/APatch environment"
+          print_ok "Detected KernelSU/APatch Environment"
           local ksu_bin="/data/adb/ksu/bin"
           [ "$APATCH" ] && ksu_bin="/data/adb/ap/bin"
 
           mkdir -p "$ksu_bin"
           rm -f "$ksu_bin/ipset"
           ln -s "/data/adb/modules/netproxy/bin/ipset" "$ksu_bin/ipset"
-          print_ok "Symbolic link created: $ksu_bin/ipset"
+          print_ok "Other Organiser: $ksu_bin/ipset"
 
       elif [ "$MAGISK_VER_CODE" ]; then
-          print_ok "detected Magisk environment"
+          print_ok "Detected Magisk Environment"
           mkdir -p "$MODPATH/system/bin"
           cp -f "$MODPATH/bin/ipset" "$MODPATH/system/bin/ipset"
           set_perm "$MODPATH/system/bin/ipset" 0 0 0755
@@ -374,28 +374,28 @@ install_ipset_lkm() {
       fi
   fi
 
-  # 4. Clean driver source code to reduce module size
+  # 4. Clean up driver source to reduce module size
   rm -rf "$MODPATH/bin/IPSET-LKM/netfilter"
 
   return 0
 }
 
-# Clean temporary files
+# Clear temporary files
 cleanup() {
   rm -rf "$BACKUP_DIR" 2> /dev/null
 }
 
 ################################################################################
-# Main process
+# Main Process
 ################################################################################
 
-print_title "NetProxy - sing-box transparent proxy"
-ui_print "  Version: $(grep_prop version "$TMPDIR/module.prop" 2> /dev/null || echo "unknown")"
+print_title "NetProxy - sing-box Transparent Agent"
+ui_print "  Version: $(grep_prop version "$TMPDIR/module.prop" 2> /dev/null || echo "Unknown")"
 
-# Unzip module.prop read version
+# Unpressure module.prop Read Version
 unzip -o "$ZIPFILE" "module.prop" -d "$TMPDIR" > /dev/null 2>&1
 
-# Follow the installation steps
+# Implement installation steps
 if backup_config \
   && extract_module \
   && restore_config \
@@ -407,16 +407,16 @@ if backup_config \
 
   cleanup
 
-  print_title "Installation completed，Please restart your device"
+  print_title "Installation complete. Restart the device."
 
-  # Ask whether to install companion app
+  # Ask if to install a companion application
   ask_install_app
 else
   cleanup
-  print_title "Installation failed"
+  print_title "Installation Failed"
   ui_print ""
-  ui_print "  Please check the above error message"
-  ui_print "  and in GitHub Issues feedback"
+  ui_print "  Please check the above-mentioned error information"
+  ui_print "  And GitHub Issues Feedback"
   ui_print ""
   exit 1
 fi
