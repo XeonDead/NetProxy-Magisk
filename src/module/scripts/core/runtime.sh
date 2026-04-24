@@ -122,7 +122,7 @@ write_runtime_outbounds() {
   [ -n "$tags" ] || die "No stop tab available in the current node directory: $CUR_OUTBOUND_DIR"
 
   case "$selector_mode" in
-    urltest | auto | Dynamic Speed)
+    urltest | auto | Dynamic_Speed)
       cat > "$RUNTIME_OUTBOUNDS_FILE" << EOF
 {
   "outbounds": [
@@ -159,7 +159,7 @@ write_runtime_outbounds() {
 }
 EOF
       ;;
-    manual | selector | Manual Selection | Manual)
+    manual | selector | Manual_Selection | Manual)
       cat > "$RUNTIME_OUTBOUNDS_FILE" << EOF
 {
   "outbounds": [

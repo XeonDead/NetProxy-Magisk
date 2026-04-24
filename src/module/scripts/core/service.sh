@@ -74,7 +74,7 @@ do_start() {
   log "INFO" "Current Node Directory: $CUR_OUTBOUND_DIR"
   log "INFO" "Route Mode: $CUR_OUTBOUND_MODE"
   log "INFO" "Selection Mode: $CUR_SELECTOR_MODE"
-  log "INFO" "Loaded Node: $RUNTIME_NODE_COUNTSkip invalid nodes: $RUNTIME_SKIPPED_COUNT"
+  log "INFO" "Loaded Node: $RUNTIME_NODE_COUNT, Skip invalid nodes: $RUNTIME_SKIPPED_COUNT"
 
   # Construct Final Start Parameters
   set -- run -C "$CONFDIR"
