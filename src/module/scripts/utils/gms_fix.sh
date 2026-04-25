@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# Device compatibility repair script
+# Device compatibility fix script
 
 set -u
 
@@ -9,7 +9,7 @@ readonly LOG_FILE="$MODDIR/logs/service.log"
 . "$MODDIR/scripts/utils/common.sh"
 
 #######################################
-# Remove the intercept rules in the chain
+# Remove interception rules from the chain
 #######################################
 remove_block_rules_from_chain() {
   local cmd="$1"
@@ -23,24 +23,24 @@ remove_block_rules_from_chain() {
   )"
 
   if [ -z "$line_numbers" ]; then
-    log "INFO" "$cmd: $chain Not found in chain REJECT or DROP Rule"
+    log "INFO" "$cmd: $chain Not found in the chain. REJECT or DROP Rules"
     return 0
   fi
 
   for line_num in $line_numbers; do
     if $cmd -t filter -D "$chain" "$line_num" 2> /dev/null; then
       count=$((count + 1))
-      log "INFO" "Deleted $cmd $chain The first in the chain $line_num Interception rules"
+      log "INFO" "Deleted $cmd $chain The first in the chain. $line_num Interception rules."
     else
-      log "WARN" "Failed to delete: $cmd $chain I don't think so. $line_num Rule"
+      log "WARN" "Delete Failed: $cmd $chain Rule $line_num Rule"
     fi
   done
 
-  log "INFO" "$cmd: $chain Chains Remove $count Interception rules"
+  log "INFO" "$cmd: $chain Chain removed $count Interception rules."
 }
 
 #######################################
-# Implementation of equipment compatibility repairs
+# Execute equipment compatibility restoration
 #######################################
 fix_by_device() {
   local has_iptables=0
@@ -53,7 +53,7 @@ fix_by_device() {
   command_exists ip6tables && has_ip6tables=1
 
   if [ "$has_iptables" -eq 0 ] && [ "$has_ip6tables" -eq 0 ]; then
-    log "ERROR" "iptables and ip6tables None"
+    log "ERROR" "iptables and ip6tables None exists."
     return 1
   fi
 
@@ -64,13 +64,13 @@ fix_by_device() {
   fi
 
   if [ "$is_redmagic" -eq 1 ]; then
-    log "INFO" "Red Demon detected. / ZTE Rules, start cleaning. zte_fw_gms"
+    log "INFO" "The Red Demon has been detected. / ZTE Rule number, start cleaning. zte_fw_gms"
     [ "$has_iptables" -eq 1 ] && remove_block_rules_from_chain "iptables" "zte_fw_gms"
     [ "$has_ip6tables" -eq 1 ] && remove_block_rules_from_chain "ip6tables" "zte_fw_gms"
   fi
 
   if [ "$is_oneplus" -eq 1 ]; then
-    log "INFO" "Detected OnePlus / ColorOS Rules, start cleaning. fw_INPUT with fw_OUTPUT"
+    log "INFO" "Detected OnePlus / ColorOS Rule number, start cleaning. fw_INPUT and fw_OUTPUT"
     for chain in fw_INPUT fw_OUTPUT; do
       [ "$has_iptables" -eq 1 ] && remove_block_rules_from_chain "iptables" "$chain"
       [ "$has_ip6tables" -eq 1 ] && remove_block_rules_from_chain "ip6tables" "$chain"
@@ -78,19 +78,19 @@ fix_by_device() {
   fi
 
   if [ "$is_redmagic" -eq 0 ] && [ "$is_oneplus" -eq 0 ]; then
-    log "INFO" "No rules detected for equipment to be repaired"
+    log "INFO" "Rules for equipment not detected for repair"
   fi
 }
 
 #######################################
-# Show Help
+# Show help
 #######################################
 show_usage() {
   cat << EOF
 Usage: $(basename "$0") [run]
 
 Command:
-  run      Implementation of equipment compatibility repairs
+  run      Execute equipment compatibility restoration
 EOF
 }
 
@@ -100,9 +100,9 @@ EOF
 main() {
   case "${1:-run}" in
     run)
-      log "INFO" "========== Implementation of equipment compatibility rehabilitation commenced =========="
+      log "INFO" "========== Start installation compatibility restoration =========="
       fix_by_device
-      log "INFO" "========== Equipment compatibility repairs completed =========="
+      log "INFO" "========== Device compatibility repair completed =========="
       ;;
     -h | --help | help)
       show_usage

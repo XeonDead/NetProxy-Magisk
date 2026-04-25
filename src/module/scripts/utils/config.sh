@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# Configure reading and writing support functions
+# Configure Reading and Writing Support Functions
 
 #######################################
 # Remove quotes from the configuration value
@@ -30,7 +30,7 @@ read_conf() {
 }
 
 #######################################
-# Write Configuration Value
+# Writing Configuration Values
 #######################################
 set_conf() {
   local file="$1"
@@ -47,14 +47,14 @@ set_conf() {
 }
 
 #######################################
-# Double quotes for configuration values
+# Add double quotes to the configuration value
 #######################################
 quote_conf() {
   printf '"%s"' "$1"
 }
 
 #######################################
-# Judge whether the list contains specified values
+# Determines whether the list contains specified values
 #######################################
 list_contains() {
   local list="$1"
@@ -69,7 +69,7 @@ list_contains() {
 }
 
 #######################################
-# Add Value to List
+# Add value to the list
 #######################################
 list_add() {
   local list="$1"

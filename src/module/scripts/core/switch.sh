@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# sing-box Outstation Switch Script
+# sing-box Off-site toggle script
 # Usage: switch.sh {config|mode} <Parameters>
 
 set -u
@@ -24,14 +24,14 @@ is_service_running() {
 }
 
 #######################################
-# Restart service to make configuration effective
+# Restart service to effective configuration
 #######################################
 restart_service_if_allowed() {
   if [ "$SWITCH_ALLOW_RESTART" = "1" ]; then
-    log "INFO" "Restarting sing-box Service to apply configuration..."
-    LOG_STDERR=0 sh "$SERVICE_SCRIPT" restart || die "Restart sing-box Service failure"
+    log "INFO" "Restarting sing-box Service to Apply Configuration..."
+    LOG_STDERR=0 sh "$SERVICE_SCRIPT" restart || die "Restart sing-box Service failed"
   else
-    log "WARN" "The current phase does not allow the application configuration by restarting"
+    log "WARN" "Application configuration by restart is not allowed at the current stage"
     return 1
   fi
 }
@@ -43,42 +43,42 @@ switch_config() {
   local config_file="$1"
   local target_tag
 
-  require_file "$MODULE_CONF" "The module profile does not exist: $MODULE_CONF"
+  require_file "$MODULE_CONF" "Module Profile does not exist: $MODULE_CONF"
   require_file "$config_file" "Node Profile does not exist: $config_file"
 
-  log "INFO" "========== Start Switch sing-box Node Configuration =========="
+  log "INFO" "========== Start Switching sing-box Node Configuration =========="
   log "INFO" "Target Node File: $config_file"
 
   set_conf "$MODULE_CONF" "CURRENT_CONFIG" "$(quote_conf "$config_file")"
   target_tag="$(detect_outbound_tag "$config_file" || true)"
 
   if ! is_service_running; then
-    log "INFO" "sing-box Not running, new node configuration will take effect at next startup"
-    log "INFO" "========== Node Configuration Switch Finished =========="
+    log "INFO" "sing-box Not running, new node configuration will be effective on next start"
+    log "INFO" "========== Node configuration switch complete =========="
     return 0
   fi
 
   if [ -n "$target_tag" ]; then
     if api_select_proxy "$target_tag"; then
-      log "INFO" "Switch to node via control interface: $target_tag"
-      log "INFO" "========== Node Configuration Switch Finished =========="
+      log "INFO" "Switched to node via control interface: $target_tag"
+      log "INFO" "========== Node configuration switch complete =========="
       return 0
     fi
-    log "INFO" "The current run example failed to load the target node or control interface switch to restart service"
+    log "INFO" "The current operation case did not load the target node or the control interface switch failed to start the service again"
   else
-    log "INFO" "Could not read target node tag, ready to restart service"
+    log "INFO" "Could not close temporary folder: %s"
   fi
 
   restart_service_if_allowed || {
-    log "WARN" "This is only the end of the configuration until the next service resumes."
+    log "WARN" "This configuration is only sustainable until the next service restart takes effect"
     return 1
   }
 
-  log "INFO" "========== Node Configuration Switch Finished =========="
+  log "INFO" "========== Node configuration switch complete =========="
 }
 
 #######################################
-# Switch Out Station Mode
+# Toggle outbound mode
 #######################################
 switch_mode() {
   local target_mode="$1"
@@ -86,46 +86,46 @@ switch_mode() {
   case "$target_mode" in
     rule | global | direct) ;;
     *)
-      die "Unknown Mode: $target_mode"
+      die "Unknown mode: $target_mode"
       ;;
   esac
 
-  require_file "$MODULE_CONF" "The module profile does not exist: $MODULE_CONF"
+  require_file "$MODULE_CONF" "Module Profile does not exist: $MODULE_CONF"
 
-  log "INFO" "========== Start Switch sing-box Out of station mode: $target_mode =========="
+  log "INFO" "========== Start Switching sing-box Outbound Mode: $target_mode =========="
   set_conf "$MODULE_CONF" "OUTBOUND_MODE" "$target_mode"
 
   if ! is_service_running; then
-    log "INFO" "sing-box Not running, new exit mode will take effect at next start"
-    log "INFO" "========== Exit mode switch complete =========="
+    log "INFO" "sing-box Not running, new exit mode will be effective on next startup"
+    log "INFO" "========== Outstop mode switch complete =========="
     return 0
   fi
 
   if api_set_mode "$target_mode"; then
-    log "INFO" "Switching out station mode through control interface"
-    log "INFO" "========== Exit mode switch complete =========="
+    log "INFO" "Switching out mode via control interface"
+    log "INFO" "========== Outstop mode switch complete =========="
     return 0
   fi
 
-  log "WARN" "Control interface switch mode failed, ready to restart service"
+  log "WARN" "Control interface switch mode failed to reset service"
   restart_service_if_allowed || {
-    log "WARN" "This only completes the permanence of the mode and waits for the next service restart to take effect"
+    log "WARN" "Only model sustainability is completed this time, pending the next service restart."
     return 1
   }
 
-  log "INFO" "========== Exit mode switch complete =========="
+  log "INFO" "========== Outstop mode switch complete =========="
 }
 
 #######################################
-# Show Help
+# Show help
 #######################################
 show_usage() {
   cat << EOF
 Usage: $(basename "$0") {config|mode} <Parameters>
 
 Command:
-  config <Profile>              Toggle Current Node Configuration
-  mode <rule|global|direct>     Switch Out Station Mode
+  config <Profile>              Toggle current node configuration
+  mode <rule|global|direct>     Toggle outbound mode
 EOF
 }
 

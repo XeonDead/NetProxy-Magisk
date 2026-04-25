@@ -29,7 +29,7 @@ readonly TPROXY_SCRIPT="$SCRIPTS_DIR/network/tproxy.sh"
 
 readonly CLASH_API="127.0.0.1:9999"
 readonly CLASH_SECRET="singbox"
-readonly SELECTOR_GROUP="Proxy"
+readonly SELECTOR_GROUP="proxy"
 readonly DELAY_URL="https://www.gstatic.com/generate_204"
 
 . "$MODDIR/scripts/utils/common.sh"
@@ -79,9 +79,9 @@ is_running() {
 }
 
 ensure_cli_dirs() {
-  ensure_dir "$LOG_DIR" "Cannot create log directory: $LOG_DIR"
-  ensure_dir "$DEFAULT_NODES_DIR" "Cannot create default node directory: $DEFAULT_NODES_DIR"
-  ensure_dir "$RUNTIME_DIR" "Could not create run-time directory: $RUNTIME_DIR"
+  ensure_dir "$LOG_DIR" "Could not create log directory: $LOG_DIR"
+  ensure_dir "$DEFAULT_NODES_DIR" "Could not create default node directory: $DEFAULT_NODES_DIR"
+  ensure_dir "$RUNTIME_DIR" "Could not create running-time directory: $RUNTIME_DIR"
 }
 
 prepare_node_scan() {
@@ -112,8 +112,8 @@ print_node_line() {
 show_service_help() {
   cat << EOF
 Usage:
-  cli service status                  View service status
-  cli service start                   Start service
+  cli service status                  View Service Status
+  cli service start                   Start-up services
   cli service stop                    Stop Service
   cli service restart                 Restart Service
   cli service logs [service|core|sub] [Lines]
@@ -124,15 +124,15 @@ EOF
 show_node_help() {
   cat << EOF
 Usage:
-  cli node list                       List All Nodes
-  cli node current                    View Current Node
-  cli node use <Name|Label|Path>       Toggle Nodes
+  cli node list                       List all nodes
+  cli node current                    View the current node
+  cli node use <Name|Label|Path>       Toggle Node
   cli node add <Node Link>             Add a single node
-  cli node import <Documentation>              Import Node File or Clash YAML
-  cli node export <Node File>          Will sing-box Node to Link
+  cli node import <Documentation>              Import node file or Clash YAML
+  cli node export <Node file>          Will sing-box Node to Link
   cli node show <Name|Label|Path>      View Node Configuration
   cli node remove <Name|Label|Path>    Delete Node
-  cli node delay [Name|Label|all]      Test Node Delay
+  cli node delay [Name|Label|all]      Test node delay
 EOF
 }
 
@@ -140,7 +140,7 @@ show_mode_help() {
   cat << EOF
 Usage:
   cli mode                            View Current Mode
-  cli mode <rule|global|direct>       Switch Out Station Mode
+  cli mode <rule|global|direct>       Toggle outbound mode
 EOF
 }
 
@@ -151,16 +151,16 @@ Usage:
   cli sub add <Name> <Link>           Add Subscription
   cli sub update <Name>               Update specified subscriptions
   cli sub update-all                  Update All Subscriptions
-  cli sub remove <Name>               Delete Subscription
+  cli sub remove <Name>               Delete Subscriptions
 EOF
 }
 
 show_api_help() {
   cat << EOF
 Usage:
-  cli api groups                      View proxy groups
+  cli api groups                      View Agent Group
   cli api conns                       View Connections
-  cli api close <ConnectionID>              Close specified connection
+  cli api close <ConnectionID>              Close the specified connection
   cli api close-all                   Close All Connections
   cli api ui                          View controller and panel address
 EOF
@@ -169,12 +169,12 @@ EOF
 show_app_help() {
   cat << EOF
 Usage:
-  cli app list                        View subapplying proxy configuration
-  cli app mode <blacklist|whitelist>  Set sub-application mode
-  cli app add <Package Name>                  Add Apply
-  cli app remove <Package Name>               Remove Application
+  cli app list                        View split application proxy configuration
+  cli app mode <blacklist|whitelist>  Set SubApplication Mode
+  cli app add <Package name>                  Add Application
+  cli app remove <Package name>               Remove Application
   cli app enable                      Enable sub-application agent
-  cli app disable                     Disable subappliance proxy
+  cli app disable                     Disable branch application agent
 EOF
 }
 
@@ -182,9 +182,9 @@ show_tproxy_help() {
   cat << EOF
 Usage:
   cli tproxy status                   View transparent proxy configuration
-  cli tproxy reload                   Reload Transparent Agent Rules
-  cli tproxy quic <on|off>            Switches QUIC Block
-  cli tproxy cnip <on|off>            Switch China IP Around
+  cli tproxy reload                   Loading Transparency Proxy Rules
+  cli tproxy quic <on|off>            Switch QUIC Block
+  cli tproxy cnip <on|off>            Switch China IP Go around.
 EOF
 }
 
@@ -198,11 +198,11 @@ cmd_service_status() {
   pid="$(get_pid "$SING_BOX_BIN")"
 
   if [ -n "$pid" ]; then
-    printf "Run Status: %sRunning%s\n" "$GREEN" "$NC"
+    printf "Active Status: %sRunning%s\n" "$GREEN" "$NC"
     printf "Process PID: %s\n" "$pid"
     printf "Run Time: %s sec\n" "$(get_process_uptime "$pid")"
   else
-    printf "Run Status: %sNot Run%s\n" "$RED" "$NC"
+    printf "Active Status: %sNot running%s\n" "$RED" "$NC"
   fi
 
   current="$(read_conf "$MODULE_CONF" "CURRENT_CONFIG" "")"
@@ -212,7 +212,7 @@ cmd_service_status() {
   dns_port="$(read_conf "$TPROXY_CONF" "DNS_PORT" "-")"
 
   [ -n "$current" ] && printf "Current Node: %s\n" "$(basename "$current")"
-  printf "Out of station mode: %s\n" "$mode"
+  printf "Outbound Mode: %s\n" "$mode"
   printf "Transparent proxy port: TCP=%s UDP=%s DNS=%s\n" "$tcp_port" "$udp_port" "$dns_port"
 
   if [ -n "$pid" ]; then
@@ -253,7 +253,7 @@ cmd_service_logs() {
     service) file="$SERVICE_LOG" ;;
     core | sing-box | singbox) file="$CORE_LOG" ;;
     sub | subscription) file="$SUB_LOG" ;;
-    *) die_cli "Unknown log type: $target" ;;
+    *) die_cli "Unknown Log Type: $target" ;;
   esac
 
   [ -f "$file" ] || die_cli "Log file does not exist: $file"
@@ -271,7 +271,7 @@ cmd_service() {
     restart) cmd_service_restart "$@" ;;
     logs) cmd_service_logs "$@" ;;
     help | -h | --help) show_service_help ;;
-    *) die_cli "Misuse, use cli service help View Help" ;;
+    *) die_cli "Use error, use cli service help View Help" ;;
   esac
 }
 
@@ -292,7 +292,7 @@ cmd_node_list() {
     count=$((count + 1))
   done < "$CLI_NODE_SCAN_FILE"
 
-  [ "$count" -gt 0 ] || printf "No Points\n"
+  [ "$count" -gt 0 ] || printf "No nodes for now\n"
 }
 
 cmd_node_current() {
@@ -300,7 +300,7 @@ cmd_node_current() {
 
   current="$(read_conf "$MODULE_CONF" "CURRENT_CONFIG" "")"
   if [ -z "$current" ]; then
-    printf "Node is currently not set\n"
+    printf "No node is currently set\n"
     return 0
   fi
 
@@ -319,7 +319,7 @@ cmd_node_use() {
   [ -n "$query" ] || die_cli "Usage: cli node use <Name|Label|Path>"
   prepare_node_scan
   node="$(resolve_node_from_scan "$CLI_NODE_SCAN_FILE" "$query")"
-  info "Switching Nodes: $(basename "$node")"
+  info "Switching nodes: $(basename "$node")"
   sh "$SWITCH_SCRIPT" config "$node"
 }
 
@@ -327,9 +327,9 @@ cmd_node_add() {
   local link="${1:-}"
 
   [ -n "$link" ] || die_cli "Usage: cli node add <Node Link>"
-  info "Importing Nodes..."
+  info "Importing nodes..."
   sh "$SUB_SCRIPT" parse "$link" "$DEFAULT_NODES_DIR"
-  info "Node Import Finished"
+  info "Node import complete"
 }
 
 cmd_node_import() {
@@ -339,14 +339,14 @@ cmd_node_import() {
   [ -f "$file" ] || die_cli "File does not exist: $file"
   info "Importing files..."
   sh "$SUB_SCRIPT" file "$file" "$DEFAULT_NODES_DIR"
-  info "File import complete."
+  info "File import complete"
 }
 
 cmd_node_export() {
   local query="${1:-}"
   local node
 
-  [ -n "$query" ] || die_cli "Usage: cli node export <Node File>"
+  [ -n "$query" ] || die_cli "Usage: cli node export <Node file>"
   prepare_node_scan
   if [ -f "$query" ]; then
     node="$query"
@@ -377,7 +377,7 @@ cmd_node_remove() {
   node="$(resolve_node_from_scan "$CLI_NODE_SCAN_FILE" "$query")"
   current="$(read_conf "$MODULE_CONF" "CURRENT_CONFIG" "")"
 
-  [ "$node" != "$current" ] || die_cli "Could not close temporary folder: %s"
+  [ "$node" != "$current" ] || die_cli "Cannot delete currently in use node"
   rm -f "$node"
   info "Deleted Node: $(basename "$node")"
 }
@@ -418,7 +418,7 @@ cmd_node_delay() {
     fi
   else
     node="$(read_conf "$MODULE_CONF" "CURRENT_CONFIG" "")"
-    [ -n "$node" ] || die_cli "Node is currently not set"
+    [ -n "$node" ] || die_cli "No node is currently set"
     tag="$(detect_outbound_tag "$node" || true)"
   fi
 
@@ -441,7 +441,7 @@ cmd_node() {
     remove | rm) cmd_node_remove "$@" ;;
     delay) cmd_node_delay "$@" ;;
     help | -h | --help) show_node_help ;;
-    *) die_cli "Misuse, use cli node help View Help" ;;
+    *) die_cli "Use error, use cli node help View Help" ;;
   esac
 }
 
@@ -454,7 +454,7 @@ cmd_mode() {
 
   if [ -z "$mode" ]; then
     current="$(read_conf "$MODULE_CONF" "OUTBOUND_MODE" "rule")"
-    printf "Enduring Mode: %s\n" "$current"
+    printf "Lasting Mode: %s\n" "$current"
     if is_running; then
       api_mode="$(api_get_mode 2> /dev/null || true)"
       [ -n "$api_mode" ] && printf "Run Mode: %s\n" "$api_mode"
@@ -469,7 +469,7 @@ cmd_mode() {
       return 0
       ;;
     *)
-      die_cli "Unknown Mode: $mode"
+      die_cli "Unknown mode: $mode"
       ;;
   esac
 
@@ -490,7 +490,7 @@ cmd_sub() {
     update-all) sh "$SUB_SCRIPT" update-all ;;
     remove | rm) sh "$SUB_SCRIPT" remove "${1:-}" ;;
     help | -h | --help) show_sub_help ;;
-    *) die_cli "Misuse, use cli sub help View Help" ;;
+    *) die_cli "Use error, use cli sub help View Help" ;;
   esac
 }
 
@@ -500,17 +500,17 @@ cmd_sub() {
 cmd_api_groups() {
   local json now item has_output=0
 
-  json="$(api_get_proxies 2> /dev/null)" || die_cli "Control interface not available. Please confirm service is running"
+  json="$(api_get_proxies 2> /dev/null)" || die_cli "Control interface not available, please confirm service is running"
   now="$(api_selector_current "$json" "$(api_selector_group)" || true)"
 
-  section "Acting Group"
+  section "Agent Group"
   [ -n "$now" ] && printf "%s: %s\n" "$(api_selector_group)" "$now"
 
   while IFS= read -r item; do
     [ -n "$item" ] || continue
     [ "$item" = "$now" ] && continue
     if [ "$has_output" -eq 0 ]; then
-      printf "Optional Nodes:\n"
+      printf "Selected Nodes:\n"
       has_output=1
     fi
     printf "  - %s\n" "$item"
@@ -518,15 +518,15 @@ cmd_api_groups() {
 $(api_selector_options "$json" "$(api_selector_group)" 2> /dev/null || true)
 EOF
 
-  [ "$has_output" -eq 1 ] || printf "Can not open message\n"
+  [ "$has_output" -eq 1 ] || printf "No node information available for the time being\n"
 }
 
 cmd_api_conns() {
   local json total ids id count=0
 
-  json="$(api_get_connections 2> /dev/null)" || die_cli "Control interface not available. Please confirm service is running"
+  json="$(api_get_connections 2> /dev/null)" || die_cli "Control interface not available, please confirm service is running"
   total="$(printf "%s" "$json" | sed -n 's/.*"downloadTotal"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p')"
-  [ -n "$total" ] && printf "Total downloads: %s bytes\n" "$total"
+  [ -n "$total" ] && printf "Total Downloads: %s bytes\n" "$total"
 
   ids="$(printf "%s" "$json" | grep -o '"id"[[:space:]]*:[[:space:]]*"[^"]*"' | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' || true)"
   if [ -n "$ids" ]; then
@@ -545,7 +545,7 @@ cmd_api_close() {
   local id="${1:-}"
 
   [ -n "$id" ] || die_cli "Usage: cli api close <ConnectionID>"
-  api_close_connection "$id" || die_cli "Closing connection failed"
+  api_close_connection "$id" || die_cli "Could not close connection"
   info "Connection closed: $id"
 }
 
@@ -576,7 +576,7 @@ cmd_api() {
     close-all) cmd_api_close_all "$@" ;;
     ui) cmd_api_ui "$@" ;;
     help | -h | --help) show_api_help ;;
-    *) die_cli "Misuse, use cli api help View Help" ;;
+    *) die_cli "Use error, use cli api help View Help" ;;
   esac
 }
 
@@ -585,19 +585,19 @@ cmd_api() {
 #######################################
 reload_tproxy_if_running() {
   if is_running; then
-    info "Reloading Transparent Agent Rules..."
-    sh "$TPROXY_SCRIPT" restart -d "$TPROXY_DIR" > /dev/null 2>&1 || die_cli "Reloading Transparent Proxy failed"
-    info "Transparent proxy rule loaded"
+    info "Reloading transparency proxy rules..."
+    sh "$TPROXY_SCRIPT" restart -d "$TPROXY_DIR" > /dev/null 2>&1 || die_cli "Failed to reload transparent proxy rules"
+    info "The transparent proxy rule has been reloaded"
   else
-    info "Service not running, configuration will take effect at next startup"
+    info "The service is not running and the configuration will be effective on the next start"
   fi
 }
 
 cmd_app_list() {
-  printf "Subappliance Proxy: %s\n" "$(read_conf "$TPROXY_CONF" "APP_PROXY_ENABLE" "0")"
+  printf "SubApplication Agent: %s\n" "$(read_conf "$TPROXY_CONF" "APP_PROXY_ENABLE" "0")"
   printf "Apply Mode: %s\n" "$(read_conf "$TPROXY_CONF" "APP_PROXY_MODE" "blacklist")"
   printf "Proxy List: %s\n" "$(read_conf "$TPROXY_CONF" "PROXY_APPS_LIST" "")"
-  printf "Around list: %s\n" "$(read_conf "$TPROXY_CONF" "BYPASS_APPS_LIST" "")"
+  printf "Overlist: %s\n" "$(read_conf "$TPROXY_CONF" "BYPASS_APPS_LIST" "")"
 }
 
 cmd_app_mode() {
@@ -610,7 +610,7 @@ cmd_app_mode() {
 
   set_conf "$TPROXY_CONF" "APP_PROXY_ENABLE" "1"
   set_conf "$TPROXY_CONF" "APP_PROXY_MODE" "$(quote_conf "$mode")"
-  info "Application mode set to: $mode"
+  info "Apply mode set as: $mode"
   reload_tproxy_if_running
 }
 
@@ -618,7 +618,7 @@ cmd_app_add() {
   local package="${1:-}"
   local mode current_list new_list
 
-  [ -n "$package" ] || die_cli "Usage: cli app add <Package Name>"
+  [ -n "$package" ] || die_cli "Usage: cli app add <Package name>"
 
   set_conf "$TPROXY_CONF" "APP_PROXY_ENABLE" "1"
   mode="$(read_conf "$TPROXY_CONF" "APP_PROXY_MODE" "blacklist")"
@@ -633,7 +633,7 @@ cmd_app_add() {
     set_conf "$TPROXY_CONF" "BYPASS_APPS_LIST" "$(quote_conf "$new_list")"
   fi
 
-  info "Added Apply: $package"
+  info "Added application: $package"
   reload_tproxy_if_running
 }
 
@@ -641,7 +641,7 @@ cmd_app_remove() {
   local package="${1:-}"
   local proxy_list bypass_list
 
-  [ -n "$package" ] || die_cli "Usage: cli app remove <Package Name>"
+  [ -n "$package" ] || die_cli "Usage: cli app remove <Package name>"
 
   proxy_list="$(list_remove "$(read_conf "$TPROXY_CONF" "PROXY_APPS_LIST" "")" "$package")"
   bypass_list="$(list_remove "$(read_conf "$TPROXY_CONF" "BYPASS_APPS_LIST" "")" "$package")"
@@ -654,13 +654,13 @@ cmd_app_remove() {
 
 cmd_app_enable() {
   set_conf "$TPROXY_CONF" "APP_PROXY_ENABLE" "1"
-  info "Sub-application agent enabled"
+  info "SubApplication agent enabled"
   reload_tproxy_if_running
 }
 
 cmd_app_disable() {
   set_conf "$TPROXY_CONF" "APP_PROXY_ENABLE" "0"
-  info "The sub-application agent is disabled"
+  info "Sub-Application Agent Disabled"
   reload_tproxy_if_running
 }
 
@@ -676,7 +676,7 @@ cmd_app() {
     enable) cmd_app_enable "$@" ;;
     disable) cmd_app_disable "$@" ;;
     help | -h | --help) show_app_help ;;
-    *) die_cli "Misuse, use cli app help View Help" ;;
+    *) die_cli "Use error, use cli app help View Help" ;;
   esac
 }
 
@@ -689,7 +689,7 @@ cmd_tproxy_status() {
   printf "UDP Port: %s\n" "$(read_conf "$TPROXY_CONF" "PROXY_UDP_PORT" "-")"
   printf "DNS Port: %s\n" "$(read_conf "$TPROXY_CONF" "DNS_PORT" "-")"
   printf "Proxy Mode: %s\n" "$(read_conf "$TPROXY_CONF" "PROXY_MODE" "0")"
-  printf "Subappliance Proxy: %s\n" "$(read_conf "$TPROXY_CONF" "APP_PROXY_ENABLE" "0")"
+  printf "SubApplication Agent: %s\n" "$(read_conf "$TPROXY_CONF" "APP_PROXY_ENABLE" "0")"
   printf "Block QUIC: %s\n" "$(read_conf "$TPROXY_CONF" "BLOCK_QUIC" "0")"
   printf "Around China. IP: %s\n" "$(read_conf "$TPROXY_CONF" "BYPASS_CN_IP" "0")"
 }
@@ -720,7 +720,7 @@ cmd_tproxy_cnip() {
     *) die_cli "Usage: cli tproxy cnip <on|off>" ;;
   esac
 
-  info "China IP Skip updated: $value"
+  info "China IP _Other Organiser: $value"
   reload_tproxy_if_running
 }
 
@@ -734,7 +734,7 @@ cmd_tproxy() {
     quic) cmd_tproxy_quic "$@" ;;
     cnip) cmd_tproxy_cnip "$@" ;;
     help | -h | --help) show_tproxy_help ;;
-    *) die_cli "Misuse, use cli tproxy help View Help" ;;
+    *) die_cli "Use error, use cli tproxy help View Help" ;;
   esac
 }
 
@@ -746,55 +746,55 @@ show_help() {
 NetProxy CLI
 
 Services:
-  cli service status                  View service status
-  cli service start                   Start service
+  cli service status                  View Service Status
+  cli service start                   Start-up services
   cli service stop                    Stop Service
   cli service restart                 Restart Service
   cli service logs [service|core|sub] [Lines]
                                       View Log
 
 Nodes:
-  cli node list                       List All Nodes
-  cli node current                    View Current Node
-  cli node use <Name|Label|Path>       Toggle Nodes
+  cli node list                       List all nodes
+  cli node current                    View the current node
+  cli node use <Name|Label|Path>       Toggle Node
   cli node add <Node Link>             Add a single node
-  cli node import <Documentation>              Import Node File or Clash YAML
-  cli node export <Node File>          Will sing-box Node to Link
+  cli node import <Documentation>              Import node file or Clash YAML
+  cli node export <Node file>          Will sing-box Node to Link
   cli node show <Name|Label|Path>      View Node Configuration
   cli node remove <Name|Label|Path>    Delete Node
-  cli node delay [Name|Label|all]      Test Node Delay
+  cli node delay [Name|Label|all]      Test node delay
 
 Mode:
   cli mode                            View Current Mode
-  cli mode <rule|global|direct>       Switch Out Station Mode
+  cli mode <rule|global|direct>       Toggle outbound mode
 
 Subscriptions:
   cli sub list                        List Subscriptions
   cli sub add <Name> <Link>           Add Subscription
   cli sub update <Name>               Update specified subscriptions
   cli sub update-all                  Update All Subscriptions
-  cli sub remove <Name>               Delete Subscription
+  cli sub remove <Name>               Delete Subscriptions
 
 Control interface:
-  cli api groups                      View proxy groups
+  cli api groups                      View Agent Group
   cli api conns                       View Connections
-  cli api close <ConnectionID>              Close specified connection
+  cli api close <ConnectionID>              Close the specified connection
   cli api close-all                   Close All Connections
   cli api ui                          View controller and panel address
 
-Subappliance Proxy:
-  cli app list                        View subapplying proxy configuration
-  cli app mode <blacklist|whitelist>  Set sub-application mode
-  cli app add <Package Name>                  Add Apply
-  cli app remove <Package Name>               Remove Application
+SubApplication Agent:
+  cli app list                        View split application proxy configuration
+  cli app mode <blacklist|whitelist>  Set SubApplication Mode
+  cli app add <Package name>                  Add Application
+  cli app remove <Package name>               Remove Application
   cli app enable                      Enable sub-application agent
-  cli app disable                     Disable subappliance proxy
+  cli app disable                     Disable branch application agent
 
 Transparent Agent:
   cli tproxy status                   View transparent proxy configuration
-  cli tproxy reload                   Reload Transparent Agent Rules
-  cli tproxy quic <on|off>            Switches QUIC Block
-  cli tproxy cnip <on|off>            Switch China IP Around
+  cli tproxy reload                   Loading Transparency Proxy Rules
+  cli tproxy quic <on|off>            Switch QUIC Block
+  cli tproxy cnip <on|off>            Switch China IP Go around.
 EOF
 }
 
@@ -816,7 +816,7 @@ main() {
     app) cmd_app "$@" ;;
     tproxy) cmd_tproxy "$@" ;;
     help | -h | --help) show_help ;;
-    *) die_cli "Unknown Command Group: $group,use cli help View Help" ;;
+    *) die_cli "Unknown Command Group: $group, use cli help View Help" ;;
   esac
 }
 

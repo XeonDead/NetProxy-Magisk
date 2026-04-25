@@ -19,7 +19,7 @@ api_secret() {
 # 读取主选择器名称
 #######################################
 api_selector_group() {
-  printf "%s" "${SELECTOR_GROUP:-Proxy}"
+  printf "%s" "${SELECTOR_GROUP:-proxy}"
 }
 
 #######################################

@@ -8,52 +8,52 @@ readonly LOG_FILE="$MODDIR/logs/service.log"
 . "$MODDIR/scripts/utils/common.sh"
 
 #######################################
-# Load module configuration
+# Loading module configuration
 #######################################
 load_module_config() {
-  # Set the default for startup service
+  # Set the startup service default
   AUTO_START=1
   GMS_FIX=1
 
   if [ -f "$MODULE_CONF" ]; then
     . "$MODULE_CONF"
-    log "INFO" "Module configuration loaded"
+    log "INFO" "Module Configuration Loaded"
   else
-    log "WARN" "Module profile does not exist, using default"
+    log "WARN" "The module configuration file does not exist, using default values"
   fi
 }
 
 #######################################
-# Waiting for system startup to complete
+# Waiting for the system to start.
 #######################################
 wait_for_boot() {
-  log "INFO" "Waiting for system startup to complete..."
+  log "INFO" "Waiting for the system to start...."
 
-  # Waiting for system startup.
+  # Waiting for the system to turn on.
   while [ "$(getprop sys.boot_completed)" != "1" ]; do
     sleep 1
   done
-  log "INFO" "System launch complete."
+  log "INFO" "System startup complete."
 
-  # Waiting for storage to mount complete
+  # Waiting for storage mount complete
   while [ ! -d "/sdcard/Android" ]; do
     sleep 1
   done
-  log "INFO" "Storage Mount Completed"
+  log "INFO" "Storage mount complete"
 }
 
 #######################################
-# Implementation equipment-specific repair scripts
+# Execute device-specific fix scripts
 #######################################
 check_device_specific() {
-  # Implement device compatibility restoration on commission
+  # Execute device compatibility fix when enabled
   if [ "$GMS_FIX" = "1" ]; then
-    log "INFO" "GMS Repairs were activated and the scripts were repaired"
+    log "INFO" "GMS Repair enabled. Fix script executed."
     sh "$MODDIR/scripts/utils/gms_fix.sh"
   fi
 }
 
-# Ensure log directory exists
+# Ensure that log directory exists
 mkdir -p "$MODDIR/logs"
 
 #######################################
@@ -94,7 +94,7 @@ log_env_info() {
     line=$(grep "^versionCode=" "$MODDIR/module.prop")
     local versionCode="${line#*=}"
     log "INFO" "Module Version: ${version:-Unknown}"
-    log "INFO" "Module Version Number: ${versionCode:-Unknown}"
+    log "INFO" "Module version number: ${versionCode:-Unknown}"
   fi
 
   log "INFO" "=================================="
@@ -108,16 +108,16 @@ sh "$MODDIR/scripts/utils/ipset.sh" load
 
 wait_for_boot
 
-# Check if startup is enabled
+# Check whether to turn on the switchboard.
 if [ "$AUTO_START" = "1" ]; then
   log "INFO" "Start service...."
   sh "$MODDIR/scripts/core/service.sh" start
   log "INFO" "Service start complete."
 else
-  log "INFO" "Starter is disabled. Skip start."
+  log "INFO" "Startup is disabled. Skipping startup."
 fi
 
-# Implementation of equipment compatibility repairs
+# Execute equipment compatibility restoration
 check_device_specific
 
-log "INFO" "========== Service start-up process completed =========="
+log "INFO" "========== End of service start process =========="

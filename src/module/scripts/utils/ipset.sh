@@ -11,25 +11,25 @@ readonly KO_LOADER="$MODDIR/bin/IPSET-LKM/ko-loader"
 . "$MODDIR/scripts/utils/common.sh"
 
 #######################################
-# Load kernel driver
+# Load kernel drive
 #######################################
 load_drivers() {
   local module
 
   if [ ! -d "$NETFILTER_DIR" ]; then
-    log "INFO" "Not detected IPSET Driver Directory, Skip Load"
+    log "INFO" "No integrated detected IPSET Driver directory, skip loading"
     return 0
   fi
 
   if [ -d /sys/module/ip_set ]; then
-    log "INFO" "kernel is built or loaded IPSET Modules"
+    log "INFO" "kernel built-in or loaded IPSET Modules"
     return 0
   fi
 
   [ -x "$KO_LOADER" ] || chmod 0755 "$KO_LOADER"
 
-  log "INFO" "Start loading integration IPSET kernel driver..."
-  cd "$NETFILTER_DIR" || die "Could not enter driver directory: $NETFILTER_DIR"
+  log "INFO" "Start loading integration IPSET kernel Driver..."
+  cd "$NETFILTER_DIR" || die "Could not get into driver directory: $NETFILTER_DIR"
 
   load_module() {
     "$KO_LOADER" "$@"
@@ -51,18 +51,18 @@ load_drivers() {
   [ -f "xt_set.ko" ] && load_module "xt_set.ko"
   [ -f "xt_addrtype.ko" ] && load_module "xt_addrtype.ko"
 
-  log "INFO" "IPSET Driver loading process complete"
+  log "INFO" "IPSET Driver load process execution completed"
 }
 
 #######################################
-# Show Help
+# Show help
 #######################################
 show_usage() {
   cat << EOF
 Usage: $(basename "$0") load
 
 Command:
-  load      Load integrated IPSET Driver
+  load      Loaded Integrated IPSET Driver
 EOF
 }
 

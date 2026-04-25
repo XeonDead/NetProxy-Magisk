@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# sing-box Node and Subscription Management Script
+# sing-box Script for nodes and subscription management
 
 set -e
 set -u
@@ -14,23 +14,23 @@ readonly LOG_FILE="$MODDIR/logs/subscription.log"
 . "$MODDIR/scripts/utils/nodes.sh"
 
 #######################################
-# Show Help
+# Show help
 #######################################
 show_help() {
   cat << EOF
 Usage: $(basename "$0") <Command> [Parameters]
 
 Node Import:
-  parse <Node Link> [Contents]        Single Link Rotate sing-box Nodes
-  file <Documentation> [Contents]            File node or Clash YAML Turn sing-box Nodes
-  sub <Subscription Link> [Contents]         Subscriptions sing-box Node, one file per node
-  convert <Node File>            sing-box Node Transfer Link
+  parse <Node Link> [Contents]        Single Link Turn sing-box Nodes
+  file <Documentation> [Contents]            File Node or Clash YAML Turn. sing-box Nodes
+  sub <Subscription Links> [Contents]         Subscription sing-box Node, one file per node
+  convert <Node file>            sing-box Node Turn Link
 
-Subscription Management:
-  add <Name> <Subscription Link>         Add Subscription and Import Node
+Subscription management:
+  add <Name> <Subscription Links>         Add Subscription and Import Node
   update <Name>                 Update specified subscriptions
   update-all                    Update All Subscriptions
-  remove <Name>                 Delete Subscription
+  remove <Name>                 Delete Subscriptions
   list                          List Subscriptions
 
 Example::
@@ -45,7 +45,7 @@ EOF
 # Inspection proxylink Environment
 #######################################
 check_proxylink() {
-  require_file "$PROXYLINK_BIN" "proxylink does not exist: $PROXYLINK_BIN"
+  require_file "$PROXYLINK_BIN" "proxylink Does not exist: $PROXYLINK_BIN"
   [ -x "$PROXYLINK_BIN" ] || die "proxylink Unenforceable: $PROXYLINK_BIN"
 }
 
@@ -92,7 +92,7 @@ run_proxylink() {
 }
 
 #######################################
-# Single Link Rotate sing-box
+# Single Link Turn sing-box
 #######################################
 import_parse() {
   local link="$1"
@@ -101,13 +101,13 @@ import_parse() {
   [ -n "$link" ] || die "Usage: $(basename "$0") parse <Node Link> [Contents]"
   target_dir="$(prepare_output_dir "${2:-}")"
 
-  log "INFO" "Start importing single nodes: $target_dir"
-  run_proxylink parse "$link" "$target_dir" || die "Import of single node failed"
-  log "INFO" "Import completed by single node"
+  log "INFO" "Start Importing a Single Node: $target_dir"
+  run_proxylink parse "$link" "$target_dir" || die "Importing single nodes failed"
+  log "INFO" "Single node import complete"
 }
 
 #######################################
-# File nodes sing-box
+# File Node Turn sing-box
 #######################################
 import_file() {
   local file="$1"
@@ -117,33 +117,33 @@ import_file() {
   require_file "$file" "File does not exist: $file"
   target_dir="$(prepare_output_dir "${2:-}")"
 
-  log "INFO" "Start import of file nodes: $target_dir"
+  log "INFO" "Start Importing File Node: $target_dir"
   run_proxylink file "$file" "$target_dir" || die "File node import failed"
   log "INFO" "File node import complete"
 }
 
 #######################################
-# Subscriptions sing-box
+# Subscription sing-box
 #######################################
 import_sub() {
   local url="$1"
   local target_dir
 
-  [ -n "$url" ] || die "Usage: $(basename "$0") sub <Subscription Link> [Contents]"
+  [ -n "$url" ] || die "Usage: $(basename "$0") sub <Subscription Links> [Contents]"
   target_dir="$(prepare_output_dir "${2:-}")"
 
-  log "INFO" "Start importing subscription node: $target_dir"
-  run_proxylink sub "$url" "$target_dir" || die "Subscription import failed"
+  log "INFO" "Start Importing Subscription Node: $target_dir"
+  run_proxylink sub "$url" "$target_dir" || die "Failed to subscribe to node import"
   log "INFO" "Subscription node import complete"
 }
 
 #######################################
-# sing-box Node Transfer Link
+# sing-box Node Turn Link
 #######################################
 export_link() {
   local file="$1"
 
-  [ -n "$file" ] || die "Usage: $(basename "$0") convert <Node File>"
+  [ -n "$file" ] || die "Usage: $(basename "$0") convert <Node file>"
   require_file "$file" "Node file does not exist: $file"
   check_proxylink
   run_proxylink convert "$file"
@@ -163,7 +163,7 @@ clear_subscription_nodes() {
 }
 
 #######################################
-# Refresh Subscriptions
+# Synchronising folder
 #######################################
 refresh_subscription_dir() {
   local name="$1"
@@ -183,19 +183,19 @@ add_subscription() {
   local url="$2"
   local sub_dir
 
-  [ -n "$name" ] || die "Usage: $(basename "$0") add <Name> <Subscription Link>"
-  [ -n "$url" ] || die "Usage: $(basename "$0") add <Name> <Subscription Link>"
+  [ -n "$name" ] || die "Usage: $(basename "$0") add <Name> <Subscription Links>"
+  [ -n "$url" ] || die "Usage: $(basename "$0") add <Name> <Subscription Links>"
 
   sub_dir="$(subscription_dir_from_name "$OUTBOUNDS_DIR" "$name")"
-  [ ! -d "$sub_dir" ] || die "Subscription Exists: $name"
+  [ ! -d "$sub_dir" ] || die "_Other Organiser: $name"
 
-  ensure_dir "$sub_dir" "Cannot create subscription directory: $sub_dir"
+  ensure_dir "$sub_dir" "Unable to create subscription directory: $sub_dir"
   refresh_subscription_dir "$name" "$url" "$sub_dir"
-  log "INFO" "Subscription completion: $name"
+  log "INFO" "Subscription completed: $name"
 }
 
 #######################################
-# Update Subscription
+# Update Subscriptions
 #######################################
 update_subscription() {
   local name="$1"
@@ -206,15 +206,15 @@ update_subscription() {
   sub_dir="$(subscription_dir_from_name "$OUTBOUNDS_DIR" "$name")"
   meta_file="$sub_dir/_meta.json"
 
-  require_file "$meta_file" "Subscription does not exist: $name"
+  require_file "$meta_file" "_Other Organiser: $name"
   saved_name="$(read_subscription_meta_value "$meta_file" "name" || true)"
   url="$(read_subscription_meta_value "$meta_file" "url" || true)"
 
-  [ -n "$url" ] || die "Unable to read subscription links: $meta_file"
+  [ -n "$url" ] || die "Could not read subscription link: $meta_file"
   [ -n "$saved_name" ] || saved_name="$name"
 
   refresh_subscription_dir "$saved_name" "$url" "$sub_dir"
-  log "INFO" "Subscription update completed: $saved_name"
+  log "INFO" "Subscription Update Completed: $saved_name"
 }
 
 #######################################
@@ -237,11 +237,11 @@ update_all_subscriptions() {
     count=$((count + 1))
   done
 
-  log "INFO" "All subscription updates completed, all $count individual"
+  log "INFO" "All subscription updates completed, total $count One."
 }
 
 #######################################
-# Delete Subscription
+# Delete Subscriptions
 #######################################
 remove_subscription() {
   local name="$1"
@@ -250,7 +250,7 @@ remove_subscription() {
   [ -n "$name" ] || die "Usage: $(basename "$0") remove <Name>"
 
   sub_dir="$(subscription_dir_from_name "$OUTBOUNDS_DIR" "$name")"
-  [ -d "$sub_dir" ] || die "Subscription does not exist: $name"
+  [ -d "$sub_dir" ] || die "_Other Organiser: $name"
 
   rm -rf "$sub_dir"
   log "INFO" "Subscription deleted: $name"
@@ -262,7 +262,7 @@ remove_subscription() {
 list_subscriptions() {
   local sub_dir meta_file name updated node_count file count=0
 
-  printf "Subscriptions List:\n"
+  printf "Subscription List:\n"
 
   for sub_dir in "$OUTBOUNDS_DIR"/sub_*; do
     [ -d "$sub_dir" ] || continue
@@ -279,11 +279,11 @@ list_subscriptions() {
       node_count=$((node_count + 1))
     done
 
-    printf "  - %s (%s Node update on %s)\n" "$name" "$node_count" "${updated:-Unknown}"
+    printf "  - %s (%s Node, update to %s)\n" "$name" "$node_count" "${updated:-Unknown}"
     count=$((count + 1))
   done
 
-  [ "$count" -gt 0 ] || printf "  Not Subscription\n"
+  [ "$count" -gt 0 ] || printf "  No subscriptions at this time\n"
 }
 
 #######################################

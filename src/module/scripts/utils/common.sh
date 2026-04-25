@@ -1,8 +1,8 @@
 #!/system/bin/sh
-# General Auxiliary Functions
+# Universal support function
 
 #######################################
-# Writing Standard Log
+# Write Standard Log
 #######################################
 log() {
   local level="INFO"
@@ -46,7 +46,7 @@ detect_busybox() {
 }
 
 #######################################
-# To determine whether an order exists.
+# Find out if an order exists.
 #######################################
 command_exists() {
   command -v "$1" > /dev/null 2>&1
@@ -63,7 +63,7 @@ require_file() {
 }
 
 #######################################
-# Check if the directory exists
+# Check if directory exists
 #######################################
 require_dir() {
   local dir="$1"
@@ -77,13 +77,13 @@ require_dir() {
 #######################################
 ensure_dir() {
   local dir="$1"
-  local message="${2:-Cannot create directory: $dir}"
+  local message="${2:-Could not close temporary folder: %s: $dir}"
 
   [ -d "$dir" ] || mkdir -p "$dir" || die "$message"
 }
 
 #######################################
-# Conversion JSON String
+# Transfers JSON String
 #######################################
 json_escape() {
   printf "%s" "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
@@ -100,7 +100,7 @@ get_pid() {
 }
 
 #######################################
-# Get Assigned PID Run time
+# Fetch Assigned PID Runtime
 #######################################
 get_process_uptime() {
   local pid="$1"
@@ -120,7 +120,7 @@ get_process_uptime() {
 }
 
 #######################################
-# Major detection equipment IPv4 Address
+# Test equipment major IPv4 Address
 #######################################
 detect_primary_ipv4() {
   ip route get 1.1.1.1 2> /dev/null | sed -n 's/.* src \([0-9.]*\).*/\1/p' | head -1

@@ -1,12 +1,12 @@
 #!/system/bin/sh
-# Nodes and Subscriptions
+# Node and Subscription Support Functions
 
 readonly NODE_RECORD_DELIM="$(printf '\t')"
 NODE_SCAN_VALID_COUNT=0
 NODE_SCAN_SKIPPED_COUNT=0
 
 #######################################
-# Determines whether the node profile is available
+# Determining whether to configure files for nodes
 #######################################
 is_node_config_file() {
   local file="$1"
@@ -16,7 +16,7 @@ is_node_config_file() {
 }
 
 #######################################
-# Read Post Tabs
+# Read Out Site Tabs
 #######################################
 detect_outbound_tag() {
   local config_file="$1"
@@ -26,24 +26,24 @@ detect_outbound_tag() {
 }
 
 #######################################
-# Determines whether to keep tabs for the Chooser
+# Determining whether to keep tabs for the selector
 #######################################
 is_reserved_outbound_tag() {
   case "$1" in
-    direct | block | Proxy | Auto-Fastest | default) return 0 ;;
+    direct | block | proxy | Auto-Fastest | default) return 0 ;;
     *) return 1 ;;
   esac
 }
 
 #######################################
-# Clear Subscription Name
+# Synchronising folder
 #######################################
 sanitize_subscription_name() {
   printf "%s" "$1" | sed 's/[\/\\:*?"<>| ]/_/g'
 }
 
 #######################################
-# Can not open message
+# Retrieval directory path
 #######################################
 subscription_dir_from_name() {
   local outbounds_dir="$1"
@@ -53,7 +53,7 @@ subscription_dir_from_name() {
 }
 
 #######################################
-# Read subscription metadata fields
+# Read Subscription Metadata Fields
 #######################################
 read_subscription_meta_value() {
   local meta_file="$1"
@@ -81,7 +81,7 @@ EOF
 }
 
 #######################################
-# Can not open message
+# Get Subscription Display Name
 #######################################
 subscription_display_name() {
   local sub_dir="$1"
@@ -105,7 +105,7 @@ reset_node_scan_counters() {
 }
 
 #######################################
-# Write a node scanned record
+# Write a node scan record
 #######################################
 append_node_record() {
   local output_file="$1"
@@ -118,7 +118,7 @@ append_node_record() {
 }
 
 #######################################
-# Scan Nodes in Individual Directory
+# Scan nodes in a single directory
 #######################################
 scan_nodes_in_dir() {
   local dir="$1"
@@ -171,7 +171,7 @@ scan_all_nodes() {
 }
 
 #######################################
-# Read Current Node Record
+# Read the current node record
 #######################################
 find_current_node_from_scan() {
   local scan_file="$1"
@@ -187,7 +187,7 @@ find_current_node_from_scan() {
 }
 
 #######################################
-# Parsing Nodes
+# Resolve Nodes
 #######################################
 resolve_node_from_scan() {
   local scan_file="$1"
@@ -214,13 +214,13 @@ resolve_node_from_scan() {
 
   case "$match_count" in
     0)
-      die "Node found: $query"
+      die "Nodes not found: $query"
       ;;
     1)
       printf "%s\n" "$first_match"
       ;;
     *)
-      die "Could not close temporary folder: %s"
+      die "Multiple nodes of the same name were found, using a more precise filename or full path"
       ;;
   esac
 }

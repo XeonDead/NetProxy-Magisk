@@ -111,6 +111,15 @@
         "path": "./source/geosite-f-droid.srs"
       },
       {
+        "tag": "russia_blocked-community",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/russia_inside.srs",
+        "download_detour": "direct",
+        "update_interval": "24h",
+        "path": "./source/russia-inside.srs"
+      },
+      {
         "tag": "f-droid-repos",
         "format": "domain_suffix",
         "rules": [
@@ -219,7 +228,8 @@
           "ru-re-filter-geosite",
           "geosite-category-dev",
           "geosite-f-droid",
-          "f-droid-repos"
+          "f-droid-repos",
+          "russia_blocked-community"
         ],
         "action": "route",
         "outbound": "proxy"
