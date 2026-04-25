@@ -2,10 +2,10 @@
   "dns": {
     "servers": [
       {
-        "tag": "cloudflare",
+        "tag": "google",
         "type": "https",
-        "server": "1.1.1.1",
-        "detour": "Proxy"
+        "server": "8.8.8.8",
+        "detour": "proxy"
       },
       {
         "tag": "ali",
@@ -32,9 +32,7 @@
       },
       {
         "rule_set": [
-          "direct",
-          "alibaba",
-          "category-games@cn"
+          "direct"
         ],
         "action": "route",
         "server": "ali"
@@ -57,19 +55,11 @@
           {
             "rule_set": [
               "block",
-              "AWAvenue",
               "category-ads-all"
             ]
           }
         ],
         "action": "reject"
-      },
-      {
-        "rule_set": [
-          "cn-domain"
-        ],
-        "action": "route",
-        "server": "ali"
       },
       {
         "query_type": [
@@ -80,7 +70,6 @@
         "server": "remote"
       }
     ],
-    "independent_cache": true,
     "strategy": "ipv4_only"
   }
 }
