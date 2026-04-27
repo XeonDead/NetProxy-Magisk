@@ -26,6 +26,7 @@
         "type": "remote",
         "format": "binary",
         "url": "https://raw.githubusercontent.com/CHIZI-0618/v2ray-rules-dat/release/singbox_rule_set/geosite-category-ads-all.srs",
+        "http_client": "default-http-client",
         "update_interval": "24h",
         "path": "./source/category-ads-all.srs"
       },
@@ -34,7 +35,7 @@
         "type": "remote",
         "format": "binary",
         "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-ru-blocked.srs",
-        "download_detour": "direct",
+        "http_client": "default-http-client",
         "update_interval": "6h",
         "path": "./source/geoip-ru-blocked.srs"
       },
@@ -43,7 +44,7 @@
         "type": "remote",
         "format": "binary",
         "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-ru-blocked-community.srs",
-        "download_detour": "direct",
+        "http_client": "default-http-client",
         "update_interval": "6h",
         "path": "./source/geoip-ru-blocked-community.srs"
       },
@@ -52,7 +53,7 @@
         "type": "remote",
         "format": "binary",
         "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-ru-blocked-all.srs",
-        "download_detour": "direct",
+        "http_client": "default-http-client",
         "update_interval": "6h",
         "path": "./source/geosite-ru-blocked-all.srs"
       },
@@ -61,7 +62,7 @@
         "type": "remote",
         "format": "binary",
         "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-category-ads-all.srs",
-        "download_detour": "direct",
+        "http_client": "default-http-client",
         "update_interval": "6h",
         "path": "./source/geosite-category-ads-all.srs"
       },
@@ -70,7 +71,7 @@
         "type": "remote",
         "format": "binary",
         "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-ru-available-only-inside.srs",
-        "download_detour": "direct",
+        "http_client": "default-http-client",
         "update_interval": "6h",
         "path": "./source/geosite-ru-inside.srs"
       },
@@ -79,7 +80,7 @@
         "type": "remote",
         "format": "binary",
         "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-re-filter.srs",
-        "download_detour": "direct",
+        "http_client": "default-http-client",
         "update_interval": "6h",
         "path": "./source/geoip-refilter.srs"
       },
@@ -88,7 +89,7 @@
         "type": "remote",
         "format": "binary",
         "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-refilter.srs",
-        "download_detour": "direct",
+        "http_client": "default-http-client",
         "update_interval": "6h",
         "path": "./source/geosite-refilter.srs"
       },
@@ -97,7 +98,7 @@
         "type": "remote",
         "format": "binary",
         "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-category-dev.srs",
-        "download_detour": "direct",
+        "http_client": "default-http-client",
         "update_interval": "6h",
         "path": "./source/geosite-category-dev.srs"
       },
@@ -106,7 +107,7 @@
         "type": "remote",
         "format": "binary",
         "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-f-droid.srs",
-        "download_detour": "direct",
+        "http_client": "default-http-client",
         "update_interval": "6h",
         "path": "./source/geosite-f-droid.srs"
       },
@@ -115,7 +116,7 @@
         "type": "remote",
         "format": "binary",
         "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/russia_inside.srs",
-        "download_detour": "direct",
+        "http_client": "default-http-client",
         "update_interval": "6h",
         "path": "./source/russia-inside.srs"
       },
@@ -124,7 +125,7 @@
         "type": "remote",
         "format": "binary",
         "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/telegram.srs",
-        "download_detour": "direct",
+        "http_client": "default-http-client",
         "update_interval": "6h",
         "path": "./source/telegram.srs"
       },
