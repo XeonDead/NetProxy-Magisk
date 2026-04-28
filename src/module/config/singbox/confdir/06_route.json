@@ -156,19 +156,7 @@
     ],
     "rules": [
       {
-        "action": "sniff",
-        "timeout": "1s"
-      },
-      {
         "action": "sniff-override-destination"
-      },
-      {
-        "ip_cidr": [
-          "198.18.0.0/15",
-          "fc00::/18"
-        ],
-        "action": "route",
-        "outbound": "proxy"
       },
       {
         "type": "logical",
@@ -182,6 +170,14 @@
           }
         ],
         "action": "hijack-dns"
+      },
+      {
+        "ip_cidr": [
+          "198.18.0.0/15",
+          "fc00::/18"
+        ],
+        "action": "route",
+        "outbound": "proxy"
       },
       {
         "rule_set": [
@@ -230,7 +226,7 @@
         "action": "resolve",
         "match_only": true,
         "strategy": "ipv4_only",
-        "server": "google"
+        "server": "quad9"
       },
       {
         "rule_set": [

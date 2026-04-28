@@ -2,9 +2,9 @@
   "dns": {
     "servers": [
       {
-        "tag": "google",
+        "tag": "quad9",
         "type": "https",
-        "server": "8.8.8.8",
+        "server": "9.9.9.9",
         "detour": "proxy"
       },
       {
@@ -55,7 +55,8 @@
           {
             "rule_set": [
               "block",
-              "category-ads-all"
+              "category-ads-all",
+              "geo-ads-all"
             ]
           }
         ],
