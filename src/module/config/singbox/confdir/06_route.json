@@ -226,7 +226,7 @@
         "action": "resolve",
         "match_only": true,
         "strategy": "ipv4_only",
-        "server": "quad9"
+        "server": "google"
       },
       {
         "rule_set": [
