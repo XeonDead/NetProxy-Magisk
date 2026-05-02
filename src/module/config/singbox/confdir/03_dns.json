@@ -2,9 +2,9 @@
   "dns": {
     "servers": [
       {
-        "tag": "quad9",
+        "tag": "google",
         "type": "https",
-        "server": "9.9.9.9",
+        "server": "8.8.8.8",
         "detour": "proxy"
       },
       {
