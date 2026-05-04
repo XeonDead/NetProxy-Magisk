@@ -1,7 +1,7 @@
 {
   "route": {
-    "default_domain_resolver": "ali",
-    "default_http_client": "rule-set-download",
+    "default_http_client": "default-http-client",
+    "default_domain_resolver": "malwlink",
     "rule_set": [
       {
         "tag": "block",
@@ -103,6 +103,24 @@
         "path": "./source/geosite-category-dev.srs"
       },
       {
+        "tag": "geosite-category-ai-cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-category-ai-cn.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-category-ai-cn.srs"
+      },
+      {
+        "tag": "geosite-category-ai-!cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-category-ai-!cn.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-category-ai-!cn.srs"
+      },
+      {
         "tag": "geosite-f-droid",
         "type": "remote",
         "format": "binary",
@@ -138,7 +156,45 @@
               "izzyondroid.org",
               "izzysoft.de",
               "futo.org",
-              "guardianproject.info"
+              "guardianproject.info",
+              "api.spaceidle.xyz"
+            ]
+          }
+        ]
+      },
+      {
+        "tag": "ai-proxy-suffix",
+        "format": "domain_suffix",
+        "rules": [
+          {
+            "domain_suffix": [
+              "openai.com",
+              "chatgpt.com",
+              "oaistatic.com",
+              "oaiusercontent.com",
+              "anthropic.com",
+              "claude.ai",
+              "perplexity.ai",
+              "poe.com",
+              "midjourney.com",
+              "meta.ai",
+              "civitai.com"
+            ]
+          }
+        ]
+      },
+      {
+        "tag": "ai-proxy-keyword",
+        "format": "domain_keyword",
+        "rules": [
+          {
+            "domain_keyword": [
+              "openai",
+              "anthropic",
+              "claude",
+              "chatgpt",
+              "gemini",
+              "copilot"
             ]
           }
         ]
@@ -216,7 +272,7 @@
         "action": "resolve",
         "match_only": true,
         "strategy": "ipv4_only",
-        "server": "google"
+        "server": "malwlink"
       },
       {
         "rule_set": [
@@ -233,9 +289,13 @@
           "ru-re-filter-geoip",
           "ru-re-filter-geosite",
           "geosite-category-dev",
+          "geosite-category-ai-cn",
+          "geosite-category-ai-!cn",
           "geosite-f-droid",
           "russia_blocked-community",
           "telegram",
+          "ai-proxy-suffix",
+          "ai-proxy-keyword",
           "f-droid-repos"
         ],
         "action": "route",

@@ -2,15 +2,15 @@
   "dns": {
     "servers": [
       {
-        "tag": "google",
-        "type": "https",
-        "server": "8.8.8.8",
-        "detour": "proxy"
+        "tag": "malwlink",
+        "type": "udp",
+        "server": "193.23.209.189"
       },
       {
-        "tag": "ali",
+        "tag": "malwlink-cf",
         "type": "https",
-        "server": "223.5.5.5"
+        "server": "5u35p8m9i7.cloudflare-gateway.com",
+        "detour": "proxy"
       },
       {
         "tag": "remote",
@@ -23,7 +23,7 @@
       {
         "clash_mode": "Direct",
         "action": "route",
-        "server": "ali"
+        "server": "malwlink"
       },
       {
         "clash_mode": "Global",
@@ -35,7 +35,7 @@
           "direct"
         ],
         "action": "route",
-        "server": "ali"
+        "server": "malwlink"
       },
       {
         "rule_set": [

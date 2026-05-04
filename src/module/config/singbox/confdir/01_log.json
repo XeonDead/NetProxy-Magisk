@@ -1,8 +1,8 @@
 {
-  "log": {
-    "disabled": false,
-    "level": "warn",
-    "output": "/data/adb/modules/netproxy/logs/sing-box.log",
-    "timestamp": true
-  }
+    "log": {
+        "disabled": false,
+        "level": "warn",
+        "output": "/data/adb/modules/netproxy/logs/sing-box.log",
+        "timestamp": true
+    }
 }
