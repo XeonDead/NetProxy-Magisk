@@ -67,13 +67,13 @@
         "path": "./source/geosite-category-ads-all.srs"
       },
       {
-        "tag": "ru-inside",
+        "tag": "ru-available-only-inside",
         "type": "remote",
         "format": "binary",
         "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-ru-available-only-inside.srs",
         "http_client": "default-http-client",
         "update_interval": "6h",
-        "path": "./source/geosite-ru-inside.srs"
+        "path": "./source/geosite-ru-available-only-inside.srs"
       },
       {
         "tag": "ru-re-filter-geoip",
@@ -130,13 +130,22 @@
         "path": "./source/geosite-f-droid.srs"
       },
       {
-        "tag": "russia_blocked-community",
+        "tag": "blocked-russia-int-ext-sites",
         "type": "remote",
         "format": "binary",
         "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/russia_inside.srs",
         "http_client": "default-http-client",
         "update_interval": "6h",
-        "path": "./source/russia-inside.srs"
+        "path": "./source/blocked-russia-int-ext-sites.srs"
+      },
+      {
+        "tag": "inside-russia-from-outside",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/russia_outside.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/inside-russia-from-outside.srs"
       },
       {
         "tag": "telegram",
@@ -260,10 +269,9 @@
           "geosite-category-ai-cn",
           "geosite-category-ai-!cn",
           "geosite-f-droid",
-          "russia_blocked-community",
+          "blocked-russia-int-ext-sites",
           "telegram",
           "ai-proxy-suffix",
-          "ai-proxy-keyword",
           "f-droid-repos"
         ],
         "action": "route",
@@ -271,7 +279,8 @@
       },
       {
         "rule_set": [
-          "ru-inside"
+          "ru-available-only-inside",
+          "inside-russia-from-outside"
         ],
         "action": "route",
         "outbound": "direct"
