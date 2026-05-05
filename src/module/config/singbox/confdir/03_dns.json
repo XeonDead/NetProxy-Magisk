@@ -17,9 +17,25 @@
         "type": "fakeip",
         "inet4_range": "198.18.0.0/15",
         "inet6_range": "fc00::/18"
+      },
+      {
+        "tag": "malw-hosts",
+        "type": "hosts",
+        "path": [
+          "./source/malw-dns.hosts"
+        ]
       }
     ],
     "rules": [
+      {
+        "action": "evaluate",
+        "server": "malw-hosts"
+      },
+      {
+        "match_response": true,
+        "ip_accept_any": true,
+        "action": "respond"
+      },
       {
         "clash_mode": "Direct",
         "action": "route",
