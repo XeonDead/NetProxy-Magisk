@@ -168,33 +168,8 @@
         "rules": [
           {
             "domain_suffix": [
-              "openai.com",
-              "chatgpt.com",
-              "oaistatic.com",
-              "oaiusercontent.com",
-              "anthropic.com",
-              "claude.ai",
-              "perplexity.ai",
-              "poe.com",
               "midjourney.com",
-              "meta.ai",
               "civitai.com"
-            ]
-          }
-        ]
-      },
-      {
-        "tag": "ai-proxy-keyword",
-        "format": "domain_keyword",
-        "rules": [
-          {
-            "domain_keyword": [
-              "openai",
-              "anthropic",
-              "claude",
-              "chatgpt",
-              "gemini",
-              "copilot"
             ]
           }
         ]
@@ -276,13 +251,6 @@
       },
       {
         "rule_set": [
-          "ru-inside"
-        ],
-        "action": "route",
-        "outbound": "direct"
-      },
-      {
-        "rule_set": [
           "ru-blocked-ip",
           "ru-blocked-ip-community",
           "ru-blocked-site",
@@ -300,6 +268,13 @@
         ],
         "action": "route",
         "outbound": "proxy"
+      },
+      {
+        "rule_set": [
+          "ru-inside"
+        ],
+        "action": "route",
+        "outbound": "direct"
       },
       {
         "protocol": [
