@@ -79,7 +79,7 @@ su -c '/data/adb/modules/netproxy/scripts/cli node delay all'
 已生成的 sing-box 节点也可以重新导出为分享链接：
 
 ```sh
-su -c '/data/adb/modules/netproxy/scripts/cli node export /data/adb/modules/netproxy/config/singbox/outbounds/default/default.json'
+su -c '/data/adb/modules/netproxy/scripts/cli node export 节点名称'
 ```
 
 ## 常见建议

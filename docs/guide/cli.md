@@ -69,7 +69,7 @@ su -c '/data/adb/modules/netproxy/scripts/cli node import /sdcard/clash.yaml'
 
 ```sh
 su -c '/data/adb/modules/netproxy/scripts/cli node delay all'
-su -c '/data/adb/modules/netproxy/scripts/cli node export /data/adb/modules/netproxy/config/singbox/outbounds/default/default.json'
+su -c '/data/adb/modules/netproxy/scripts/cli node export 节点名称'
 ```
 
 ## mode

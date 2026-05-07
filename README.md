@@ -204,7 +204,7 @@ Default values in `module.conf`:
 - `OUTBOUND_MODE=rule`
 - `SELECTOR_MODE=urltest`
 - `GMS_FIX=0`
-- `CURRENT_CONFIG=/data/adb/modules/netproxy/config/singbox/outbounds/default/default.json`
+- `CURRENT_CONFIG=` (empty until a node is selected)
 
 Common defaults in `tproxy.conf`:
 

@@ -30,7 +30,7 @@ detect_outbound_tag() {
 #######################################
 is_reserved_outbound_tag() {
   case "$1" in
-    direct | block | Proxy | Auto-Fastest | default) return 0 ;;
+    direct | block | Proxy | Auto-Fastest) return 0 ;;
     *) return 1 ;;
   esac
 }

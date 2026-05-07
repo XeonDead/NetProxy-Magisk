@@ -29,17 +29,17 @@ su -c '/data/adb/modules/netproxy/scripts/cli sub add 我的订阅 https://examp
 su -c '/data/adb/modules/netproxy/scripts/cli sub update-all'
 ```
 
-## 3. 启动服务
-
-```sh
-su -c /data/adb/modules/netproxy/scripts/cli service start
-```
-
-## 4. 切换节点
+## 3. 选择节点
 
 ```sh
 su -c '/data/adb/modules/netproxy/scripts/cli node list'
 su -c '/data/adb/modules/netproxy/scripts/cli node use 节点名称'
+```
+
+## 4. 启动服务
+
+```sh
+su -c /data/adb/modules/netproxy/scripts/cli service start
 ```
 
 ## 5. 确认出站模式

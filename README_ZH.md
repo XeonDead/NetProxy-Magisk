@@ -203,7 +203,7 @@ su -c /data/adb/modules/netproxy/scripts/cli help
 - `OUTBOUND_MODE=rule`
 - `SELECTOR_MODE=urltest`
 - `GMS_FIX=0`
-- `CURRENT_CONFIG=/data/adb/modules/netproxy/config/singbox/outbounds/default/default.json`
+- `CURRENT_CONFIG=`（导入并选择节点后写入）
 
 `tproxy.conf` 默认项中较常用的部分：
 

@@ -49,7 +49,7 @@
 - 默认值：
 
 ```text
-/data/adb/modules/netproxy/config/singbox/outbounds/default/default.json
+CURRENT_CONFIG=""
 ```
 
 - 作用：记录当前选中的 sing-box 节点配置文件

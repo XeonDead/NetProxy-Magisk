@@ -77,12 +77,12 @@ NetProxy 会在服务启动时，根据：
 - Secret：`singbox`
 - External UI：`/data/adb/modules/netproxy/bin/zashboard`
 
-## 当前默认节点路径
+## 当前节点路径
 
-默认 `CURRENT_CONFIG` 为：
+默认 `CURRENT_CONFIG` 为空。导入并选择节点后，它会指向当前使用的节点文件，例如：
 
 ```text
-/data/adb/modules/netproxy/config/singbox/outbounds/default/default.json
+/data/adb/modules/netproxy/config/singbox/outbounds/default/example.json
 ```
 
 如果你切换到其他订阅目录中的节点，这个路径会随之变化。

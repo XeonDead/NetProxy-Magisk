@@ -37,7 +37,7 @@ show_help() {
   $(basename "$0") parse "vless://..."
   $(basename "$0") file "/sdcard/clash.yaml"
   $(basename "$0") sub "https://example.com/sub" "$OUTBOUNDS_DIR/sub_demo"
-  $(basename "$0") convert "$OUTBOUNDS_DIR/default/default.json"
+  $(basename "$0") convert "$OUTBOUNDS_DIR/default/example.json"
 EOF
 }
 
