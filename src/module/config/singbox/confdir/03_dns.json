@@ -2,9 +2,9 @@
   "dns": {
     "servers": [
       {
-        "tag": "malwlink",
+        "tag": "adguard",
         "type": "udp",
-        "server": "193.23.209.189"
+        "server": "94.140.14.14"
       },
       {
         "tag": "malwlink-cf",
@@ -39,7 +39,7 @@
       {
         "clash_mode": "Direct",
         "action": "route",
-        "server": "malwlink"
+        "server": "adguard"
       },
       {
         "clash_mode": "Global",
@@ -51,7 +51,7 @@
           "direct"
         ],
         "action": "route",
-        "server": "malwlink"
+        "server": "adguard"
       },
       {
         "rule_set": [

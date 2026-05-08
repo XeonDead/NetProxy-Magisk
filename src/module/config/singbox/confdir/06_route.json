@@ -1,7 +1,7 @@
 {
   "route": {
     "default_http_client": "default-http-client",
-    "default_domain_resolver": "malwlink",
+    "default_domain_resolver": "adguard",
     "rule_set": [
       {
         "tag": "block",
@@ -256,7 +256,7 @@
         "action": "resolve",
         "match_only": true,
         "strategy": "ipv4_only",
-        "server": "malwlink"
+        "server": "adguard"
       },
       {
         "rule_set": [
