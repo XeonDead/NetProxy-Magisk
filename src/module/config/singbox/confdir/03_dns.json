@@ -71,12 +71,14 @@
           {
             "rule_set": [
               "block",
-              "category-ads-all",
-              "geo-ads-all"
+              "geosite-win-spy",
+              "geosite-category-ads",
+              "geosite-torrent"
             ]
           }
         ],
-        "action": "reject"
+        "action": "reject",
+        "response_rcode": "success"
       },
       {
         "query_type": [

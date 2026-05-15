@@ -76,6 +76,51 @@
         "path": "./source/geosite-torrent.srs"
       },
       {
+        "tag": "geosite-google-play",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/google-play.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-google-play.srs"
+      },
+      {
+        "tag": "geosite-github",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/github.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-github.srs"
+      },
+      {
+        "tag": "geosite-youtube",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/youtube.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-youtube.srs"
+      },
+      {
+        "tag": "geosite-telegram",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/telegram.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-telegram.srs"
+      },
+      {
+        "tag": "geosite-win-spy",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/win-spy.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-win-spy.srs"
+      },
+      {
         "tag": "geoip-direct",
         "type": "remote",
         "format": "binary",
@@ -180,6 +225,7 @@
           {
             "rule_set": [
               "block",
+              "geosite-win-spy",
               "geosite-category-ads",
               "geosite-torrent"
             ]
@@ -208,6 +254,10 @@
       {
         "rule_set": [
           "geosite-category-geoblock-ru",
+          "geosite-google-play",
+          "geosite-github",
+          "geosite-youtube",
+          "geosite-telegram",
           "ai-proxy-suffix",
           "f-droid-repos"
         ],
@@ -217,7 +267,7 @@
       {
         "rule_set": [
           "geosite-whitelist",
-          "geosite-private".
+          "geosite-private",
           "geoip-whitelist",
           "geoip-private",
           "geosite-category-ru",
