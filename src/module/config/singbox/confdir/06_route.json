@@ -1,7 +1,7 @@
 {
   "route": {
     "default_http_client": "default-http-client",
-    "default_domain_resolver": "adguard",
+    "default_domain_resolver": "google",
     "rule_set": [
       {
         "tag": "block",
@@ -22,139 +22,85 @@
         "path": "./source/proxy.json"
       },
       {
-        "tag": "category-ads-all",
+        "tag": "geosite-category-ads",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/CHIZI-0618/v2ray-rules-dat/release/singbox_rule_set/geosite-category-ads-all.srs",
-        "http_client": "default-http-client",
-        "update_interval": "24h",
-        "path": "./source/category-ads-all.srs"
-      },
-      {
-        "tag": "ru-blocked-ip",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-ru-blocked.srs",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/category-ads.srs",
         "http_client": "default-http-client",
         "update_interval": "6h",
-        "path": "./source/geoip-ru-blocked.srs"
+        "path": "./source/geosite-category-ads.srs"
       },
       {
-        "tag": "ru-blocked-ip-community",
+        "tag": "geosite-whitelist",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-ru-blocked-community.srs",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/whitelist.srs",
         "http_client": "default-http-client",
         "update_interval": "6h",
-        "path": "./source/geoip-ru-blocked-community.srs"
+        "path": "./source/geosite-whitelist.srs"
       },
       {
-        "tag": "ru-blocked-site",
+        "tag": "geosite-category-ru",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-ru-blocked-all.srs",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/category-ru.srs",
         "http_client": "default-http-client",
         "update_interval": "6h",
-        "path": "./source/geosite-ru-blocked-all.srs"
+        "path": "./source/geosite-category-ru.srs"
       },
       {
-        "tag": "geo-ads-all",
+        "tag": "geosite-category-geoblock-ru",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-category-ads-all.srs",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/category-geoblock-ru.srs",
         "http_client": "default-http-client",
         "update_interval": "6h",
-        "path": "./source/geosite-category-ads-all.srs"
+        "path": "./source/geosite-category-geoblock-ru.srs"
       },
       {
-        "tag": "ru-available-only-inside",
+        "tag": "geosite-private",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-ru-available-only-inside.srs",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/private.srs",
         "http_client": "default-http-client",
         "update_interval": "6h",
-        "path": "./source/geosite-ru-available-only-inside.srs"
+        "path": "./source/geosite-private.srs"
       },
       {
-        "tag": "ru-re-filter-geoip",
+        "tag": "geosite-torrent",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geoip/geoip-re-filter.srs",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/torrent.srs",
         "http_client": "default-http-client",
         "update_interval": "6h",
-        "path": "./source/geoip-refilter.srs"
+        "path": "./source/geosite-torrent.srs"
       },
       {
-        "tag": "ru-re-filter-geosite",
+        "tag": "geoip-direct",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-refilter.srs",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geoip/release/sing-box/direct.srs",
         "http_client": "default-http-client",
         "update_interval": "6h",
-        "path": "./source/geosite-refilter.srs"
+        "path": "./source/geoip-direct.srs"
       },
       {
-        "tag": "geosite-category-dev",
+        "tag": "geoip-whitelist",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-category-dev.srs",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geoip/release/sing-box/whitelist.srs",
         "http_client": "default-http-client",
         "update_interval": "6h",
-        "path": "./source/geosite-category-dev.srs"
+        "path": "./source/geoip-whitelist.srs"
       },
       {
-        "tag": "geosite-category-ai-cn",
+        "tag": "geoip-private",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-category-ai-cn.srs",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geoip/release/sing-box/private.srs",
         "http_client": "default-http-client",
         "update_interval": "6h",
-        "path": "./source/geosite-category-ai-cn.srs"
-      },
-      {
-        "tag": "geosite-category-ai-!cn",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-category-ai-!cn.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-category-ai-!cn.srs"
-      },
-      {
-        "tag": "geosite-f-droid",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/release/sing-box/rule-set-geosite/geosite-f-droid.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-f-droid.srs"
-      },
-      {
-        "tag": "blocked-russia-int-ext-sites",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/russia_inside.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/blocked-russia-int-ext-sites.srs"
-      },
-      {
-        "tag": "inside-russia-from-outside",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/russia_outside.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/inside-russia-from-outside.srs"
-      },
-      {
-        "tag": "telegram",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/telegram.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/telegram.srs"
+        "path": "./source/geoip-private.srs"
       },
       {
         "tag": "f-droid-repos",
@@ -234,12 +180,13 @@
           {
             "rule_set": [
               "block",
-              "category-ads-all",
-              "geo-ads-all"
+              "geosite-category-ads",
+              "geosite-torrent"
             ]
           }
         ],
-        "action": "reject"
+        "action": "reject",
+        "rcode": "success"
       },
       {
         "ip_is_private": true,
@@ -256,21 +203,11 @@
         "action": "resolve",
         "match_only": true,
         "strategy": "ipv4_only",
-        "server": "adguard"
+        "server": "alidns"
       },
       {
         "rule_set": [
-          "ru-blocked-ip",
-          "ru-blocked-ip-community",
-          "ru-blocked-site",
-          "ru-re-filter-geoip",
-          "ru-re-filter-geosite",
-          "geosite-category-dev",
-          "geosite-category-ai-cn",
-          "geosite-category-ai-!cn",
-          "geosite-f-droid",
-          "blocked-russia-int-ext-sites",
-          "telegram",
+          "geosite-category-geoblock-ru",
           "ai-proxy-suffix",
           "f-droid-repos"
         ],
@@ -279,8 +216,12 @@
       },
       {
         "rule_set": [
-          "ru-available-only-inside",
-          "inside-russia-from-outside"
+          "geosite-whitelist",
+          "geosite-private".
+          "geoip-whitelist",
+          "geoip-private",
+          "geosite-category-ru",
+          "geoip-direct"
         ],
         "action": "route",
         "outbound": "direct"

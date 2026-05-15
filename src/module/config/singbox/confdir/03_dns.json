@@ -2,14 +2,14 @@
   "dns": {
     "servers": [
       {
-        "tag": "adguard",
+        "tag": "google",
         "type": "udp",
-        "server": "94.140.14.14"
+        "server": "8.8.8.8"
       },
       {
-        "tag": "malwlink-cf",
+        "tag": "alidns",
         "type": "https",
-        "server": "5u35p8m9i7.cloudflare-gateway.com",
+        "server": "dns.alidns.com",
         "detour": "proxy"
       },
       {
@@ -39,7 +39,7 @@
       {
         "clash_mode": "Direct",
         "action": "route",
-        "server": "adguard"
+        "server": "google"
       },
       {
         "clash_mode": "Global",
