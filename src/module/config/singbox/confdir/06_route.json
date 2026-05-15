@@ -112,6 +112,96 @@
         "path": "./source/geosite-telegram.srs"
       },
       {
+        "tag": "geosite-microsoft",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/microsoft.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-microsoft.srs"
+      },
+      {
+        "tag": "geosite-apple",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/apple.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-apple.srs"
+      },
+      {
+        "tag": "geosite-epicgames",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/epicgames.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-epicgames.srs"
+      },
+      {
+        "tag": "geosite-riot",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/riot.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-riot.srs"
+      },
+      {
+        "tag": "geosite-escapefromtarkov",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/escapefromtarkov.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-escapefromtarkov.srs"
+      },
+      {
+        "tag": "geosite-steam",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/steam.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-steam.srs"
+      },
+      {
+        "tag": "geosite-twitch",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/twitch.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-twitch.srs"
+      },
+      {
+        "tag": "geosite-twitch-ads",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/twitch-ads.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-twitch-ads.srs"
+      },
+      {
+        "tag": "geosite-pinterest",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/pinterest.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-pinterest.srs"
+      },
+      {
+        "tag": "geosite-faceit",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/faceit.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/geosite-faceit.srs"
+      },
+      {
         "tag": "geosite-win-spy",
         "type": "remote",
         "format": "binary",
@@ -256,6 +346,7 @@
           "geosite-category-geoblock-ru",
           "geosite-google-play",
           "geosite-github",
+          "geosite-twitch-ads",
           "geosite-youtube",
           "geosite-telegram",
           "ai-proxy-suffix",
@@ -271,7 +362,16 @@
           "geoip-whitelist",
           "geoip-private",
           "geosite-category-ru",
-          "geoip-direct"
+          "geoip-direct",
+          "geosite-microsoft",
+          "geosite-apple",
+          "geosite-epicgames",
+          "geosite-riot",
+          "geosite-escapefromtarkov",
+          "geosite-steam",
+          "geosite-twitch",
+          "geosite-pinterest",
+          "geosite-faceit"
         ],
         "action": "route",
         "outbound": "direct"
@@ -284,6 +384,6 @@
       }
     ],
     "find_process": true,
-    "final": "direct"
+    "final": "proxy"
   }
 }
