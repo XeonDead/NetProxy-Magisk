@@ -2,14 +2,14 @@
   "dns": {
     "servers": [
       {
-        "tag": "google",
+        "tag": "yandex",
         "type": "udp",
-        "server": "8.8.8.8"
+        "server": "77.88.8.8"
       },
       {
-        "tag": "alidns",
+        "tag": "google",
         "type": "https",
-        "server": "dns.alidns.com",
+        "server": "8.8.8.8",
         "detour": "proxy"
       },
       {
@@ -39,7 +39,7 @@
       {
         "clash_mode": "Direct",
         "action": "route",
-        "server": "google"
+        "server": "yandex"
       },
       {
         "clash_mode": "Global",

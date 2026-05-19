@@ -1,7 +1,7 @@
 {
   "route": {
     "default_http_client": "default-http-client",
-    "default_domain_resolver": "google",
+    "default_domain_resolver": "yandex",
     "rule_set": [
       {
         "tag": "block",
@@ -339,7 +339,7 @@
         "action": "resolve",
         "match_only": true,
         "strategy": "ipv4_only",
-        "server": "alidns"
+        "server": "google"
       },
       {
         "rule_set": [
