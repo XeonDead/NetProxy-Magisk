@@ -31,6 +31,15 @@
         "path": "./source/geosite-category-ads.srs"
       },
       {
+        "tag": "hagezi-pro-adlist",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://github.com/zxc-rv/ad-filter/releases/latest/download/adlist.srs",
+        "http_client": "default-http-client",
+        "update_interval": "6h",
+        "path": "./source/hagezi-pro-adlist.srs"
+      },
+      {
         "tag": "geosite-whitelist",
         "type": "remote",
         "format": "binary",
@@ -317,6 +326,7 @@
               "block",
               "geosite-win-spy",
               "geosite-category-ads",
+              "hagezi-pro-adlist",
               "geosite-torrent"
             ]
           }
