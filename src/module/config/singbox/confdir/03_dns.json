@@ -89,6 +89,11 @@
         "server": "remote"
       }
     ],
-    "strategy": "ipv4_only"
+    "strategy": "ipv4_only",
+    "cache_capacity": 2048,
+    "optimistic": {
+      "enabled": true,
+      "timeout": "1d"
+    }
   }
 }
