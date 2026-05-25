@@ -8,7 +8,7 @@
       },
       {
         "tag": "google",
-        "type": "https",
+        "type": "udp",
         "server": "8.8.8.8",
         "detour": "proxy"
       },
