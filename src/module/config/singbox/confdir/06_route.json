@@ -1,7 +1,7 @@
 {
   "route": {
     "default_http_client": "rule-set-download",
-    "default_domain_resolver": "yandex",
+    "default_domain_resolver": "agh-local",
     "rule_set": [
       {
         "tag": [
@@ -12,15 +12,6 @@
         "type": "local",
         "format": "source",
         "path": "./rules/local/{tag}.json"
-      },
-      {
-        "tag": "hagezi-pro-adlist",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://github.com/zxc-rv/ad-filter/releases/latest/download/adlist.srs",
-        "http_client": "rule-set-download",
-        "update_interval": "24h",
-        "path": "./rules/remote/hagezi-pro-adlist.srs"
       },
       {
         "tag": "geoip-ru",
@@ -83,23 +74,6 @@
         "outbound": "direct"
       },
       {
-        "type": "logical",
-        "mode": "and",
-        "rules": [
-          {
-            "clash_mode": "AllowAds",
-            "invert": true
-          },
-          {
-            "rule_set": [
-              "block",
-              "hagezi-pro-adlist"
-            ]
-          }
-        ],
-        "action": "reject"
-      },
-      {
         "domain_suffix": [
           "local",
           "lan"
@@ -110,7 +84,7 @@
         "action": "resolve",
         "match_only": true,
         "strategy": "prefer_ipv4",
-        "server": "google"
+        "server": "agh-local"
       },
       {
         "rule_set": [

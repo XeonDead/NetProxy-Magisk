@@ -2,126 +2,19 @@
   "dns": {
     "servers": [
       {
-        "type": "hosts",
-        "tag": "hosts",
-        "predefined": {
-          "dns.yandex": [
-            "77.88.8.8",
-            "77.88.8.1"
-          ],
-          "dns.google": [
-            "8.8.8.8",
-            "8.8.4.4"
-          ],
-          "dns.alidns.com": [
-            "223.5.5.5",
-            "223.6.6.6"
-          ]
-        }
-      },
-      {
-        "tag": "dns-proxy",
-        "type": "group",
-        "servers": [
-          "ali",
-          "google"
-        ]
-      },
-      {
-        "tag": "dns-direct",
-        "type": "group",
-        "servers": [
-          "yandex"
-        ]
-      },
-      {
-        "tag": "yandex",
-        "type": "https",
-        "server": "dns.yandex",
-        "domain_resolver": "hosts"
-      },
-      {
-        "tag": "google",
-        "type": "https",
-        "server": "dns.google",
-        "domain_resolver": "hosts",
-        "detour": "Proxy"
-      },
-      {
-        "tag": "ali",
-        "type": "https",
-        "server": "dns.alidns.com",
-        "domain_resolver": "hosts"
-      },
-      {
-        "tag": "malw-hosts",
-        "type": "hosts",
-        "path": [
-          "./rules/local/malw-dns.hosts"
-        ]
+        "tag": "agh-local",
+        "type": "udp",
+        "server": "127.0.0.1",
+        "server_port": 5591
       }
     ],
     "rules": [
       {
-        "action": "evaluate",
-        "server": "malw-hosts"
-      },
-      {
-        "match_response": true,
-        "ip_accept_any": true,
-        "action": "respond"
-      },
-      {
-        "clash_mode": "Direct",
         "action": "route",
-        "server": "dns-direct"
-      },
-      {
-        "clash_mode": "Global",
-        "action": "route",
-        "server": "dns-proxy"
-      },
-      {
-        "rule_set": [
-          "direct"
-        ],
-        "action": "route",
-        "server": "dns-direct"
-      },
-      {
-        "rule_set": [
-          "proxy"
-        ],
-        "action": "route",
-        "server": "dns-proxy"
-      },
-      {
-        "type": "logical",
-        "mode": "and",
-        "rules": [
-          {
-            "clash_mode": "AllowAds",
-            "invert": true
-          },
-          {
-            "rule_set": [
-              "block",
-              "hagezi-pro-adlist"
-            ]
-          }
-        ],
-        "action": "reject"
-      },
-      {
-        "query_type": [
-          "A",
-          "AAAA"
-        ],
-        "action": "route",
-        "server": "remote"
+        "server": "agh-local"
       }
     ],
-    "final": "dns-proxy",
+    "final": "agh-local",
     "optimistic": true,
     "strategy": "prefer_ipv4"
   }
