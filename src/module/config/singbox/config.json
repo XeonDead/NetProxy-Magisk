@@ -41,145 +41,26 @@
   "dns": {
     "servers": [
       {
-        "tag": "dns-proxy",
-        "type": "group",
-        "servers": [
-          "ali",
-          "google",
-          "adguard"
-        ]
-      },
-      {
-        "tag": "dns-direct",
-        "type": "group",
-        "servers": [
-          "yandex",
-          "adguard"
-        ]
-      },
-      {
-        "type": "hosts",
-        "tag": "hosts",
-        "predefined": {
-          "dns.yandex": [
-            "77.88.8.8",
-            "77.88.8.1"
-          ],
-          "dns.google": [
-            "8.8.8.8",
-            "8.8.4.4"
-          ],
-          "dns.alidns.com": [
-            "223.5.5.5",
-            "223.6.6.6"
-          ],
-          "dns.adguard.com": [
-            "94.140.14.14",
-            "94.140.15.15"
-          ]
-        }
-      },
-      {
-        "tag": "yandex",
-        "type": "https",
-        "server": "dns.yandex",
-        "domain_resolver": "hosts"
-      },
-      {
-        "tag": "google",
-        "type": "https",
-        "server": "dns.google",
-        "domain_resolver": "hosts",
-        "detour": "Proxy"
-      },
-      {
-        "tag": "ali",
-        "type": "https",
-        "server": "dns.alidns.com",
-        "domain_resolver": "hosts"
-      },
-      {
-        "tag": "adguard",
-        "type": "https",
-        "server": "dns.adgaurd.com",
-        "domain_resolver": "hosts"
-      },
-      {
-        "tag": "malw-hosts",
-        "type": "hosts",
-        "path": [
-          "./rules/local/malw-dns.hosts"
-        ]
+        "tag": "agh-local",
+        "type": "udp",
+        "server": "127.0.0.1",
+        "server_port": 5591
       }
     ],
     "rules": [
       {
-        "action": "evaluate",
-        "server": "malw-hosts"
-      },
-      {
-        "match_response": true,
-        "ip_accept_any": true,
-        "action": "respond"
-      },
-      {
-        "clash_mode": "Direct",
         "action": "route",
-        "server": "dns-direct"
-      },
-      {
-        "clash_mode": "Global",
-        "action": "route",
-        "server": "dns-proxy"
-      },
-      {
-        "rule_set": [
-          "direct"
-        ],
-        "action": "route",
-        "server": "dns-direct"
-      },
-      {
-        "rule_set": [
-          "proxy"
-        ],
-        "action": "route",
-        "server": "dns-proxy"
-      },
-      {
-        "type": "logical",
-        "mode": "and",
-        "rules": [
-          {
-            "clash_mode": "AllowAds",
-            "invert": true
-          },
-          {
-            "rule_set": [
-              "block",
-              "hagezi-pro-adlist"
-            ]
-          }
-        ],
-        "action": "reject"
-      },
-      {
-        "query_type": [
-          "A",
-          "AAAA"
-        ],
-        "action": "route",
-        "server": "remote"
+        "server": "agh-local"
       }
     ],
-    "final": "dns-proxy",
+    "final": "agh-local",
     "optimistic": true,
     "strategy": "prefer_ipv4"
   },
   "inbounds": [],
   "route": {
     "default_http_client": "s-download",
-    "default_domain_resolver": "dns-direct",
+    "default_domain_resolver": "agh-local",
     "rule_set": [
       {
         "tag": [
@@ -207,6 +88,13 @@
       }
     ],
     "rules": [
+      {
+        "process_name": [
+          "AdGuardHome",
+          "adguardhome"
+        ],
+        "outbound": "direct"
+      },
       {
         "action": "resolve",
         "strategy": "prefer_ipv4"
