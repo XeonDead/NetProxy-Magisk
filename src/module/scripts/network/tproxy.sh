@@ -1,6 +1,6 @@
 #!/bin/sh
 
-readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
+readonly SCRIPT_DIR="$(local_dir="${0%/*}"; [ "$local_dir" = "$0" ] && local_dir="."; cd "$local_dir" && pwd -P)"
 # Version (use YY.MM.DD format)
 readonly SCRIPT_VERSION="v26.05.28"
 
@@ -320,11 +320,11 @@ init_kernel_config_cache() {
     [ "$SKIP_CHECK_FEATURE" = "1" ] && return 0
 
     if [ -f /proc/config.gz ]; then
-        if zcat /proc/config.gz > "$TMPDIR/kernel_config.cache" 2> /dev/null; then
-            log Debug "Kernel config cached to $TMPDIR/kernel_config.cache"
+        ENABLED_CONFIGS="$(zcat /proc/config.gz 2>/dev/null | grep -E '^CONFIG_[A-Z0-9_]+=[ym]$' || true)"
+        if [ -n "$ENABLED_CONFIGS" ]; then
+            log Debug "Kernel configs loaded into memory"
         else
-            log Warn "Failed to cache /proc/config.gz"
-            rm -f "$TMPDIR/kernel_config.cache" 2> /dev/null
+            log Warn "Failed to read configs from /proc/config.gz"
         fi
     fi
 }
@@ -425,7 +425,7 @@ check_root() {
         log Debug "Skip root check"
         return 0
     fi
-    if [ "$(id -u 2> /dev/null || echo 1)" != "0" ]; then
+    if [ "${UID:-$(id -u 2> /dev/null || echo 1)}" != "0" ]; then
         log Error "Must run with root privileges"
         exit 1
     fi
@@ -457,8 +457,10 @@ check_dependencies() {
 }
 
 setup_busybox() {
-    if command -v busybox > /dev/null 2>&1; then
-        log Debug "BusyBox already available in PATH: $(command -v busybox)"
+    local bb_path
+    bb_path=$(command -v busybox 2> /dev/null)
+    if [ -n "$bb_path" ]; then
+        log Debug "BusyBox already available in PATH: $bb_path"
         return 0
     fi
 
@@ -479,7 +481,7 @@ setup_busybox() {
     done
 
     if [ -n "$found_bb" ]; then
-        local bb_dir=$(dirname "$found_bb")
+        local bb_dir="${found_bb%/*}"
         export PATH="$PATH:$bb_dir"
         log Info "BusyBox detected and added to PATH: $found_bb"
     else
@@ -492,11 +494,13 @@ check_kernel_feature() {
     local config_name="CONFIG_${feature}"
 
     # Check compile-time config (/proc/config.gz)
-    if [ -f "$TMPDIR/kernel_config.cache" ]; then
-        if grep -qE "^${config_name}=[ym]$" "$TMPDIR/kernel_config.cache" 2> /dev/null; then
-            log Debug "Kernel feature $feature is enabled (config)"
-            return 0
-        fi
+    if [ -n "${ENABLED_CONFIGS:-}" ]; then
+        case "$ENABLED_CONFIGS" in
+            *"${config_name}=y"* | *"${config_name}=m"*)
+                log Debug "Kernel feature $feature is enabled (config)"
+                return 0
+                ;;
+        esac
     fi
 
     # check runtime loaded modules (/sys/module/)
@@ -1654,15 +1658,20 @@ manage_ipv6() {
         log Info "Backing up current IPv6 settings to $ipv6_backup_file"
 
         {
-            echo "# IPv6 settings backup (generated at $(date))"
-            echo "accept_ra=$(cat /proc/sys/net/ipv6/conf/all/accept_ra 2> /dev/null || echo unknown)"
-            echo "autoconf=$(cat /proc/sys/net/ipv6/conf/all/autoconf 2> /dev/null || echo unknown)"
-            echo "forwarding=$(cat /proc/sys/net/ipv6/conf/all/forwarding 2> /dev/null || echo unknown)"
+            local val
+            val="unknown"; read -r val < /proc/sys/net/ipv6/conf/all/accept_ra 2> /dev/null
+            echo "accept_ra=$val"
+            val="unknown"; read -r val < /proc/sys/net/ipv6/conf/all/autoconf 2> /dev/null
+            echo "autoconf=$val"
+            val="unknown"; read -r val < /proc/sys/net/ipv6/conf/all/forwarding 2> /dev/null
+            echo "forwarding=$val"
 
+            local iface iface_name current
             for iface in /proc/sys/net/ipv6/conf/*; do
                 if [ -f "$iface/disable_ipv6" ]; then
-                    iface_name=$(basename "$iface")
-                    current=$(cat "$iface/disable_ipv6" 2> /dev/null || echo unknown)
+                    iface_name="${iface##*/}"
+                    current="unknown"
+                    read -r current < "$iface/disable_ipv6" 2> /dev/null
                     echo "$iface_name=$current"
                 fi
             done
@@ -1745,8 +1754,7 @@ call_func() {
 }
 
 show_usage() {
-    local script_name
-    script_name=$(basename "$0")
+    local script_name="${0##*/}"
 
     cat << EOF
 Usage: $script_name {start|stop|restart} [options]
@@ -1878,8 +1886,7 @@ parse_args() {
 }
 
 main() {
-    local script_name
-    script_name=$(basename "$0")
+    local script_name="${0##*/}"
     log Debug "Starting ${script_name} ${SCRIPT_VERSION}"
 
     load_config
@@ -1952,6 +1959,7 @@ HAS_IPSET=0
 HAS_XT_SET=0
 HAS_NAT6=0
 HAS_REDIRECT6=0
+ENABLED_CONFIGS=""
 
 parse_args "$@"
 
