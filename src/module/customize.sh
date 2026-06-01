@@ -297,6 +297,14 @@ install_ipset_lkm() {
 
   local skip_lkm=false
 
+  # 检查是否为魅族设备
+  local brand=$(getprop ro.product.brand | tr '[:upper:]' '[:lower:]')
+  local manufacturer=$(getprop ro.product.manufacturer | tr '[:upper:]' '[:lower:]')
+  if [ "$brand" = "meizu" ] || [ "$manufacturer" = "meizu" ]; then
+      print_warn "检测到魅族设备，跳过 IPSET LKM 驱动安装"
+      skip_lkm=true
+  fi
+
   # 1. 检查内核是否已内置 IP_SET 支持
   print_step "正在检查系统 IPSET 状态..."
   if [ -f /proc/config.gz ] && zcat /proc/config.gz | grep -q "CONFIG_IP_SET=y"; then
