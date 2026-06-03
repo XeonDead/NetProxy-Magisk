@@ -224,7 +224,11 @@ add_subscription() {
   [ ! -d "$sub_dir" ] || die "订阅已存在: $name"
 
   ensure_dir "$sub_dir" "无法创建订阅目录: $sub_dir"
-  refresh_subscription_dir "$name" "$url" "$sub_dir" "$SUB_UA" "$SUB_HWID"
+  if ! ( refresh_subscription_dir "$name" "$url" "$sub_dir" "$SUB_UA" "$SUB_HWID" ); then
+    log "ERROR" "订阅添加失败，清理目录: $sub_dir"
+    rm -rf "$sub_dir"
+    exit 1
+  fi
   log "INFO" "订阅添加完成: $name"
 }
 
