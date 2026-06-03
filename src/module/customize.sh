@@ -31,6 +31,7 @@ readonly EXECUTABLE_FILES="
     bin/IPSET-LKM/ko-loader
     bin/IPSET-LKM/ipset
     action.sh
+    uninstall.sh
     scripts/cli
     scripts/core/service.sh
     scripts/core/switch.sh
