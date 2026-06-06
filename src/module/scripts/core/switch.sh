@@ -84,7 +84,7 @@ switch_mode() {
   local target_mode="$1"
 
   case "$target_mode" in
-    rule | global | direct) ;;
+    rule | global | direct | AllowAds) ;;
     *)
       die "未知模式: $target_mode"
       ;;

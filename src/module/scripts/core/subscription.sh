@@ -336,38 +336,33 @@ list_subscriptions() {
   [ "$count" -gt 0 ] || printf "  暂无订阅\n"
 }
 
-#######################################
-# 解析全局选项 (-ua / -hwid)
-#######################################
-parse_global_options() {
-  while [ $# -gt 0 ]; do
-    case "$1" in
-      -ua)
-        SUB_UA="${2:-}"
-        shift 2
-        ;;
-      -hwid)
-        SUB_HWID="${2:-}"
-        shift 2
-        ;;
-      *)
-        # 收集非选项参数
-        POSITIONAL_ARGS="${POSITIONAL_ARGS:-} $1"
-        shift
-        ;;
-    esac
-  done
-}
-
 main() {
   local command="${1:-}"
   shift 2> /dev/null || true
 
-  # 解析 -ua / -hwid 全局选项
-  POSITIONAL_ARGS=""
-  parse_global_options "$@"
-  # shellcheck disable=SC2086
-  set -- $POSITIONAL_ARGS
+  # 解析 -ua / -hwid 全局选项并保留位置参数中的空格与特殊字符
+  local i=0
+  local num_args=$#
+  while [ $i -lt $num_args ]; do
+    case "$1" in
+      -ua)
+        SUB_UA="${2:-}"
+        shift 2
+        i=$((i + 2))
+        ;;
+      -hwid)
+        SUB_HWID="${2:-}"
+        shift 2
+        i=$((i + 2))
+        ;;
+      *)
+        local arg="$1"
+        shift
+        set -- "$@" "$arg"
+        i=$((i + 1))
+        ;;
+    esac
+  done
 
   case "$command" in
     parse)

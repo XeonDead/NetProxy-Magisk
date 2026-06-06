@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="image/logo.png" alt="NetProxy Logo" width="120" />
+  <img src="image/N.svg" alt="NetProxy Logo" width="120" />
 </p>
 
 <h1 align="center">NetProxy</h1>

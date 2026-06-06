@@ -50,53 +50,70 @@ reset_runtime_nodes() {
 }
 
 #######################################
-# 追加运行时节点缓存
-#######################################
-append_runtime_node() {
-  local file="$1"
-  local tag="$2"
-  local escaped_tag
-
-  if [ -n "$RUNTIME_NODE_PATHS" ]; then
-    RUNTIME_NODE_PATHS="${RUNTIME_NODE_PATHS}
-$file"
-  else
-    RUNTIME_NODE_PATHS="$file"
-  fi
-
-  if ! is_reserved_outbound_tag "$tag"; then
-    escaped_tag="$(json_escape "$tag")"
-    if [ -n "$RUNTIME_NODE_TAGS_JSON" ]; then
-      RUNTIME_NODE_TAGS_JSON="$RUNTIME_NODE_TAGS_JSON, \"$escaped_tag\""
-    else
-      RUNTIME_NODE_TAGS_JSON="\"$escaped_tag\""
-    fi
-  fi
-
-  RUNTIME_NODE_COUNT=$((RUNTIME_NODE_COUNT + 1))
-}
-
-#######################################
 # 扫描当前节点目录
 #######################################
 scan_runtime_nodes() {
   local current_dir="${1:-$CUR_OUTBOUND_DIR}"
-  local file tag
-
   require_dir "$current_dir" "节点目录不存在: $current_dir"
   reset_runtime_nodes
 
-  for file in "$current_dir"/*.json; do
-    is_node_config_file "$file" || continue
-    tag="$(detect_outbound_tag "$file" || true)"
+  local parsed_data
+  parsed_data=$(awk -F'"' '
+    # 每个新文件开始时，重置标志位
+    FNR == 1 { found = 0 }
+    
+    # 匹配含有 "tag": "xxx" 的行
+    !found && /"tag"[ \t]*:/ {
+        tag = $4
+        
+        # JSON 转义 替换反斜杠和双引号
+        gsub(/\\/, "\\\\", tag)
+        
+        # 打印: 文件名[TAB]Tag值
+        printf "%s\t%s\n", FILENAME, tag
+        
+        # 标记已找到，跳过该文件的后续行
+        found = 1
+        nextfile
+    }
+  ' "$current_dir"/*.json 2>/dev/null)
 
+  # 如果没找到任何数据，直接退出函数
+  [ -z "$parsed_data" ] && return
+
+  # 使用 Shell 纯内建命令 read 按行处理结果
+  local file tag
+  while IFS=$'\t' read -r file tag; do
     if [ -z "$tag" ]; then
       RUNTIME_SKIPPED_COUNT=$((RUNTIME_SKIPPED_COUNT + 1))
       continue
     fi
 
-    append_runtime_node "$file" "$tag"
-  done
+    # 内联 append_runtime_node 逻辑
+    if [ -n "$RUNTIME_NODE_PATHS" ]; then
+      RUNTIME_NODE_PATHS="${RUNTIME_NODE_PATHS}"$'\n'"$file"
+      
+      # 忽略保留的路由标签
+      if ! is_reserved_outbound_tag "$tag"; then
+        RUNTIME_NODE_TAGS_JSON="${RUNTIME_NODE_TAGS_JSON}, \"$tag\""
+      fi
+    else
+      RUNTIME_NODE_PATHS="$file"
+      
+      if ! is_reserved_outbound_tag "$tag"; then
+        RUNTIME_NODE_TAGS_JSON="\"$tag\""
+      fi
+    fi
+
+    RUNTIME_NODE_COUNT=$((RUNTIME_NODE_COUNT + 1))
+  done << EOF
+$parsed_data
+EOF
+
+  # 如果有文件未能成功提取 tag，计算被跳过的数量
+  local total_files
+  total_files=$(ls -1 "$current_dir"/*.json 2>/dev/null | wc -l)
+  RUNTIME_SKIPPED_COUNT=$((total_files - RUNTIME_NODE_COUNT))
 }
 
 #######################################

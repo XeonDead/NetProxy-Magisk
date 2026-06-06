@@ -1,7 +1,7 @@
 id=netproxy
 name=NetProxy
-version=v7.0.2
-versionCode=574
+version=v7.0.5
+versionCode=604
 author=Fanju & XeonDead
 description=sing-box based transparent proxy module for Android
 updateJson=https://raw.githubusercontent.com/XeonDead/NetProxy-Magisk/refs/heads/main/update.json

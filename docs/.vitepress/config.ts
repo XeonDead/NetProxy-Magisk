@@ -7,7 +7,7 @@ export default defineConfig({
   base: '/',
 
   head: [
-    ['link', { rel: 'icon', href: '/logo.png' }],
+    ['link', { rel: 'icon', href: '/N.svg' }],
     [
       'script',
       {
@@ -19,11 +19,13 @@ export default defineConfig({
   ],
 
   themeConfig: {
-    logo: '/logo.png',
+    logo: '/N.svg',
 
     nav: [
       { text: '指南', link: '/guide/introduction' },
       { text: '配置参考', link: '/config/module' },
+      { text: 'N', link: '/tools/monet' },
+      { text: '祈愿', link: '/tools/gacha' },
       { text: 'GitHub', link: 'https://github.com/Fanju6/NetProxy-Magisk' }
     ],
 

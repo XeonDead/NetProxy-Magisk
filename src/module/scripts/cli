@@ -463,7 +463,7 @@ cmd_mode() {
   fi
 
   case "$mode" in
-    rule | global | direct) ;;
+    rule | global | direct | AllowAds) ;;
     help | -h | --help)
       show_mode_help
       return 0
