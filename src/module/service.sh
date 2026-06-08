@@ -1,17 +1,30 @@
 #!/system/bin/sh
-set -e
+#######################################
+# 文件: service.sh
+# 功能: Magisk service 阶段入口，在系统启动完成后执行：记录运行环境、
+#       加载模块配置，按需开机自启 sing-box 服务并执行设备兼容性修复。
+# 用法: 由 Magisk/KernelSU/APatch 在 service 阶段自动调用。
+# 依赖: common.sh、scripts/core/service.sh、scripts/utils/gms_fix.sh。
+#######################################
 
-readonly MODDIR="${0%/*}"
-readonly MODULE_CONF="$MODDIR/config/module.conf"
-readonly LOG_FILE="$MODDIR/logs/service.log"
+set -e  # 命令失败立即退出
+
+# 模块根目录与关键路径
+readonly MODDIR="${0%/*}"                          # 模块根目录 (脚本所在目录)
+readonly MODULE_CONF="$MODDIR/config/module.conf"  # 模块配置
+readonly LOG_FILE="$MODDIR/logs/service.log"       # 服务日志
 
 . "$MODDIR/scripts/utils/common.sh"
 
 #######################################
 # 加载模块配置
+# 先设默认值，再用配置文件覆盖 (文件不存在时沿用默认)。
+# 参数: 无
+# 全局: 设置 AUTO_START / GMS_FIX
+# 返回: 无
 #######################################
 load_module_config() {
-  # 设置开机服务默认值
+  # 开机服务相关默认值
   AUTO_START=1
   GMS_FIX=1
 
@@ -25,15 +38,18 @@ load_module_config() {
 
 #######################################
 # 等待系统启动完成
+# 阻塞至系统开机完成且外部存储挂载就绪。
+# 参数: 无
+# 返回: 无
 #######################################
 wait_for_boot() {
   log "INFO" "等待系统启动完成..."
 
-  # 等待系统开机完成
+  # 等待系统开机完成属性置位
   resetprop -w sys.boot_completed
   log "INFO" "系统启动完成"
 
-  # 等待存储挂载完成
+  # 等待外部存储挂载完成
   while [ ! -d "/sdcard/Android" ]; do
     sleep 1
   done
@@ -41,21 +57,23 @@ wait_for_boot() {
 }
 
 #######################################
-# 执行设备特定修复脚本
+# 执行设备兼容性修复
+# 参数: 无
+# 全局: GMS_FIX 为 1 时才执行
+# 返回: 无
 #######################################
 check_device_specific() {
-  # 启用时执行设备兼容性修复
+  # 启用时执行设备兼容性修复脚本
   if [ "$GMS_FIX" = "1" ]; then
     log "INFO" "GMS 修复已启用，执行修复脚本"
     sh "$MODDIR/scripts/utils/gms_fix.sh"
   fi
 }
 
-# 确保日志目录存在
-mkdir -p "$MODDIR/logs"
-
 #######################################
-# 记录环境信息
+# 记录运行环境信息 (Root 方案、版本、模块版本等)
+# 参数: 无
+# 返回: 无
 #######################################
 log_env_info() {
   log "INFO" "========== 环境信息检测 =========="
@@ -84,7 +102,7 @@ log_env_info() {
     log "INFO" "Magisk 版本号: $MAGISK_VER_CODE"
   fi
 
-  # 模块版本信息
+  # 模块版本信息 (从 module.prop 提取)
   if [ -f "$MODDIR/module.prop" ]; then
     local version line
     line=$(grep "^version=" "$MODDIR/module.prop")
@@ -98,16 +116,19 @@ log_env_info() {
   log "INFO" "=================================="
 }
 
+# 确保日志目录存在 (须在首次写日志前完成)
+mkdir -p "$MODDIR/logs"
+
 log "INFO" "service阶段"
 
-# 主流程
+# ========== 主流程 ==========
 log "INFO" "========== NetProxy 服务启动 =========="
 log_env_info
 load_module_config
 
 wait_for_boot
 
-# 检查是否启用开机自启
+# 按配置决定是否开机自启服务
 if [ "$AUTO_START" = "1" ]; then
   log "INFO" "开始启动服务..."
   sh "$MODDIR/scripts/core/service.sh" start

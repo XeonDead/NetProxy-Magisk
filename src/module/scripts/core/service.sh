@@ -1,21 +1,28 @@
 #!/system/bin/sh
-# NetProxy sing-box 服务管理脚本
-# 用法: service.sh {start|stop|restart|status}
+#######################################
+# 文件: service.sh
+# 功能: NetProxy sing-box 服务管理脚本，负责启动/停止/重启 sing-box
+#       进程，同步运行模式与节点配置，并加载/清理透明代理规则。
+# 用法: service.sh {start|stop|restart|status} [core]
+#       (附加 core 表示仅操作核心进程，跳过透明代理规则)
+# 依赖: common.sh、config.sh、api.sh、nodes.sh、runtime.sh。
+#######################################
 
-set -u
+set -u  # 引用未定义变量报错
 
+# 模块根目录与关键路径
 readonly MODDIR="$(cd "$(dirname "$0")/../.." && pwd)"
-readonly LOG_FILE="$MODDIR/logs/service.log"
-readonly SING_BOX_BIN="$MODDIR/bin/sing-box"
-readonly MODULE_CONF="$MODDIR/config/module.conf"
-readonly TPROXY_CONF_DIR="$MODDIR/config/tproxy"
-readonly SINGBOX_LOG_FILE="$MODDIR/logs/sing-box.log"
-readonly SINGBOX_DIR="$MODDIR/config/singbox"
-readonly CONFDIR="$SINGBOX_DIR/confdir"
-readonly RUNTIME_DIR="$SINGBOX_DIR/runtime"
-readonly SWITCH_SCRIPT="$MODDIR/scripts/core/switch.sh"
-readonly TPROXY_SCRIPT="$MODDIR/scripts/network/tproxy.sh"
-readonly KILL_TIMEOUT=5
+readonly LOG_FILE="$MODDIR/logs/service.log"          # 服务日志
+readonly SING_BOX_BIN="$MODDIR/bin/sing-box"          # sing-box 二进制
+readonly MODULE_CONF="$MODDIR/config/module.conf"     # 模块配置
+readonly TPROXY_CONF_DIR="$MODDIR/config/tproxy"      # 透明代理配置目录
+readonly SINGBOX_LOG_FILE="$MODDIR/logs/sing-box.log" # sing-box 运行日志
+readonly SINGBOX_DIR="$MODDIR/config/singbox"         # sing-box 配置根目录
+readonly CONFDIR="$SINGBOX_DIR/confdir"               # 通用配置目录
+readonly RUNTIME_DIR="$SINGBOX_DIR/runtime"           # 运行时生成目录
+readonly SWITCH_SCRIPT="$MODDIR/scripts/core/switch.sh"     # 模式/节点切换脚本
+readonly TPROXY_SCRIPT="$MODDIR/scripts/network/tproxy.sh"  # 透明代理脚本
+readonly KILL_TIMEOUT=5                               # 等待进程退出的秒数上限
 
 . "$MODDIR/scripts/utils/common.sh"
 . "$MODDIR/scripts/utils/config.sh"
@@ -23,47 +30,67 @@ readonly KILL_TIMEOUT=5
 . "$MODDIR/scripts/utils/nodes.sh"
 . "$MODDIR/scripts/core/runtime.sh"
 
+# 将模块 bin 目录加入 PATH，便于调用自带二进制
 export PATH="$MODDIR/bin:$PATH"
 
-readonly BUSYBOX="$(detect_busybox)"
+readonly BUSYBOX="$(detect_busybox)"  # busybox 路径 (用于 setuidgid)
 
 #######################################
-# 检查服务运行环境
+# 校验服务运行所需的命令、文件与目录
+# 参数: 无
+# 返回: 全部就绪返回 0，否则退出
 #######################################
 verify_environment() {
+  # 关键外部命令检查
+  require_cmds awk sed nohup
+
+  # 关键文件与目录检查
   require_file "$SING_BOX_BIN" "sing-box 二进制不存在: $SING_BOX_BIN"
   require_file "$MODULE_CONF" "模块配置文件不存在: $MODULE_CONF"
   require_file "$TPROXY_CONF_DIR/tproxy.conf" "透明代理配置文件不存在: $TPROXY_CONF_DIR/tproxy.conf"
   require_dir "$SINGBOX_DIR" "sing-box 配置目录不存在: $SINGBOX_DIR"
   require_dir "$CONFDIR" "通用配置目录不存在: $CONFDIR"
 
+  # 确保日志与运行时目录存在
   ensure_dir "$MODDIR/logs" "无法创建日志目录: $MODDIR/logs"
   ensure_dir "$RUNTIME_DIR" "无法创建运行时目录: $RUNTIME_DIR"
 }
 
 #######################################
-# 清理运行时文件
+# 清理运行时生成的临时文件
+# 参数: 无
+# 返回: 无
 #######################################
 cleanup_runtime_files() {
   rm -f "$RUNTIME_DIR/outbounds.json" 2> /dev/null || true
 }
 
 #######################################
-# 启动服务
+# 启动 sing-box 服务
+# 参数:
+#   $1  是否跳过透明代理 (1=跳过，仅启动核心，默认 0)
+# 返回: 成功返回 0，启动失败则退出
 #######################################
 do_start() {
+  local skip_tproxy="${1:-0}"
   local pid runtime_outbounds new_pid
   local node_path
 
-  log "INFO" "========== 开始启动 sing-box 服务 =========="
+  if [ "$skip_tproxy" = "1" ]; then
+    log "INFO" "========== 开始启动 sing-box 核心服务 (跳过 tproxy) =========="
+  else
+    log "INFO" "========== 开始启动 sing-box 服务 =========="
+  fi
   verify_environment
 
+  # 已在运行则直接返回，保证幂等
   pid="$(get_pid "$SING_BOX_BIN")"
   if [ -n "$pid" ]; then
     log "WARN" "sing-box 已在运行中 (PID: $pid)"
     return 0
   fi
 
+  # 初始化上下文并扫描节点、生成运行时出站配置
   initialize_runtime_context
   scan_runtime_nodes "$CUR_OUTBOUND_DIR"
   write_runtime_outbounds > /dev/null
@@ -76,7 +103,7 @@ do_start() {
   log "INFO" "选择模式: $CUR_SELECTOR_MODE"
   log "INFO" "已加载节点: $RUNTIME_NODE_COUNT，跳过无效节点: $RUNTIME_SKIPPED_COUNT"
 
-  # 构造最终启动参数
+  # 构造启动参数：先基础参数，再逐个追加节点配置，最后追加运行时出站
   set -- run -C "$CONFDIR"
   while IFS= read -r node_path; do
     [ -n "$node_path" ] || continue
@@ -86,10 +113,12 @@ $RUNTIME_NODE_PATHS
 EOF
   set -- "$@" -c "$runtime_outbounds"
 
+  # 以 root:net_admin 身份后台启动进程
   log "INFO" "正在启动 sing-box 进程..."
   cd "$SINGBOX_DIR" || die "无法进入配置目录: $SINGBOX_DIR"
   nohup "$BUSYBOX" setuidgid root:net_admin "$SING_BOX_BIN" "$@" > "$SINGBOX_LOG_FILE" 2>&1 &
 
+  # 短暂等待后确认进程存活
   new_pid=$!
   sleep 1
 
@@ -99,30 +128,47 @@ EOF
     die "sing-box 启动失败，请检查日志: $SINGBOX_LOG_FILE"
   fi
 
+  # 等待控制接口就绪后同步运行模式
   api_wait_available 60 1 || die "控制接口不可用，启动失败"
   LOG_STDERR=0 SWITCH_ALLOW_RESTART=0 sh "$SWITCH_SCRIPT" mode "$CUR_OUTBOUND_MODE" || die "运行模式同步失败，启动中止"
+  # 手动选择模式下额外同步当前节点
   if [ "$CUR_SELECTOR_MODE" = "manual" ] || [ "$CUR_SELECTOR_MODE" = "selector" ] || [ "$CUR_SELECTOR_MODE" = "手动选择" ] || [ "$CUR_SELECTOR_MODE" = "手动" ]; then
     LOG_STDERR=0 SWITCH_ALLOW_RESTART=0 sh "$SWITCH_SCRIPT" config "$CUR_OUTBOUND_CONFIG" || die "节点配置同步失败，启动中止"
   fi
 
-  log "INFO" "正在加载透明代理规则..."
-  "$TPROXY_SCRIPT" start -d "$TPROXY_CONF_DIR" >> "$LOG_FILE" 2>&1 || die "透明代理规则加载失败"
+  # 非跳过模式下加载透明代理规则
+  if [ "$skip_tproxy" != "1" ]; then
+    log "INFO" "正在加载透明代理规则..."
+    "$TPROXY_SCRIPT" start -d "$TPROXY_CONF_DIR" >> "$LOG_FILE" 2>&1 || die "透明代理规则加载失败"
+  fi
 
   log "INFO" "========== sing-box 服务启动完成 =========="
 }
 
 #######################################
-# 停止服务
+# 停止 sing-box 服务
+# 参数:
+#   $1  是否跳过透明代理清理 (1=跳过，默认 0)
+# 返回: 无
 #######################################
 do_stop() {
+  local skip_tproxy="${1:-0}"
   local pid count
 
-  log "INFO" "========== 开始停止 sing-box 服务 =========="
+  if [ "$skip_tproxy" = "1" ]; then
+    log "INFO" "========== 开始停止 sing-box 核心服务 (跳过 tproxy) =========="
+  else
+    log "INFO" "========== 开始停止 sing-box 服务 =========="
+  fi
   verify_environment
 
-  log "INFO" "正在清理透明代理规则..."
-  "$TPROXY_SCRIPT" stop -d "$TPROXY_CONF_DIR" >> "$LOG_FILE" 2>&1 || true
+  # 先清理透明代理规则 (非跳过模式)
+  if [ "$skip_tproxy" != "1" ]; then
+    log "INFO" "正在清理透明代理规则..."
+    "$TPROXY_SCRIPT" stop -d "$TPROXY_CONF_DIR" >> "$LOG_FILE" 2>&1 || true
+  fi
 
+  # 进程不存在则清理运行时文件后返回，保证幂等
   pid="$(get_pid "$SING_BOX_BIN")"
   if [ -z "$pid" ]; then
     log "INFO" "未发现运行中的 sing-box 进程"
@@ -133,6 +179,7 @@ do_stop() {
 
   log "INFO" "正在停止 sing-box 进程 (PID: $pid)..."
 
+  # 先发送 SIGTERM，超时未退出再强制 SIGKILL
   if kill "$pid" 2> /dev/null; then
     count=0
     while kill -0 "$pid" 2> /dev/null && [ "$count" -lt "$KILL_TIMEOUT" ]; do
@@ -152,17 +199,32 @@ do_stop() {
 }
 
 #######################################
-# 重启服务
+# 重启 sing-box 服务
+# 参数:
+#   $1  目标 (core=仅核心，跳过透明代理；其他=完整重启)
+# 返回: 无
 #######################################
 do_restart() {
-  log "INFO" "========== 开始重启 sing-box 服务 =========="
-  do_stop
+  local target="${1:-}"
+  local skip_tproxy=0
+
+  # core 模式仅重启核心进程
+  if [ "$target" = "core" ]; then
+    skip_tproxy=1
+    log "INFO" "========== 开始重启 sing-box 核心服务 (跳过 tproxy) =========="
+  else
+    log "INFO" "========== 开始重启 sing-box 服务 =========="
+  fi
+
+  do_stop "$skip_tproxy"
   sleep 1
-  do_start
+  do_start "$skip_tproxy"
 }
 
 #######################################
-# 查看状态
+# 查看服务运行状态
+# 参数: 无
+# 返回: 运行中返回 0，未运行返回 1
 #######################################
 do_status() {
   local pid uptime
@@ -182,7 +244,9 @@ do_status() {
 }
 
 #######################################
-# 显示帮助
+# 显示帮助信息
+# 参数: 无
+# 返回: 无
 #######################################
 show_usage() {
   cat << EOF
@@ -197,18 +261,30 @@ EOF
 }
 
 #######################################
-# 主入口
+# 主入口：解析命令并分发
+# 参数:
+#   $1  命令 (start/stop/restart/status)
+#   $2  可选目标 (core)
+# 返回: 依命令而定
 #######################################
 main() {
   case "${1:-}" in
     start)
-      do_start
+      # 解析是否仅启动核心
+      local target="${2:-}"
+      local skip=0
+      [ "$target" = "core" ] && skip=1
+      do_start "$skip"
       ;;
     stop)
-      do_stop
+      # 解析是否仅停止核心
+      local target="${2:-}"
+      local skip=0
+      [ "$target" = "core" ] && skip=1
+      do_stop "$skip"
       ;;
     restart)
-      do_restart
+      do_restart "${2:-}"
       ;;
     status)
       do_status
