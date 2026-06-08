@@ -28,8 +28,8 @@ is_service_running() {
 #######################################
 restart_service_if_allowed() {
   if [ "$SWITCH_ALLOW_RESTART" = "1" ]; then
-    log "INFO" "正在重启 sing-box 服务以应用配置..."
-    LOG_STDERR=0 sh "$SERVICE_SCRIPT" restart || die "重启 sing-box 服务失败"
+    log "INFO" "正在重启 sing-box 核心服务以应用配置..."
+    LOG_STDERR=0 sh "$SERVICE_SCRIPT" restart core || die "重启 sing-box 服务失败"
   else
     log "WARN" "当前阶段不允许通过重启应用配置"
     return 1

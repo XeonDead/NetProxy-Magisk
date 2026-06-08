@@ -78,6 +78,24 @@ dir_not_empty() {
   [ -d "$1" ] && [ "$(ls -A "$1" 2> /dev/null)" ]
 }
 
+set_perm() {
+  chown "$2:$3" "$1" || return 1
+  chmod "$4" "$1" || return 1
+  local CON="$5"
+  [ -z "$CON" ] && CON="u:object_r:system_file:s0"
+  chcon "$CON" "$1" || return 1
+}
+
+set_perm_recursive() {
+  find "$1" -type d -print0 2>/dev/null | while IFS= read -r -d '' dir; do
+    set_perm "$dir" "$2" "$3" "$4" "$6"
+  done
+  
+  find "$1" \( -type f -o -type l \) -print0 2>/dev/null | while IFS= read -r -d '' file; do
+    set_perm "$file" "$2" "$3" "$5" "$6"
+  done
+}
+
 ################################################################################
 # 核心函数
 ################################################################################

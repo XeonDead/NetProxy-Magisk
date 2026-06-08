@@ -60,7 +60,8 @@ api_request() {
   host="${controller%%:*}"
   port="${controller##*:}"
 
-  {
+  local response status_line status
+  response=$( {
     printf "%s %s HTTP/1.1\r\n" "$method" "$path"
     printf "Host: %s\r\n" "$controller"
     printf "Authorization: Bearer %s\r\n" "$secret"
@@ -71,7 +72,24 @@ api_request() {
     printf "Connection: close\r\n"
     printf "\r\n"
     [ -n "$data" ] && printf "%s" "$data"
-  } | "$(detect_busybox)" nc "$host" "$port" 2>/dev/null | sed '1,/^\r$/d'
+  } | "$(detect_busybox)" nc "$host" "$port" 2>/dev/null )
+  status=$?
+
+  status_line=$(printf "%s" "$response" | head -n 1)
+
+  if [ "$method" = "GET" ]; then
+    printf "%s" "$response" | sed '1,/^\r$/d'
+    if [ $status -ne 0 ] || ! printf "%s" "$status_line" | grep -q -E '^HTTP/[0-9.]+ 2[0-9][0-9]'; then
+      return 1
+    fi
+    return 0
+  else
+    if [ $status -ne 0 ] || ! printf "%s" "$status_line" | grep -q -E '^HTTP/[0-9.]+ 2[0-9][0-9]'; then
+      log "ERROR" "[控制接口错误] 请求失败: $method $path，状态行: $status_line"
+      return 1
+    fi
+    return 0
+  fi
 }
 
 #######################################

@@ -52,10 +52,15 @@ cleanup_runtime_files() {
 # 启动服务
 #######################################
 do_start() {
+  local skip_tproxy="${1:-0}"
   local pid runtime_outbounds new_pid
   local node_path
 
-  log "INFO" "========== 开始启动 sing-box 服务 =========="
+  if [ "$skip_tproxy" = "1" ]; then
+    log "INFO" "========== 开始启动 sing-box 核心服务 (跳过 tproxy) =========="
+  else
+    log "INFO" "========== 开始启动 sing-box 服务 =========="
+  fi
   verify_environment
 
   pid="$(get_pid "$SING_BOX_BIN")"
@@ -105,8 +110,10 @@ EOF
     LOG_STDERR=0 SWITCH_ALLOW_RESTART=0 sh "$SWITCH_SCRIPT" config "$CUR_OUTBOUND_CONFIG" || die "节点配置同步失败，启动中止"
   fi
 
-  log "INFO" "正在加载透明代理规则..."
-  "$TPROXY_SCRIPT" start -d "$TPROXY_CONF_DIR" >> "$LOG_FILE" 2>&1 || die "透明代理规则加载失败"
+  if [ "$skip_tproxy" != "1" ]; then
+    log "INFO" "正在加载透明代理规则..."
+    "$TPROXY_SCRIPT" start -d "$TPROXY_CONF_DIR" >> "$LOG_FILE" 2>&1 || die "透明代理规则加载失败"
+  fi
 
   log "INFO" "========== sing-box 服务启动完成 =========="
 }
@@ -115,13 +122,20 @@ EOF
 # 停止服务
 #######################################
 do_stop() {
+  local skip_tproxy="${1:-0}"
   local pid count
 
-  log "INFO" "========== 开始停止 sing-box 服务 =========="
+  if [ "$skip_tproxy" = "1" ]; then
+    log "INFO" "========== 开始停止 sing-box 核心服务 (跳过 tproxy) =========="
+  else
+    log "INFO" "========== 开始停止 sing-box 服务 =========="
+  fi
   verify_environment
 
-  log "INFO" "正在清理透明代理规则..."
-  "$TPROXY_SCRIPT" stop -d "$TPROXY_CONF_DIR" >> "$LOG_FILE" 2>&1 || true
+  if [ "$skip_tproxy" != "1" ]; then
+    log "INFO" "正在清理透明代理规则..."
+    "$TPROXY_SCRIPT" stop -d "$TPROXY_CONF_DIR" >> "$LOG_FILE" 2>&1 || true
+  fi
 
   pid="$(get_pid "$SING_BOX_BIN")"
   if [ -z "$pid" ]; then
@@ -155,10 +169,19 @@ do_stop() {
 # 重启服务
 #######################################
 do_restart() {
-  log "INFO" "========== 开始重启 sing-box 服务 =========="
-  do_stop
+  local target="${1:-}"
+  local skip_tproxy=0
+
+  if [ "$target" = "core" ]; then
+    skip_tproxy=1
+    log "INFO" "========== 开始重启 sing-box 核心服务 (跳过 tproxy) =========="
+  else
+    log "INFO" "========== 开始重启 sing-box 服务 =========="
+  fi
+
+  do_stop "$skip_tproxy"
   sleep 1
-  do_start
+  do_start "$skip_tproxy"
 }
 
 #######################################
@@ -202,13 +225,19 @@ EOF
 main() {
   case "${1:-}" in
     start)
-      do_start
+      local target="${2:-}"
+      local skip=0
+      [ "$target" = "core" ] && skip=1
+      do_start "$skip"
       ;;
     stop)
-      do_stop
+      local target="${2:-}"
+      local skip=0
+      [ "$target" = "core" ] && skip=1
+      do_stop "$skip"
       ;;
     restart)
-      do_restart
+      do_restart "${2:-}"
       ;;
     status)
       do_status

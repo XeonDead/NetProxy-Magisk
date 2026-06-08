@@ -191,7 +191,7 @@ clear_subscription_nodes() {
 }
 
 #######################################
-# 刷新订阅目录
+# 拉取订阅节点并替换旧节点
 #######################################
 refresh_subscription_dir() {
   local name="$1"
@@ -199,13 +199,25 @@ refresh_subscription_dir() {
   local sub_dir="$3"
   local ua="${4:-$SUB_UA}"
   local hwid_val="${5:-$SUB_HWID}"
+  local tmp_dir="$sub_dir/_tmp"
 
   # 临时设置全局参数供 import_sub -> run_proxylink 使用
   SUB_UA="$ua"
   SUB_HWID="$hwid_val"
 
+  # 拉取新节点到临时目录
+  ensure_dir "$tmp_dir" "无法创建临时目录: $tmp_dir"
+  if ! ( import_sub "$url" "$tmp_dir" ); then
+    log "ERROR" "订阅拉取失败，保留旧节点: $name"
+    rm -rf "$tmp_dir"
+    return 1
+  fi
+
+  # 拉取成功，替换旧节点
   clear_subscription_nodes "$sub_dir"
-  import_sub "$url" "$sub_dir"
+  mv "$tmp_dir"/*.json "$sub_dir/" 2> /dev/null || true
+  rm -rf "$tmp_dir"
+
   write_subscription_meta "$sub_dir" "$name" "$url" "$ua" "$hwid_val"
 }
 
