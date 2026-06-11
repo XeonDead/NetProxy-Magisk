@@ -1,0 +1,98 @@
+name: 发布（Release）
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  release:
+    name: 构建并发布 Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: 构建并打包模块
+        id: pack
+        uses: ./.github/actions/build-module
+
+      - name: 生成 update.json（模块自更新清单，随 Release 上传）
+        env:
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          COMMIT_COUNT: ${{ steps.pack.outputs.commit_count }}
+          FULL_NAME: ${{ steps.pack.outputs.full_name }}
+        run: |
+          # 以仓库根的 update.json 为模板（保留 changelog 等静态字段），仅回填动态字段
+          # 模板与产物同名，先写临时文件再覆盖，避免重定向截断输入
+          tmp="$(mktemp)"
+          jq \
+            --arg version "Module ${TAG}" \
+            --argjson versionCode "${COMMIT_COUNT}" \
+            --arg zipUrl "https://github.com/${REPO}/releases/download/${TAG}/${FULL_NAME}" \
+            '.version = $version | .versionCode = $versionCode | .zipUrl = $zipUrl' \
+            update.json > "$tmp"
+          mv "$tmp" update.json
+          cat update.json
+
+      - name: 发布 GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          body_path: docs/changelog.md
+          files: |
+            ${{ steps.pack.outputs.full_name }}
+            ${{ steps.pack.outputs.lite_name }}
+            ${{ steps.pack.outputs.mini_name }}
+            update.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 发布通知到 Telegram
+        uses: cbrgm/telegram-github-action@v1
+        with:
+          token: ${{ secrets.TG_BOT_TOKEN }}
+          to: ${{ secrets.TG_CHAT_ID }}
+          thread-id: 2343
+          parse-mode: markdown
+          message: |
+            **新版本发布通知**
+
+            版本: `${{ github.ref_name }}`
+
+            [查看更新日志并下载](${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }})
+
+            **直接下载:**
+            [完整包](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.pack.outputs.full_name }})
+            [精简包](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.pack.outputs.lite_name }})
+            [纯脚本包](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.pack.outputs.mini_name }})
+
+      - name: 触发同步到 KernelSU 仓库
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # release:published 由 GITHUB_TOKEN 创建，受防递归限制不会自动触发 sync 工作流；
+        # 故在此显式 dispatch（workflow_dispatch 是该限制的官方例外，GITHUB_TOKEN 可触发）。
+        run: gh workflow run sync-kernelsu.yml
+
+      - name: 失败通知
+        if: failure()
+        uses: cbrgm/telegram-github-action@v1
+        with:
+          token: ${{ secrets.TG_BOT_TOKEN }}
+          to: ${{ secrets.TG_CHAT_ID }}
+          thread-id: 2275
+          parse-mode: markdown
+          message: |
+            **发布工作流执行失败！**
+
+            标签: `${{ github.ref_name }}`
+
+            [点击查看构建日志](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})

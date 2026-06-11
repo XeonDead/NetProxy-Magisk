@@ -2,9 +2,7 @@
 
 version: 2
 updates:
-
-
-  # GitHub Actions
+  # GitHub Actions（工作流与 composite action 引用的 actions）
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -12,10 +10,18 @@ updates:
     commit-message:
       prefix: "ci(deps)"
 
-  # Docs (VitePress)
+  # 文档站 (VitePress)
   - package-ecosystem: "npm"
     directory: "/docs"
     schedule:
       interval: "weekly"
     commit-message:
       prefix: "docs(deps)"
+
+  # WebUI (Vue + Vite)
+  - package-ecosystem: "npm"
+    directory: "/src/webui"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "webui(deps)"

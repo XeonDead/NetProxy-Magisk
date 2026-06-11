@@ -4,7 +4,7 @@
 # 功能: NetProxy 命令行工具，统一管理服务、节点、模式、订阅、
 #       控制接口、分应用代理与透明代理等操作。
 # 用法: cli <命令组> <子命令> [参数]，详见 show_help。
-#       命令组: service / node / mode / sub / api / app / tproxy
+#       命令组: service / node / mode / sub / api / app / tproxy / wifi
 # 依赖: common.sh、config.sh、api.sh、nodes.sh 及 core/network 下脚本。
 #######################################
 
@@ -31,7 +31,6 @@ readonly SUB_LOG="$LOG_DIR/subscription.log"              # 订阅日志
 
 # 关键二进制与子脚本路径
 readonly SING_BOX_BIN="$MODDIR/bin/sing-box"
-readonly PROXYLINK_BIN="$MODDIR/bin/proxylink"
 readonly SERVICE_SCRIPT="$SCRIPTS_DIR/core/service.sh"
 readonly SWITCH_SCRIPT="$SCRIPTS_DIR/core/switch.sh"
 readonly SUB_SCRIPT="$SCRIPTS_DIR/core/subscription.sh"
@@ -108,10 +107,12 @@ is_running() {
   [ -n "$(get_pid "$SING_BOX_BIN")" ]
 }
 
-# 确保 CLI 依赖的日志/节点/运行时目录存在
+# 确保 CLI 依赖的日志/运行时目录存在
+# 注: 默认节点目录 (DEFAULT_NODES_DIR) 不在此创建——它仅在真正写入节点时
+#     由 subscription.sh 的 prepare_output_dir 按需创建，避免每次任意命令都
+#     重建用户可能已主动删除的空 default 目录。
 ensure_cli_dirs() {
   ensure_dir "$LOG_DIR" "无法创建日志目录: $LOG_DIR"
-  ensure_dir "$DEFAULT_NODES_DIR" "无法创建默认节点目录: $DEFAULT_NODES_DIR"
   ensure_dir "$RUNTIME_DIR" "无法创建运行时目录: $RUNTIME_DIR"
 }
 
@@ -159,6 +160,8 @@ show_service_help() {
   cli service restart                 重启服务
   cli service logs [service|core|sub] [行数]
                                       查看日志
+  cli service logs-clear [service|core|sub]
+                                      清空日志
 EOF
 }
 
@@ -196,6 +199,9 @@ show_sub_help() {
   cli sub update <名称>               更新指定订阅
   cli sub update-all                  更新全部订阅
   cli sub remove <名称>               删除订阅
+  cli sub auto status                 查看定时更新配置
+  cli sub auto on | off               启用 / 禁用定时更新
+  cli sub auto interval <小时>        设置更新间隔 (1~23)
 EOF
 }
 
@@ -221,6 +227,23 @@ show_app_help() {
   cli app remove <包名>               移除应用
   cli app enable                      启用分应用代理
   cli app disable                     禁用分应用代理
+EOF
+}
+
+# 显示 wifi 命令组帮助
+show_wifi_help() {
+  cat << EOF
+用法:
+  cli wifi status                     查看 WiFi 自动切换配置与当前态
+  cli wifi on | off                   启用 / 禁用 WiFi 自动切换
+  cli wifi mode <blacklist|whitelist> 设置名单模式
+  cli wifi add <SSID>                 添加 SSID 到名单
+  cli wifi del <SSID>                 从名单移除 SSID
+  cli wifi list                       列出名单
+  cli wifi clear                      清空名单
+  cli wifi cellular <on|off>          非 WiFi 网络是否走代理
+说明:
+  blacklist = 名单内 SSID 关代理、其余开;whitelist = 仅名单内开、其余关
 EOF
 }
 
@@ -323,6 +346,29 @@ cmd_service_logs() {
   tail -n "$lines" "$file"
 }
 
+#######################################
+# 清空日志
+# 参数:
+#   $1  日志类型 (service/core/sub，默认 service)
+# 返回: 无 (将对应日志文件清零)
+#######################################
+cmd_service_logs_clear() {
+  local target="${1:-service}"
+  local file
+
+  # 映射日志类型到文件路径
+  case "$target" in
+    service) file="$SERVICE_LOG" ;;
+    core | sing-box | singbox) file="$CORE_LOG" ;;
+    sub | subscription) file="$SUB_LOG" ;;
+    *) die_cli "未知日志类型: $target" ;;
+  esac
+
+  # 文件存在则清零；不存在视为已空，直接成功返回
+  [ -f "$file" ] && : > "$file"
+  info "已清空日志: $target"
+}
+
 # service 命令组分发
 cmd_service() {
   local subcmd="${1:-status}"
@@ -334,6 +380,7 @@ cmd_service() {
     stop) cmd_service_stop "$@" ;;
     restart) cmd_service_restart "$@" ;;
     logs) cmd_service_logs "$@" ;;
+    logs-clear) cmd_service_logs_clear "$@" ;;
     help | -h | --help) show_service_help ;;
     *) die_cli "用法错误，使用 cli service help 查看帮助" ;;
   esac
@@ -571,6 +618,52 @@ cmd_mode() {
 # sub 命令
 #######################################
 
+readonly SUBSCHED_SCRIPT="$SCRIPTS_DIR/core/subsched.sh"
+
+# 改动定时更新配置后应用：运行中则让 subsched 重启 crond，否则下次启动生效
+subsched_apply() {
+  if is_running; then
+    sh "$SUBSCHED_SCRIPT" sync > /dev/null 2>&1 || warn "定时更新应用失败"
+    info "已应用 (即时生效)"
+  else
+    info "服务未运行，配置将在下次启动时生效"
+  fi
+}
+
+# sub auto 子命令：定时更新配置。参数: $1 status/on/off/interval  $2 间隔
+cmd_sub_auto() {
+  local act="${1:-status}"
+  local val="${2:-}"
+
+  case "$act" in
+    status)
+      section "订阅定时更新"
+      printf "定时更新: %s\n" "$(read_conf "$MODULE_CONF" "SUB_AUTO_UPDATE" "0")"
+      printf "更新间隔: %s 小时\n" "$(read_conf "$MODULE_CONF" "SUB_UPDATE_INTERVAL" "12")"
+      ;;
+    on)
+      set_conf "$MODULE_CONF" "SUB_AUTO_UPDATE" "1"
+      info "订阅定时更新已启用"
+      subsched_apply
+      ;;
+    off)
+      set_conf "$MODULE_CONF" "SUB_AUTO_UPDATE" "0"
+      info "订阅定时更新已禁用"
+      subsched_apply
+      ;;
+    interval)
+      case "$val" in
+        "" | *[!0-9]*) die_cli "用法: cli sub auto interval <1~23 的小时数>" ;;
+      esac
+      [ "$val" -ge 1 ] && [ "$val" -le 23 ] || die_cli "间隔需为 1~23 小时"
+      set_conf "$MODULE_CONF" "SUB_UPDATE_INTERVAL" "$val"
+      info "更新间隔已设置为: $val 小时"
+      subsched_apply
+      ;;
+    *) die_cli "用法: cli sub auto <status|on|off|interval>" ;;
+  esac
+}
+
 # sub 命令组分发 (透传给 subscription.sh)
 cmd_sub() {
   local subcmd="${1:-list}"
@@ -582,6 +675,7 @@ cmd_sub() {
     update) sh "$SUB_SCRIPT" update "${1:-}" ;;
     update-all) sh "$SUB_SCRIPT" update-all ;;
     remove | rm) sh "$SUB_SCRIPT" remove "${1:-}" ;;
+    auto) cmd_sub_auto "$@" ;;
     help | -h | --help) show_sub_help ;;
     *) die_cli "用法错误，使用 cli sub help 查看帮助" ;;
   esac
@@ -859,8 +953,172 @@ cmd_tproxy() {
 }
 
 #######################################
-# 总帮助
+# wifi 命令 (按 SSID 自动开/关代理)
 #######################################
+
+readonly NETMON_SCRIPT="$SCRIPTS_DIR/network/netmon.sh"
+
+# 改动配置后应用：运行中则让 netmon 重启守护并即时评估，否则提示下次启动生效
+wifi_apply() {
+  if is_running; then
+    sh "$NETMON_SCRIPT" sync > /dev/null 2>&1 || warn "WiFi 自动切换应用失败"
+    info "已应用 (即时生效)"
+  else
+    info "服务未运行，配置将在下次启动时生效"
+  fi
+}
+
+# 向逗号分隔名单添加 SSID (去重、归一化全角逗号)。参数: $1 原名单 $2 新增SSID
+wifi_list_add() {
+  printf "%s" "$1" | sed 's/，/,/g' | awk -v add="$2" -F',' '
+    BEGIN { OFS = "," }
+    {
+      for (i = 1; i <= NF; i++) {
+        s = $i; sub(/^[ \t]+/, "", s); sub(/[ \t]+$/, "", s)
+        if (s != "") { items[++n] = s; if (s == add) found = 1 }
+      }
+    }
+    END {
+      if (!found && add != "") items[++n] = add
+      for (i = 1; i <= n; i++) printf "%s%s", (i > 1 ? OFS : ""), items[i]
+    }
+  '
+}
+
+# 从逗号分隔名单移除 SSID。参数: $1 原名单 $2 待删SSID
+wifi_list_del() {
+  printf "%s" "$1" | sed 's/，/,/g' | awk -v del="$2" -F',' '
+    BEGIN { OFS = "," }
+    {
+      for (i = 1; i <= NF; i++) {
+        s = $i; sub(/^[ \t]+/, "", s); sub(/[ \t]+$/, "", s)
+        if (s != "" && s != del) items[++n] = s
+      }
+    }
+    END { for (i = 1; i <= n; i++) printf "%s%s", (i > 1 ? OFS : ""), items[i] }
+  '
+}
+
+# 查看 WiFi 自动切换配置与当前态
+cmd_wifi_status() {
+  local state
+  section "WiFi 自动切换"
+  printf "自动切换: %s\n" "$(read_conf "$TPROXY_CONF" "WIFI_AUTO_SWITCH" "0")"
+  printf "名单模式: %s\n" "$(read_conf "$TPROXY_CONF" "WIFI_SSID_MODE" "blacklist")"
+  printf "SSID 名单: %s\n" "$(read_conf "$TPROXY_CONF" "WIFI_SSID_LIST" "")"
+  printf "非WiFi代理: %s\n" "$(read_conf "$TPROXY_CONF" "PROXY_ON_CELLULAR" "1")"
+  # 运行中时按 iptables 实际规则显示当前态
+  if is_running; then
+    if iptables -t mangle -C PROXY_PREROUTING -j NETMON_BYPASS > /dev/null 2>&1 ||
+      iptables -t nat -C PROXY_PREROUTING -j NETMON_BYPASS > /dev/null 2>&1; then
+      state="bypassed (绕过代理)"
+    else
+      state="proxying (走代理)"
+    fi
+    printf "当前状态: %s\n" "$state"
+  fi
+}
+
+# 启用 WiFi 自动切换
+cmd_wifi_on() {
+  set_conf "$TPROXY_CONF" "WIFI_AUTO_SWITCH" "1"
+  info "WiFi 自动切换已启用"
+  wifi_apply
+}
+
+# 禁用 WiFi 自动切换
+cmd_wifi_off() {
+  set_conf "$TPROXY_CONF" "WIFI_AUTO_SWITCH" "0"
+  info "WiFi 自动切换已禁用"
+  wifi_apply
+}
+
+# 设置名单模式。参数: $1 blacklist/whitelist
+cmd_wifi_mode() {
+  local mode="${1:-}"
+  case "$mode" in
+    blacklist | whitelist) ;;
+    *) die_cli "用法: cli wifi mode <blacklist|whitelist>" ;;
+  esac
+  set_conf "$TPROXY_CONF" "WIFI_SSID_MODE" "$(quote_conf "$mode")"
+  info "名单模式已设置为: $mode"
+  wifi_apply
+}
+
+# 添加 SSID 到名单。参数: $1 SSID
+cmd_wifi_add() {
+  local ssid="${1:-}"
+  local new_list
+  [ -n "$ssid" ] || die_cli "用法: cli wifi add <SSID>"
+  new_list="$(wifi_list_add "$(read_conf "$TPROXY_CONF" "WIFI_SSID_LIST" "")" "$ssid")"
+  set_conf "$TPROXY_CONF" "WIFI_SSID_LIST" "$(quote_conf "$new_list")"
+  info "已添加 SSID: $ssid"
+  wifi_apply
+}
+
+# 从名单移除 SSID。参数: $1 SSID
+cmd_wifi_del() {
+  local ssid="${1:-}"
+  local new_list
+  [ -n "$ssid" ] || die_cli "用法: cli wifi del <SSID>"
+  new_list="$(wifi_list_del "$(read_conf "$TPROXY_CONF" "WIFI_SSID_LIST" "")" "$ssid")"
+  set_conf "$TPROXY_CONF" "WIFI_SSID_LIST" "$(quote_conf "$new_list")"
+  info "已移除 SSID: $ssid"
+  wifi_apply
+}
+
+# 列出名单
+cmd_wifi_list() {
+  local list
+  list="$(read_conf "$TPROXY_CONF" "WIFI_SSID_LIST" "")"
+  if [ -z "$list" ]; then
+    printf "名单为空\n"
+    return 0
+  fi
+  printf "%s" "$list" | sed 's/，/,/g' | tr ',' '\n' | while IFS= read -r s; do
+    [ -n "$s" ] && printf "  - %s\n" "$s"
+  done
+}
+
+# 清空名单
+cmd_wifi_clear() {
+  set_conf "$TPROXY_CONF" "WIFI_SSID_LIST" "$(quote_conf "")"
+  info "名单已清空"
+  wifi_apply
+}
+
+# 设置非 WiFi 网络是否走代理。参数: $1 on/off
+cmd_wifi_cellular() {
+  local value="${1:-}"
+  case "$value" in
+    on) set_conf "$TPROXY_CONF" "PROXY_ON_CELLULAR" "1" ;;
+    off) set_conf "$TPROXY_CONF" "PROXY_ON_CELLULAR" "0" ;;
+    *) die_cli "用法: cli wifi cellular <on|off>" ;;
+  esac
+  info "非 WiFi 网络代理已更新: $value"
+  wifi_apply
+}
+
+# wifi 命令组分发
+cmd_wifi() {
+  local subcmd="${1:-status}"
+  shift 2> /dev/null || true
+
+  case "$subcmd" in
+    status) cmd_wifi_status "$@" ;;
+    on) cmd_wifi_on "$@" ;;
+    off) cmd_wifi_off "$@" ;;
+    mode) cmd_wifi_mode "$@" ;;
+    add) cmd_wifi_add "$@" ;;
+    del | remove | rm) cmd_wifi_del "$@" ;;
+    list) cmd_wifi_list "$@" ;;
+    clear) cmd_wifi_clear "$@" ;;
+    cellular) cmd_wifi_cellular "$@" ;;
+    help | -h | --help) show_wifi_help ;;
+    *) die_cli "用法错误，使用 cli wifi help 查看帮助" ;;
+  esac
+}
+
 
 # 显示全部命令组的总帮助
 show_help() {
@@ -896,6 +1154,7 @@ NetProxy CLI
   cli sub update <名称>               更新指定订阅
   cli sub update-all                  更新全部订阅
   cli sub remove <名称>               删除订阅
+  cli sub auto <status|on|off|interval>  定时更新
 
 控制接口:
   cli api groups                      查看代理组
@@ -917,6 +1176,14 @@ NetProxy CLI
   cli tproxy reload                   重载透明代理规则
   cli tproxy quic <on|off>            开关 QUIC 阻断
   cli tproxy cnip <on|off>            开关中国 IP 绕过
+
+WiFi 自动切换:
+  cli wifi status                     查看 WiFi 自动切换配置
+  cli wifi on | off                   启用 / 禁用
+  cli wifi mode <blacklist|whitelist> 设置名单模式
+  cli wifi add <SSID> | del <SSID>    增删名单 SSID
+  cli wifi list | clear               列出 / 清空名单
+  cli wifi cellular <on|off>          非 WiFi 网络是否走代理
 EOF
 }
 
@@ -943,6 +1210,7 @@ main() {
     api) cmd_api "$@" ;;
     app) cmd_app "$@" ;;
     tproxy) cmd_tproxy "$@" ;;
+    wifi) cmd_wifi "$@" ;;
     help | -h | --help) show_help ;;
     *) die_cli "未知命令组: $group，使用 cli help 查看帮助" ;;
   esac

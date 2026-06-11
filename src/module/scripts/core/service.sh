@@ -22,6 +22,8 @@ readonly CONFDIR="$SINGBOX_DIR/confdir"               # 通用配置目录
 readonly RUNTIME_DIR="$SINGBOX_DIR/runtime"           # 运行时生成目录
 readonly SWITCH_SCRIPT="$MODDIR/scripts/core/switch.sh"     # 模式/节点切换脚本
 readonly TPROXY_SCRIPT="$MODDIR/scripts/network/tproxy.sh"  # 透明代理脚本
+readonly NETMON_SCRIPT="$MODDIR/scripts/network/netmon.sh"  # WiFi 自动切换监听脚本
+readonly SUBSCHED_SCRIPT="$MODDIR/scripts/core/subsched.sh" # 订阅定时更新调度脚本
 readonly KILL_TIMEOUT=5                               # 等待进程退出的秒数上限
 readonly LOG_TAG="service"                            # 日志组件标签
 
@@ -163,6 +165,10 @@ EOF
   if [ "$skip_tproxy" != "1" ]; then
     log "DEBUG" "正在加载透明代理规则..."
     "$TPROXY_SCRIPT" start -d "$TPROXY_CONF_DIR" >> "$LOG_FILE" 2>&1 || die "透明代理规则加载失败"
+    # WiFi 自动切换：按配置启停监听守护并做初始决策 (失败不影响主流程)
+    sh "$NETMON_SCRIPT" sync > /dev/null 2>&1 || log "WARN" "WiFi 自动切换初始化失败"
+    # 订阅定时更新：按配置启停 crond 守护
+    sh "$SUBSCHED_SCRIPT" sync > /dev/null 2>&1 || log "WARN" "订阅定时更新初始化失败"
   fi
 
   log "INFO" "sing-box 服务启动完成"
@@ -183,6 +189,10 @@ do_stop() {
 
   # 先清理透明代理规则 (非跳过模式)
   if [ "$skip_tproxy" != "1" ]; then
+    # 先停掉 WiFi 自动切换监听守护，避免其在清理期间误触发切换
+    sh "$NETMON_SCRIPT" stop > /dev/null 2>&1 || true
+    # 停掉订阅定时更新 crond 守护
+    sh "$SUBSCHED_SCRIPT" stop > /dev/null 2>&1 || true
     log "DEBUG" "正在清理透明代理规则..."
     "$TPROXY_SCRIPT" stop -d "$TPROXY_CONF_DIR" >> "$LOG_FILE" 2>&1 || true
   fi

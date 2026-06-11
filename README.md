@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="image/N.svg" alt="NetProxy Logo" width="120" />
+  <img src="docs/public/N.svg" alt="NetProxy Logo" width="120" />
 </p>
 
 <h1 align="center">NetProxy</h1>
@@ -45,7 +45,7 @@
 ## Screenshots
 
 <div align="center">
-  <img src="image/Screenshot.jpg" width="60%" alt="Interface Preview" />
+  <img src="docs/public/Screenshot.jpg" width="60%" alt="Interface Preview" />
 </div>
 
 ---

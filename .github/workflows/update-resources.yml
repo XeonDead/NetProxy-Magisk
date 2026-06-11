@@ -1,0 +1,130 @@
+name: 每日更新内置资源
+
+# 每日检查内置上游资源（zashboard 仪表盘 + GeoIP/GeoSite/广告规则），
+# 有更新则汇总到一个 PR（人工 review 合并后由 ci.yml 重建打包）。
+# 资源清单见 .github/resources.json，新增/调整资源只改清单、无需动本文件。
+
+on:
+  schedule:
+    - cron: '0 16 * * *'   # 每日 00:00 北京时间（= 16:00 UTC）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: update-resources
+  cancel-in-progress: true
+
+jobs:
+  update:
+    name: 检查并更新内置资源
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v6
+
+      - name: 更新原始资源文件
+        id: raw
+        run: |
+          changed=""
+          # 逐条读取清单 raw 数组（path<TAB>url）
+          while IFS=$'\t' read -r path url; do
+            [ -n "$path" ] || continue
+            echo "检查: $path ← $url"
+            tmp="$(mktemp)"
+            if ! curl -fsSL --retry 3 --connect-timeout 15 "$url" -o "$tmp"; then
+              echo "::warning::下载失败，跳过: $url"
+              rm -f "$tmp"; continue
+            fi
+            if [ ! -s "$tmp" ]; then
+              echo "::warning::内容为空，跳过: $url"
+              rm -f "$tmp"; continue
+            fi
+            if [ ! -f "$path" ] || ! cmp -s "$tmp" "$path"; then
+              mkdir -p "$(dirname "$path")"
+              mv "$tmp" "$path"
+              echo "  → 已更新"
+              changed="${changed}- ${path}（上游内容变化）"$'\n'
+            else
+              rm -f "$tmp"
+              echo "  → 无变化"
+            fi
+          done < <(jq -r '.raw[] | [.path, .url] | @tsv' .github/resources.json)
+
+          {
+            echo "summary<<RESOURCES_EOF"
+            printf '%s' "$changed"
+            echo "RESOURCES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: 更新 zashboard 仪表盘
+        id: zashboard
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          repo="$(jq -r '.githubRelease[0].repo' .github/resources.json)"
+          dest="$(jq -r '.githubRelease[0].path' .github/resources.json)"
+          pattern="$(jq -r '.githubRelease[0].assetPattern' .github/resources.json)"
+          current="$(jq -r '.githubRelease[0].currentVersion' .github/resources.json)"
+
+          latest="$(gh release view --repo "$repo" --json tagName -q .tagName)"
+          echo "zashboard 当前: '${current:-无}'，最新: '$latest'"
+
+          summary=""
+          if [ "$latest" != "$current" ]; then
+            echo "发现新版本，开始更新..."
+            rm -rf tmp-zashboard && mkdir -p tmp-zashboard
+            if gh release download "$latest" --repo "$repo" --pattern "$pattern" --dir tmp-zashboard; then
+              unzip -q tmp-zashboard/*.zip -d tmp-zashboard/extract
+              # 若解压出单个顶层目录（dist/ 或 dist-no-fonts/ 等），进入它；否则用解压根
+              srcdir="tmp-zashboard/extract"
+              inner="$(find "$srcdir" -mindepth 1 -maxdepth 1)"
+              if [ "$(printf '%s\n' "$inner" | grep -c .)" = "1" ] && [ -d "$inner" ]; then
+                srcdir="$inner"
+              fi
+              rm -rf "$dest"
+              mkdir -p "$dest"
+              cp -r "$srcdir"/. "$dest"/
+              # 回写当前版本到清单
+              tmpjson="$(mktemp)"
+              jq --arg v "$latest" '.githubRelease[0].currentVersion = $v' .github/resources.json > "$tmpjson"
+              mv "$tmpjson" .github/resources.json
+              summary="- ${dest}：zashboard ${current:-初始} → ${latest}"
+            else
+              echo "::warning::未找到资产 '$pattern'，跳过 zashboard 更新（请核对 assetPattern）"
+            fi
+            rm -rf tmp-zashboard
+          else
+            echo "已是最新，跳过"
+          fi
+
+          {
+            echo "summary<<ZASHBOARD_EOF"
+            printf '%s\n' "$summary"
+            echo "ZASHBOARD_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: 开启 / 更新 Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore/update-resources
+          delete-branch: true
+          base: main
+          labels: resources
+          title: "chore(资源): 更新内置上游资源"
+          commit-message: |
+            chore(资源): 更新内置上游资源
+
+            由「每日更新内置资源」工作流自动检测并同步。
+          body: |
+            ## 内置资源自动更新
+
+            本 PR 由[每日更新内置资源](${{ github.server_url }}/${{ github.repository }}/actions/workflows/update-resources.yml)工作流自动生成。
+
+            ### 本次更新
+            ${{ steps.raw.outputs.summary }}
+            ${{ steps.zashboard.outputs.summary }}
+
+            > 合并后将触发 CI 重新构建打包；请先核对 diff 是否符合预期。

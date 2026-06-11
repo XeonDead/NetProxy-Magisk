@@ -43,7 +43,9 @@ readonly EXECUTABLE_FILES="
     scripts/core/service.sh
     scripts/core/switch.sh
     scripts/network/tproxy.sh
+    scripts/network/netmon.sh
     scripts/core/subscription.sh
+    scripts/core/subsched.sh
     scripts/utils/ipset.sh
     scripts/utils/gms_fix.sh
 "
@@ -417,7 +419,7 @@ install_ipset_lkm() {
   print_title "集成 IPSET 驱动安装"
 
   # 安装包未包含 IPSET 组件则整体跳过
-  if [ ! -d "$MODPATH/bin/IPSET-LKM" ] && [ ! -f "$MODPATH/bin/ipset" ]; then
+  if [ ! -d "$MODPATH/bin/IPSET-LKM" ] && [ ! -f "$MODPATH/bin/IPSET-LKM/ipset" ]; then
       print_ok "安装包未包含 IPSET 组件，跳过"
       return 0
   fi
@@ -490,7 +492,7 @@ install_ipset_lkm() {
   fi
 
   # 3. 配置 ipset 二进制工具的运行环境
-  if [ -f "$MODPATH/bin/ipset" ]; then
+  if [ -f "$MODPATH/bin/IPSET-LKM/ipset" ]; then
       print_step "配置 IPSET 二进制工具环境..."
 
       # KernelSU / APatch：在其 bin 目录创建软链接
@@ -501,14 +503,14 @@ install_ipset_lkm() {
 
           mkdir -p "$ksu_bin"
           rm -f "$ksu_bin/ipset"
-          ln -s "/data/adb/modules/netproxy/bin/ipset" "$ksu_bin/ipset"
+          ln -s "/data/adb/modules/netproxy/bin/IPSET-LKM/ipset" "$ksu_bin/ipset"
           print_ok "已创建符号链接: $ksu_bin/ipset"
 
       # Magisk：挂载到模块的 system/bin
       elif [ "$MAGISK_VER_CODE" ]; then
           print_ok "检测到 Magisk 环境"
           mkdir -p "$MODPATH/system/bin"
-          cp -f "$MODPATH/bin/ipset" "$MODPATH/system/bin/ipset"
+          cp -f "$MODPATH/bin/IPSET-LKM/ipset" "$MODPATH/system/bin/ipset"
           set_perm "$MODPATH/system/bin/ipset" 0 0 0755
           print_ok "ipset 已挂载至 /system/bin"
       fi

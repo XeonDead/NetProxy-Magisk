@@ -24,8 +24,14 @@ export default defineConfig({
     nav: [
       { text: '指南', link: '/guide/introduction' },
       { text: '配置参考', link: '/config/module' },
-      { text: 'N', link: '/tools/monet' },
-      { text: '祈愿', link: '/tools/gacha' },
+      {
+        text: '工具',
+        items: [
+          { text: '莫奈调色器', link: '/tools/monet' },
+          { text: '祈愿模拟器', link: '/tools/gacha' }
+        ]
+      },
+      { text: '更新日志', link: '/changelog' },
       { text: 'GitHub', link: 'https://github.com/Fanju6/NetProxy-Magisk' }
     ],
 
@@ -74,7 +80,7 @@ export default defineConfig({
     ],
 
     footer: {
-      message: '基于 GPL-3.0 许可证发布',
+      message: '基于 GPL-3.0 许可证发布 · <a href="/privacy">隐私政策</a>',
       copyright: 'Copyright © 2024-present Fanju'
     },
 
