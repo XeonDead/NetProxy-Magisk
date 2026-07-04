@@ -44,7 +44,7 @@
       {
         "clash_mode": "Global",
         "action": "route",
-        "server": "remote"
+        "server": "dns-proxy"
       },
       {
         "rule_set": [
@@ -58,7 +58,7 @@
           "proxy"
         ],
         "action": "route",
-        "server": "remote"
+        "server": "dns-proxy"
       },
       {
         "type": "logical",

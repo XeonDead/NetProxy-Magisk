@@ -1,12 +1,12 @@
-name: 每日更新内置资源
+name: 每周更新内置资源
 
-# 每日检查内置上游资源（zashboard 仪表盘 + GeoIP/GeoSite/广告规则），
+# 每周检查内置上游资源（zashboard 仪表盘 + GeoIP/GeoSite/广告规则），
 # 有更新则汇总到一个 PR（人工 review 合并后由 ci.yml 重建打包）。
 # 资源清单见 .github/resources.json，新增/调整资源只改清单、无需动本文件。
 
 on:
   schedule:
-    - cron: '0 16 * * *'   # 每日 00:00 北京时间（= 16:00 UTC）
+    - cron: '0 16 * * 0'   # 每周一 00:00 北京时间（= 周日 16:00 UTC）
   workflow_dispatch:
 
 permissions:
@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 拉取代码
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: 更新原始资源文件
         id: raw
@@ -107,7 +107,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: 开启 / 更新 Pull Request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: chore/update-resources
           delete-branch: true
@@ -117,11 +117,11 @@ jobs:
           commit-message: |
             chore(资源): 更新内置上游资源
 
-            由「每日更新内置资源」工作流自动检测并同步。
+            由「每周更新内置资源」工作流自动检测并同步。
           body: |
             ## 内置资源自动更新
 
-            本 PR 由[每日更新内置资源](${{ github.server_url }}/${{ github.repository }}/actions/workflows/update-resources.yml)工作流自动生成。
+            本 PR 由[每周更新内置资源](${{ github.server_url }}/${{ github.repository }}/actions/workflows/update-resources.yml)工作流自动生成。
 
             ### 本次更新
             ${{ steps.raw.outputs.summary }}

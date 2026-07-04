@@ -27,14 +27,19 @@ PROXY_WAS_RUNNING=false
 # 需要保留的配置文件/目录 (相对于 config/)
 readonly PRESERVE_CONFIGS="
     module.conf
-    tproxy/
-    singbox/
+    tproxy/tproxy.conf
+    singbox/confdir/
+    singbox/outbounds/
+    singbox/source/direct.json
+    singbox/source/proxy.json
+    singbox/source/block.json
 "
 
 # 需要设置可执行权限的文件
 readonly EXECUTABLE_FILES="
     bin/sing-box
     bin/proxylink
+    bin/ebpf-matcher
     bin/IPSET-LKM/ko-loader
     bin/IPSET-LKM/ipset
     action.sh
@@ -255,8 +260,8 @@ sync_to_live() {
     return 0
   fi
 
-  # 同步程序文件与脚本 (整目录覆盖)
-  local sync_dirs="bin scripts action.sh service.sh module.prop"
+  # 同步程序文件与脚本，以及需要更新的内置资源 (整目录/文件覆盖)
+  local sync_dirs="bin scripts action.sh service.sh module.prop config/tproxy/cn.zone config/tproxy/cn_ipv6.zone config/singbox/source"
 
   for item in $sync_dirs; do
     local src="$MODPATH/$item"

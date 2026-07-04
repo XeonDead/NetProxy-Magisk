@@ -55,7 +55,9 @@ api_delay_url() {
 # 返回: 标准输出打印编码后的字符串 (转义常见特殊字符)
 #######################################
 url_encode_simple() {
-  printf "%s" "$1" | sed 's/%/%25/g; s/ /%20/g; s/#/%23/g; s/?/%3F/g; s/&/%26/g; s/\//%2F/g; s/+/%2B/g'
+  local decoded
+  decoded="$(printf '%b' "$1")"
+  printf "%s" "$decoded" | sed 's/%/%25/g; s/ /%20/g; s/'"$(printf '\t')"'/%09/g; s/#/%23/g; s/?/%3F/g; s/&/%26/g; s/\//%2F/g; s/+/%2B/g'
 }
 
 #######################################
@@ -287,7 +289,7 @@ api_select_proxy() {
   local payload
 
   # 组装请求体并对组名做 URL 编码
-  payload="{\"name\":\"$(json_escape "$tag")\"}"
+  payload="{\"name\":\"$tag\"}"
   api_request PUT "/proxies/$(url_encode_simple "$group")" "$payload" > /dev/null 2>&1
 }
 

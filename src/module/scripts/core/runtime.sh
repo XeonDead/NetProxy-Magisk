@@ -91,9 +91,6 @@ scan_runtime_nodes() {
     !found && /"tag"[ \t]*:/ {
         tag = $4
 
-        # 转义标签中的反斜杠
-        gsub(/\\/, "\\\\", tag)
-
         # 输出 文件名[TAB]标签
         printf "%s\t%s\n", FILENAME, tag
 
@@ -166,7 +163,7 @@ write_runtime_outbounds() {
 
   # 扫描无标签时，回退使用当前节点标签 (非保留标签)
   if [ -z "$tags" ] && ! is_reserved_outbound_tag "$CUR_CURRENT_TAG"; then
-    tags="\"$(json_escape "$CUR_CURRENT_TAG")\""
+    tags="\"$CUR_CURRENT_TAG\""
   fi
 
   [ -n "$tags" ] || die "当前节点目录没有可用的出站标签: $CUR_OUTBOUND_DIR"
@@ -231,7 +228,7 @@ EOF
         "direct",
         $tags
       ],
-      "default": "$(json_escape "$CUR_CURRENT_TAG")",
+      "default": "$CUR_CURRENT_TAG",
       "interrupt_exist_connections": true
     }
   ]

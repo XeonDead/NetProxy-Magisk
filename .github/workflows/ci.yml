@@ -11,7 +11,7 @@ on:
       - '.github/actions/build-module/**'
 
 permissions:
-  contents: read
+  contents: write
 
 # 同一分支的新推送取消尚未完成的旧构建
 concurrency:
@@ -20,11 +20,11 @@ concurrency:
 
 jobs:
   build:
-    name: 构建与推送开发包
+    name: 构建与发布开发包
     runs-on: ubuntu-latest
     steps:
       - name: 拉取代码
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -32,42 +32,52 @@ jobs:
         id: pack
         uses: ./.github/actions/build-module
 
-      - name: 推送开发包到 Telegram
-        env:
-          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
-          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-          COMMIT_MSG: ${{ github.event.head_commit.message }}
-          VERSION: ${{ steps.pack.outputs.version }}
-          COMMIT_COUNT: ${{ steps.pack.outputs.commit_count }}
-          FULL_NAME: ${{ steps.pack.outputs.full_name }}
-          LITE_NAME: ${{ steps.pack.outputs.lite_name }}
-          MINI_NAME: ${{ steps.pack.outputs.mini_name }}
+      - name: 设置构建元信息
         run: |
-          CAPTION="模块构建成功通知
+          echo "TIMESTAMP=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
+          echo "SHORT_HASH=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-          版本: \`${VERSION}\` (build ${COMMIT_COUNT})
-          说明:
-          \`\`\`
-          ${COMMIT_MSG:-手动触发或无说明}
-          \`\`\`
+      - name: 发布 Pre-release 到 GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 删除已有的 nightly 发布和 Tag
+          gh release delete nightly --cleanup-tag -y || true
+          
+          # 等待 API 状态同步
+          sleep 2
+          
+          # 创建新的 nightly 发布并上传资产
+          gh release create nightly \
+            --prerelease \
+            --generate-notes \
+            --title "nightly Pre-release" \
+            --notes "同步最新代码变更，仅保留最新版本的构建产物。
 
-          [提交记录](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
-          [构建日志](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            版本: \`${{ steps.pack.outputs.version }}\` (build ${{ steps.pack.outputs.commit_count }})
+            构建时间: ${{ env.TIMESTAMP }}
+            提交: \`${{ env.SHORT_HASH }}\`" \
+            "${{ steps.pack.outputs.full_name }}" \
+            "${{ steps.pack.outputs.lite_name }}" \
+            "${{ steps.pack.outputs.mini_name }}"
 
-          # 统一发送函数：$1=文件 $2=说明，其余参数透传给 curl（如 -F parse_mode=Markdown）
-          send() {
-            curl -sS \
-              -F "chat_id=${TG_CHAT_ID}" \
-              -F "message_thread_id=2275" \
-              -F "document=@$1" \
-              -F "caption=$2" \
-              "${@:3}" \
-              "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"
-          }
+      - name: Telegram 构建成功通知
+        if: success()
+        uses: cbrgm/telegram-github-action@v1
+        with:
+          token: ${{ secrets.TG_BOT_TOKEN }}
+          to: ${{ secrets.TG_CHAT_ID }}
+          thread-id: 2275
+          parse-mode: markdown
+          message: |
+            **持续集成构建成功**
 
-          send "$FULL_NAME" "$CAPTION" -F "parse_mode=Markdown"
-          send "$LITE_NAME" "lite: 不含 IPSET 驱动，适用于内核已内置 IPSET 的设备"
-          send "$MINI_NAME" "mini: 不含二进制文件和 IPSET 驱动，需自行放入 sing-box、proxylink、zashboard 等组件"
+            版本: `${{ steps.pack.outputs.version }}` (build ${{ steps.pack.outputs.commit_count }})
+            说明: ${{ github.event.head_commit.message }}
+
+            [下载开发包](${{ github.server_url }}/${{ github.repository }}/releases/tag/nightly)
+            [提交记录](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+            [构建日志](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
       - name: 失败通知
         if: failure()
