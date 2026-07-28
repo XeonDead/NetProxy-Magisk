@@ -47,6 +47,13 @@
         "server": "dns-proxy"
       },
       {
+        "domain": [
+          "cloudflare-ech.com"
+        ],
+        "action": "route",
+        "server": "dns-direct"
+      },
+      {
         "rule_set": [
           "direct"
         ],
