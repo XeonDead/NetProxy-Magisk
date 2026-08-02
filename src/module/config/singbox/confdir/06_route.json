@@ -319,6 +319,12 @@
         "outbound": "proxy"
       },
       {
+        "protocol": [
+          "bittorrent"
+        ],
+        "outbound": "direct"
+      },
+      {
         "type": "logical",
         "mode": "and",
         "rules": [
@@ -389,12 +395,6 @@
           "geosite-faceit"
         ],
         "action": "route",
-        "outbound": "direct"
-      },
-      {
-        "protocol": [
-          "bittorrent"
-        ],
         "outbound": "direct"
       }
     ],
