@@ -4,22 +4,14 @@
     "default_domain_resolver": "yandex",
     "rule_set": [
       {
-        "tag": "block",
+        "tag": [
+          "block",
+          "direct",
+          "proxy"
+        ],
         "type": "local",
         "format": "source",
-        "path": "./source/block.json"
-      },
-      {
-        "tag": "direct",
-        "type": "local",
-        "format": "source",
-        "path": "./source/direct.json"
-      },
-      {
-        "tag": "proxy",
-        "type": "local",
-        "format": "source",
-        "path": "./source/proxy.json"
+        "path": "./source/{tag}.json"
       },
       {
         "tag": "geosite-category-ads",
@@ -298,6 +290,11 @@
         ],
         "action": "route",
         "outbound": "proxy"
+      },
+      {
+        "clash_mode": "Global",
+        "action": "route",
+        "outbound": "Proxy"
       },
       {
         "ip_cidr": [

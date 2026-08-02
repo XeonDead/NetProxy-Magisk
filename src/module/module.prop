@@ -3,6 +3,6 @@ name=NetProxy
 version=v7.2.0
 versionCode=1
 author=Fanju & XeonDead
-description=sing-box based transparent proxy module for Android
+description=Android transparent proxy tool for inbound traffic based on sing-box eBPF
 updateJson=https://github.com/XeonDead/NetProxy-Magisk/releases/latest/download/update.json
 webuiIcon=webroot/favicon.svg
