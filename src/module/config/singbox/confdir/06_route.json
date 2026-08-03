@@ -359,7 +359,7 @@
       {
         "action": "resolve",
         "match_only": true,
-        "strategy": "ipv4_only",
+        "strategy": "prefer_ipv4",
         "server": "google"
       },
       {

@@ -10,12 +10,12 @@
   "route": {
     "rules": [
       {
-        "inbound": "tproxy_in",
         "action": "resolve",
-        "strategy": "prefer_ipv4"
+        "strategy": "prefer_ipv4",
+        "rewrite_ttl": 300,
+        "timeout": "300s"
       },
       {
-        "inbound": "tproxy_in",
         "action": "sniff",
         "timeout": "1s"
       }
