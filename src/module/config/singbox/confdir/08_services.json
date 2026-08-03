@@ -7,7 +7,7 @@
       "secret": "singbox",
       "dashboard": {
         "enabled": true,
-        "path": "dashboard",
+        "path": "/data/adb/modules/netproxy/webroot"
         "download_url": "https://github.com/SagerNet/sing-box-dashboard/archive/refs/heads/gh-pages.zip",
         "http_client": "default-http-client",
         "update_interval": "1d"
