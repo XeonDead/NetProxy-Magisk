@@ -1,26 +1,76 @@
 {
   "raw": [
     {
+      "name": "Ads_AWAvenue",
       "path": "src/module/config/singbox/source/Ads_AWAvenue.srs",
-      "url": "https://raw.githubusercontent.com/Repcz/Tool/X/sing-box/Rules/Ads_AWAvenue.srs"
+      "url": "https://raw.githubusercontent.com/Repcz/Tool/X/sing-box/Rules/Ads_AWAvenue.srs",
+      "repo": "Repcz/Tool",
+      "ref": "X",
+      "sourcePath": "sing-box/Rules/Ads_AWAvenue.srs",
+      "metadataPath": "sing-box/Rules/Ads_AWAvenue.json",
+      "currentCommit": "b275db41d70338b937f354972e9328f786028b9f"
     },
     {
+      "name": "AppleCN",
       "path": "src/module/config/singbox/source/AppleCN.srs",
-      "url": "https://raw.githubusercontent.com/Repcz/Tool/X/sing-box/Rules/AppleCN.srs"
+      "url": "https://raw.githubusercontent.com/Repcz/Tool/X/sing-box/Rules/AppleCN.srs",
+      "repo": "Repcz/Tool",
+      "ref": "X",
+      "sourcePath": "sing-box/Rules/AppleCN.srs",
+      "metadataPath": "sing-box/Rules/AppleCN.json",
+      "currentCommit": "f90ff980209e9b75aef68a449c1eed3771eee0fc"
     },
     {
+      "name": "ChinaDomain",
       "path": "src/module/config/singbox/source/ChinaDomain.srs",
-      "url": "https://raw.githubusercontent.com/Repcz/Tool/X/sing-box/Rules/ChinaDomain.srs"
+      "url": "https://raw.githubusercontent.com/Repcz/Tool/X/sing-box/Rules/ChinaDomain.srs",
+      "repo": "Repcz/Tool",
+      "ref": "X",
+      "sourcePath": "sing-box/Rules/ChinaDomain.srs",
+      "metadataPath": "sing-box/Rules/ChinaDomain.json",
+      "currentCommit": "f90ff980209e9b75aef68a449c1eed3771eee0fc"
     },
     {
+      "name": "ChinaIP",
       "path": "src/module/config/singbox/source/ChinaIP.srs",
-      "url": "https://raw.githubusercontent.com/Repcz/Tool/X/sing-box/Rules/ChinaIP.srs"
+      "url": "https://raw.githubusercontent.com/Repcz/Tool/X/sing-box/Rules/ChinaIP.srs",
+      "repo": "Repcz/Tool",
+      "ref": "X",
+      "sourcePath": "sing-box/Rules/ChinaIP.srs",
+      "metadataPath": "sing-box/Rules/ChinaIP.json",
+      "currentCommit": "a5c75a33c19b0db0d852dc679b20942e45b33662"
     },
     {
+      "name": "Proxy",
       "path": "src/module/config/singbox/source/Proxy.srs",
-      "url": "https://raw.githubusercontent.com/Repcz/Tool/X/sing-box/Rules/Proxy.srs"
+      "url": "https://raw.githubusercontent.com/Repcz/Tool/X/sing-box/Rules/Proxy.srs",
+      "repo": "Repcz/Tool",
+      "ref": "X",
+      "sourcePath": "sing-box/Rules/Proxy.srs",
+      "metadataPath": "sing-box/Rules/Proxy.json",
+      "currentCommit": "2602ff2dd69c4ff9bb204f5af3c18e419747f30e"
     }
   ],
+  "singBox": {
+    "path": "src/module/bin/sing-box",
+    "repo": "reF1nd/sing-box",
+    "tagPattern": "^v[0-9].*-reF1nd$",
+    "currentVersion": "v1.14.0-beta.5-reF1nd",
+    "goVersion": "1.25.12",
+    "ndkVersion": "r25c",
+    "buildTags": [
+      "with_gvisor",
+      "with_quic",
+      "with_dhcp",
+      "with_utls",
+      "with_clash_api",
+      "with_tailscale",
+      "badlinkname",
+      "tfogo_checklinkname0",
+      "with_provider",
+      "with_ebpf"
+    ]
+  },
   "githubRelease": [
     {
       "path": "src/module/webroot/zashboard",
@@ -34,7 +84,8 @@
       "path": "src/module/webroot/sing-box-dashboard",
       "repo": "SagerNet/sing-box-dashboard",
       "ref": "gh-pages",
-      "currentCommit": "4254b9c42e70b622953dca6c79bf3451bc50a489"
+      "currentCommit": "fa4d6ab6e742c4c22b65a2de3b10280d57c4d364",
+      "currentSourceCommit": "7021b7332b2bc52036b041cb9b5d5fae74d50d60"
     }
   ]
 }
