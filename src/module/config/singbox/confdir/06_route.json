@@ -294,7 +294,7 @@
       {
         "clash_mode": "Global",
         "action": "route",
-        "outbound": "Proxy"
+        "outbound": "proxy"
       },
       {
         "ip_cidr": [
@@ -302,7 +302,7 @@
           "fc00::/18"
         ],
         "action": "route",
-        "outbound": "Proxy"
+        "outbound": "proxy"
       },
       {
         "rule_set": [
@@ -322,6 +322,7 @@
         "protocol": [
           "bittorrent"
         ],
+        "action": "route",
         "outbound": "direct"
       },
       {
