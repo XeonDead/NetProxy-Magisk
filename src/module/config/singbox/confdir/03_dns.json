@@ -44,28 +44,28 @@
       {
         "clash_mode": "Global",
         "action": "route",
-        "server": "dns-proxy"
+        "server": "google"
       },
       {
         "domain": [
           "cloudflare-ech.com"
         ],
         "action": "route",
-        "server": "dns-direct"
+        "server": "yandex"
       },
       {
         "rule_set": [
           "direct"
         ],
         "action": "route",
-        "server": "adguard"
+        "server": "yandex"
       },
       {
         "rule_set": [
           "proxy"
         ],
         "action": "route",
-        "server": "dns-proxy"
+        "server": "google"
       },
       {
         "type": "logical",
@@ -78,9 +78,7 @@
           {
             "rule_set": [
               "block",
-              "geosite-win-spy",
-              "geosite-category-ads",
-              "geosite-torrent"
+              "hagezi-pro-adlist"
             ]
           }
         ],

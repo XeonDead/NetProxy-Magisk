@@ -14,259 +14,36 @@
         "path": "./source/{tag}.json"
       },
       {
-        "tag": "geosite-category-ads",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/category-ads.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-category-ads.srs"
-      },
-      {
         "tag": "hagezi-pro-adlist",
         "type": "remote",
         "format": "binary",
         "url": "https://github.com/zxc-rv/ad-filter/releases/latest/download/adlist.srs",
         "http_client": "default-http-client",
-        "update_interval": "6h",
+        "update_interval": "24h",
         "path": "./source/hagezi-pro-adlist.srs"
       },
       {
-        "tag": "geosite-whitelist",
+        "tag": "geoip-ru",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/whitelist.srs",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/refs/heads/rule-set/geoip-ru.srs",
         "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-whitelist.srs"
+        "update_interval": "24h",
+        "path": "./source/geoip-ru.srs"
       },
       {
-        "tag": "geosite-category-ru",
-        "type": "remote",
+        "tag": "geosite-ru",
+        "type": "local",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/category-ru.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-category-ru.srs"
-      },
-      {
-        "tag": "geosite-category-geoblock-ru",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/category-geoblock-ru.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-category-geoblock-ru.srs"
-      },
-      {
-        "tag": "geosite-private",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/private.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-private.srs"
-      },
-      {
-        "tag": "geosite-torrent",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/torrent.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-torrent.srs"
-      },
-      {
-        "tag": "geosite-google-play",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/google-play.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-google-play.srs"
-      },
-      {
-        "tag": "geosite-github",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/github.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-github.srs"
-      },
-      {
-        "tag": "geosite-youtube",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/youtube.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-youtube.srs"
-      },
-      {
-        "tag": "geosite-telegram",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/telegram.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-telegram.srs"
-      },
-      {
-        "tag": "geosite-microsoft",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/microsoft.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-microsoft.srs"
-      },
-      {
-        "tag": "geosite-apple",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/apple.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-apple.srs"
-      },
-      {
-        "tag": "geosite-epicgames",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/epicgames.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-epicgames.srs"
-      },
-      {
-        "tag": "geosite-riot",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/riot.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-riot.srs"
-      },
-      {
-        "tag": "geosite-escapefromtarkov",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/escapefromtarkov.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-escapefromtarkov.srs"
-      },
-      {
-        "tag": "geosite-steam",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/steam.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-steam.srs"
-      },
-      {
-        "tag": "geosite-twitch",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/twitch.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-twitch.srs"
-      },
-      {
-        "tag": "geosite-twitch-ads",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/twitch-ads.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-twitch-ads.srs"
-      },
-      {
-        "tag": "geosite-pinterest",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/pinterest.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-pinterest.srs"
-      },
-      {
-        "tag": "geosite-faceit",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/faceit.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-faceit.srs"
-      },
-      {
-        "tag": "geosite-win-spy",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geosite/release/sing-box/win-spy.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geosite-win-spy.srs"
-      },
-      {
-        "tag": "geoip-direct",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geoip/release/sing-box/direct.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geoip-direct.srs"
-      },
-      {
-        "tag": "geoip-whitelist",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geoip/release/sing-box/whitelist.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geoip-whitelist.srs"
-      },
-      {
-        "tag": "geoip-private",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://raw.githubusercontent.com/hydraponique/roscomvpn-geoip/release/sing-box/private.srs",
-        "http_client": "default-http-client",
-        "update_interval": "6h",
-        "path": "./source/geoip-private.srs"
-      },
-      {
-        "tag": "f-droid-repos",
-        "format": "domain_suffix",
-        "rules": [
-          {
-            "domain_suffix": [
-              "izzyondroid.org",
-              "izzysoft.de",
-              "futo.org",
-              "guardianproject.info",
-              "api.spaceidle.xyz"
-            ]
-          }
-        ]
-      },
-      {
-        "tag": "ai-proxy-suffix",
-        "format": "domain_suffix",
-        "rules": [
-          {
-            "domain_suffix": [
-              "midjourney.com",
-              "civitai.com"
-            ]
-          }
-        ]
+        "path": "./source/zapret-ru-domains.srs"
       }
     ],
     "rules": [
+      {
+        "ip_is_private": true,
+        "action": "route",
+        "outbound": "direct"
+      },
       {
         "action": "sniff-override-destination"
       },
@@ -293,14 +70,6 @@
       },
       {
         "clash_mode": "Global",
-        "action": "route",
-        "outbound": "proxy"
-      },
-      {
-        "ip_cidr": [
-          "198.18.0.0/15",
-          "fc00::/18"
-        ],
         "action": "route",
         "outbound": "proxy"
       },
@@ -336,19 +105,12 @@
           {
             "rule_set": [
               "block",
-              "geosite-win-spy",
-              "geosite-category-ads",
-              "hagezi-pro-adlist",
-              "geosite-torrent"
+              "hagezi-pro-adlist"
             ]
           }
         ],
         "action": "reject",
         "rcode": "success"
-      },
-      {
-        "ip_is_private": true,
-        "outbound": "direct"
       },
       {
         "domain_suffix": [
@@ -365,35 +127,8 @@
       },
       {
         "rule_set": [
-          "geosite-category-geoblock-ru",
-          "geosite-google-play",
-          "geosite-github",
-          "geosite-twitch-ads",
-          "geosite-youtube",
-          "geosite-telegram",
-          "ai-proxy-suffix",
-          "f-droid-repos"
-        ],
-        "action": "route",
-        "outbound": "proxy"
-      },
-      {
-        "rule_set": [
-          "geosite-whitelist",
-          "geosite-private",
-          "geoip-whitelist",
-          "geoip-private",
-          "geosite-category-ru",
-          "geoip-direct",
-          "geosite-microsoft",
-          "geosite-apple",
-          "geosite-epicgames",
-          "geosite-riot",
-          "geosite-escapefromtarkov",
-          "geosite-steam",
-          "geosite-twitch",
-          "geosite-pinterest",
-          "geosite-faceit"
+          "geoip-ru",
+          "geosite-ru"
         ],
         "action": "route",
         "outbound": "direct"

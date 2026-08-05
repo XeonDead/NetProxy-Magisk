@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "domain": [
+        "championat.com"
+      ],
+      "domain_suffix": [
+        ".championat.com",
+        ".ru",
+        ".su",
+        ".xn--p1ai"
+      ]
+    }
+  ]
+}
