@@ -38,9 +38,9 @@ NetProxy 现在有三种正式入口：
 - `config/module.conf`：模块级默认项
 - `config/ebpf/ebpf.conf`：eBPF 入站、分应用与共享网络配置
 - `config/singbox/confdir/`：通用 sing-box 配置片段
-- `config/singbox/outbounds/`：节点与订阅目录
-- `config/singbox/runtime/`：运行时生成配置
-- `logs/`：服务、核心、订阅日志
+- `data/catalog/`：节点与订阅 Catalog
+- `runtime/`：运行时生成配置与服务状态
+- `logs/`：服务与核心日志，订阅更新记录写入服务日志
 
 ### Android 管理器侧
 
@@ -54,7 +54,7 @@ Android 管理器下载地址：[`NetProxy - Google Play`](https://play.google.c
 - 当前节点与出站模式
 - 节点 / 订阅导入、切换、测速、导出
 - 分应用代理开关与黑白名单
-- GMS 修复、自动启动、动态测速等常用项
+- 自动启动、动态测速等常用项
 - sing-box / eBPF / JSON 配置编辑
 - 日志查看与导出
 
@@ -63,4 +63,4 @@ Android 管理器下载地址：[`NetProxy - Google Play`](https://play.google.c
 - 日常使用：优先 Android 管理器
 - 批量或远程操作：CLI
 - 观察代理组、连接和延迟：Clash API / zashboard
-- 深度排障：查看 `service.log`、`sing-box.log`、`subscription.log`
+- 深度排障：查看 `service.log` 与 `sing-box.log`

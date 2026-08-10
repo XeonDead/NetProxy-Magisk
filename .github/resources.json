@@ -18,7 +18,8 @@
       "ref": "X",
       "sourcePath": "sing-box/Rules/AppleCN.srs",
       "metadataPath": "sing-box/Rules/AppleCN.json",
-      "currentCommit": "f90ff980209e9b75aef68a449c1eed3771eee0fc"
+      "currentCommit": "8e0987c5e1894a70cc2c4c3e2ffbfbcf0a36aeac",
+      "currentSha256": "c2f4c5bc86bb1faaf14f0ce692b0af8ad4765c6a36785da80066ade328ecf724"
     },
     {
       "name": "ChinaDomain",
@@ -28,7 +29,8 @@
       "ref": "X",
       "sourcePath": "sing-box/Rules/ChinaDomain.srs",
       "metadataPath": "sing-box/Rules/ChinaDomain.json",
-      "currentCommit": "f90ff980209e9b75aef68a449c1eed3771eee0fc"
+      "currentCommit": "8e0987c5e1894a70cc2c4c3e2ffbfbcf0a36aeac",
+      "currentSha256": "45c67bd6edb6cde6bea06039f2ff70824ac3f29488a739f01ac6e05ed3518a43"
     },
     {
       "name": "ChinaIP",
@@ -38,7 +40,8 @@
       "ref": "X",
       "sourcePath": "sing-box/Rules/ChinaIP.srs",
       "metadataPath": "sing-box/Rules/ChinaIP.json",
-      "currentCommit": "a5c75a33c19b0db0d852dc679b20942e45b33662"
+      "currentCommit": "eee40d30f48a5e527aae11f1047677294a3ca147",
+      "currentSha256": "ae0d2d01e35429647bf9387616badfbc3bf382adb431d8e5d636f307ae748a3c"
     },
     {
       "name": "Proxy",
@@ -48,26 +51,35 @@
       "ref": "X",
       "sourcePath": "sing-box/Rules/Proxy.srs",
       "metadataPath": "sing-box/Rules/Proxy.json",
-      "currentCommit": "2602ff2dd69c4ff9bb204f5af3c18e419747f30e"
+      "currentCommit": "8e0987c5e1894a70cc2c4c3e2ffbfbcf0a36aeac",
+      "currentSha256": "d2397b031e1761373fdabdc86193a21de14a253cdf937019855fe09888582061"
+    },
+    {
+      "name": "bpftool 5.16.0",
+      "path": "src/module/bin/bpftool",
+      "url": "https://raw.githubusercontent.com/bnsmb/binaries-for-Android/main/binaries/bpftool_static_5.16.0",
+      "repo": "bnsmb/binaries-for-Android",
+      "ref": "main",
+      "sourcePath": "binaries/bpftool_static_5.16.0",
+      "kind": "android-arm64-executable",
+      "currentCommit": "e5a6d28cccb6e38afd91460e0e23ef85731fe0bb",
+      "currentSha256": "fef6ee1c65fac265743040abb70841cc46dc903e026a8396d95dd1687d1ffb4f"
     }
   ],
   "singBox": {
     "path": "src/module/bin/sing-box",
     "repo": "reF1nd/sing-box",
     "tagPattern": "^v[0-9].*-reF1nd$",
-    "currentVersion": "v1.14.0-beta.5-reF1nd",
-    "goVersion": "1.25.12",
-    "ndkVersion": "r25c",
+    "currentVersion": "v1.14.0-beta.12-reF1nd",
+    "ndkVersion": "r29",
     "buildTags": [
-      "with_gvisor",
       "with_quic",
-      "with_dhcp",
       "with_utls",
       "with_clash_api",
+      "with_gvisor",
       "with_tailscale",
       "badlinkname",
       "tfogo_checklinkname0",
-      "with_provider",
       "with_ebpf"
     ]
   },
@@ -76,7 +88,7 @@
       "path": "src/module/webroot/zashboard",
       "repo": "Zephyruso/zashboard",
       "assetPattern": "dist-no-fonts.zip",
-      "currentVersion": "v3.16.1"
+      "currentVersion": "v3.18.0"
     }
   ],
   "githubArchive": [

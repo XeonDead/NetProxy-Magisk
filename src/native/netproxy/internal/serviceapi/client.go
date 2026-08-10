@@ -17,14 +17,14 @@ import (
 )
 
 const (
-	methodGetVersion         = "/daemon.StartedService/GetVersion"
-	methodGetStartedAt       = "/daemon.StartedService/GetStartedAt"
-	methodSubscribeStatus    = "/daemon.StartedService/SubscribeStatus"
-	methodGetClashModeStatus = "/daemon.StartedService/GetClashModeStatus"
-	methodSetClashMode       = "/daemon.StartedService/SetClashMode"
-	methodSelectOutbound     = "/daemon.StartedService/SelectOutbound"
-	methodURLTest            = "/daemon.StartedService/URLTest"
-	methodSubscribeGroups    = "/daemon.StartedService/SubscribeGroups"
+	methodGetStartedAt        = "/daemon.StartedService/GetStartedAt"
+	methodSubscribeStatus     = "/daemon.StartedService/SubscribeStatus"
+	methodGetClashModeStatus  = "/daemon.StartedService/GetClashModeStatus"
+	methodSetClashMode        = "/daemon.StartedService/SetClashMode"
+	methodSelectOutbound      = "/daemon.StartedService/SelectOutbound"
+	methodURLTest             = "/daemon.StartedService/URLTest"
+	methodSubscribeGroups     = "/daemon.StartedService/SubscribeGroups"
+	methodCloseAllConnections = "/daemon.StartedService/CloseAllConnections"
 )
 
 // Client is the minimal native Service API bridge used by the NetProxy shell
@@ -34,11 +34,6 @@ type Client struct {
 	baseURL    string
 	secret     string
 	httpClient *http.Client
-}
-
-type Version struct {
-	Version    string `json:"version"`
-	APIVersion int32  `json:"api_version"`
 }
 
 type StartedAt struct {
@@ -79,18 +74,14 @@ type Group struct {
 }
 
 type emptyMessage struct{}
-type versionResponse struct {
-	Version    string
-	APIVersion int32
-}
 type startedAtResponse struct{ UnixMilli int64 }
 type statusRequest struct{ Interval int64 }
 type statusResponse Status
-type clashModeStatusResponse struct {
+type modeStatusResponse struct {
 	Available []string
 	Current   string
 }
-type clashModeRequest struct{ Mode string }
+type modeRequest struct{ Mode string }
 type selectOutboundRequest struct {
 	Group    string
 	Outbound string
@@ -143,16 +134,7 @@ func (c *Client) invoke(ctx context.Context, method string, request any, respons
 	return (wireCodec{}).Unmarshal(content, response)
 }
 
-func (c *Client) Version(ctx context.Context) (Version, error) {
-	var response versionResponse
-	if err := c.invoke(ctx, methodGetVersion, &emptyMessage{}, &response); err != nil {
-		return Version{}, err
-	}
-	return Version{Version: response.Version, APIVersion: response.APIVersion}, nil
-}
-
-// Ready verifies that StartedService is attached to a running sing-box
-// instance and that Clash mode control is available.
+// Ready verifies that StartedService is attached to a running sing-box instance.
 func (c *Client) Ready(ctx context.Context) (StartedAt, error) {
 	startedAt, err := c.StartedAt(ctx)
 	if err != nil {
@@ -160,9 +142,6 @@ func (c *Client) Ready(ctx context.Context) (StartedAt, error) {
 	}
 	if startedAt.UnixMilli <= 0 {
 		return StartedAt{}, errors.New("Service API has no active sing-box instance")
-	}
-	if _, err = c.Mode(ctx); err != nil {
-		return StartedAt{}, err
 	}
 	return startedAt, nil
 }
@@ -192,7 +171,7 @@ func (c *Client) Status(ctx context.Context) (Status, error) {
 }
 
 func (c *Client) Mode(ctx context.Context) (Mode, error) {
-	var response clashModeStatusResponse
+	var response modeStatusResponse
 	if err := c.invoke(ctx, methodGetClashModeStatus, &emptyMessage{}, &response); err != nil {
 		return Mode{}, err
 	}
@@ -200,7 +179,7 @@ func (c *Client) Mode(ctx context.Context) (Mode, error) {
 }
 
 func (c *Client) SetMode(ctx context.Context, mode string) error {
-	return c.invoke(ctx, methodSetClashMode, &clashModeRequest{Mode: mode}, &emptyMessage{})
+	return c.invoke(ctx, methodSetClashMode, &modeRequest{Mode: mode}, &emptyMessage{})
 }
 
 func (c *Client) Select(ctx context.Context, group string, outbound string) error {
@@ -209,6 +188,10 @@ func (c *Client) Select(ctx context.Context, group string, outbound string) erro
 
 func (c *Client) URLTest(ctx context.Context, outbound string) error {
 	return c.invoke(ctx, methodURLTest, &urlTestRequest{Outbound: outbound}, &emptyMessage{})
+}
+
+func (c *Client) CloseAllConnections(ctx context.Context) error {
+	return c.invoke(ctx, methodCloseAllConnections, &emptyMessage{}, &emptyMessage{})
 }
 
 func (c *Client) Groups(ctx context.Context) ([]Group, error) {
@@ -263,7 +246,9 @@ func (c *Client) doRequest(ctx context.Context, method string, payload []byte, f
 		var header [5]byte
 		if _, err = io.ReadFull(response.Body, header[:]); err != nil {
 			if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
-				if firstDataFrameOnly && firstData != nil {
+				// reF1nd 的部分 unary RPC 只发送完整数据帧，不附带 trailer。
+				// 数据帧已经完整读取时可以安全解码；明确的 gRPC 错误帧仍在上方处理。
+				if firstData != nil {
 					return firstData, nil
 				}
 				return nil, errors.New("Service API response ended without gRPC status")
@@ -325,14 +310,12 @@ func parseTrailer(content []byte) error {
 
 type wireCodec struct{}
 
-func (wireCodec) Name() string { return "proto" }
-
 func (wireCodec) Marshal(value any) ([]byte, error) {
 	var output []byte
 	switch message := value.(type) {
 	case *emptyMessage:
 		return nil, nil
-	case *clashModeRequest:
+	case *modeRequest:
 		output = appendString(output, 3, message.Mode)
 	case *selectOutboundRequest:
 		output = appendString(output, 1, message.Group)
@@ -351,13 +334,11 @@ func (wireCodec) Unmarshal(content []byte, value any) error {
 	switch message := value.(type) {
 	case *emptyMessage:
 		return nil
-	case *versionResponse:
-		return decodeVersion(content, message)
 	case *startedAtResponse:
 		return decodeStartedAt(content, message)
 	case *statusResponse:
 		return decodeStatus(content, message)
-	case *clashModeStatusResponse:
+	case *modeStatusResponse:
 		return decodeMode(content, message)
 	case *groupsResponse:
 		return decodeGroups(content, message)
@@ -434,23 +415,6 @@ func consumeBytes(content []byte, wireType protowire.Type) ([]byte, int, error) 
 	return value, length, nil
 }
 
-func decodeVersion(content []byte, message *versionResponse) error {
-	return consumeFields(content, func(number protowire.Number, wireType protowire.Type, field []byte) (int, error) {
-		switch number {
-		case 1:
-			value, length, err := consumeString(field, wireType)
-			message.Version = value
-			return length, err
-		case 2:
-			value, length, err := consumeVarint(field, wireType)
-			message.APIVersion = int32(value)
-			return length, err
-		default:
-			return 0, nil
-		}
-	})
-}
-
 func decodeStartedAt(content []byte, message *startedAtResponse) error {
 	return consumeFields(content, func(number protowire.Number, wireType protowire.Type, field []byte) (int, error) {
 		if number != 1 {
@@ -495,7 +459,7 @@ func decodeStatus(content []byte, message *statusResponse) error {
 	})
 }
 
-func decodeMode(content []byte, message *clashModeStatusResponse) error {
+func decodeMode(content []byte, message *modeStatusResponse) error {
 	return consumeFields(content, func(number protowire.Number, wireType protowire.Type, field []byte) (int, error) {
 		if number != 1 && number != 2 {
 			return 0, nil

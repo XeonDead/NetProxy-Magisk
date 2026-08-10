@@ -48,6 +48,32 @@ func TestStartedAtOverGRPCWeb(t *testing.T) {
 	}
 }
 
+func TestStartedAtWithoutGRPCStatusFrame(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.URL.Path != methodGetStartedAt {
+			http.Error(writer, "unexpected method", http.StatusNotFound)
+			return
+		}
+		payload := protowire.AppendTag(nil, 1, protowire.VarintType)
+		payload = protowire.AppendVarint(payload, 654321)
+		writeTestFrame(t, writer, 0, payload)
+	}))
+	defer server.Close()
+
+	client, err := New(server.URL, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	startedAt, err := client.StartedAt(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if startedAt.UnixMilli != 654321 {
+		t.Fatalf("unexpected startedAt: %d", startedAt.UnixMilli)
+	}
+}
+
 func TestStatusOverGRPCWeb(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		if request.URL.Path != methodSubscribeStatus {
@@ -96,6 +122,32 @@ func TestStatusOverGRPCWeb(t *testing.T) {
 		status.ConnectionsOut != 4 || !status.TrafficAvailable || status.Uplink != 128 ||
 		status.Downlink != 256 || status.UplinkTotal != 1024 || status.DownlinkTotal != 2048 {
 		t.Fatalf("unexpected status: %#v", status)
+	}
+}
+
+func TestCloseAllConnectionsOverGRPCWeb(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.URL.Path != methodCloseAllConnections {
+			http.Error(writer, "unexpected method", http.StatusNotFound)
+			return
+		}
+		requestFrame, err := io.ReadAll(request.Body)
+		if err != nil || len(requestFrame) != 5 || binary.BigEndian.Uint32(requestFrame[1:]) != 0 {
+			http.Error(writer, "invalid request frame", http.StatusBadRequest)
+			return
+		}
+		writeTestFrame(t, writer, 0, nil)
+		writeTestFrame(t, writer, 0x80, []byte("grpc-status: 0\r\n"))
+	}))
+	defer server.Close()
+
+	client, err := New(server.URL, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	if err = client.CloseAllConnections(t.Context()); err != nil {
+		t.Fatal(err)
 	}
 }
 

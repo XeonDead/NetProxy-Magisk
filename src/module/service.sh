@@ -1,10 +1,10 @@
 #!/system/bin/sh
 #######################################
 # 文件: service.sh
-# 功能: Magisk service 阶段入口，在系统启动完成后执行：记录运行环境、
-#       加载模块配置，按需开机自启 sing-box 服务并执行设备兼容性修复。
+# 功能: Magisk service 阶段入口，在系统启动完成后记录运行环境，
+#       加载模块配置并按需开机自启 sing-box 服务。
 # 用法: 由 Magisk/KernelSU/APatch 在 service 阶段自动调用。
-# 依赖: common.sh、scripts/core/service.sh、scripts/utils/gms_fix.sh。
+# 依赖: scripts/core/service.sh、netproxy-native
 #######################################
 
 set -e  # 命令失败立即退出
@@ -12,26 +12,34 @@ set -e  # 命令失败立即退出
 # 模块根目录与关键路径
 readonly MODDIR="${0%/*}"                          # 模块根目录 (脚本所在目录)
 readonly MODULE_CONF="$MODDIR/config/module.conf"  # 模块配置
-readonly SUBWORKER_SCRIPT="$MODDIR/scripts/core/subworker.sh"  # 订阅更新 worker
+readonly CATALOG_DIR="$MODDIR/data/catalog"        # Catalog 根目录
+readonly NETPROXY_NATIVE_BIN="$MODDIR/bin/netproxy-native"  # Go 原生组件
+readonly WORKER_PID_FILE="/dev/netproxy/subworker.pid"     # Worker PID 文件
 readonly LOG_FILE="$MODDIR/logs/service.log"       # 服务日志
 readonly LOG_TAG="boot"                            # 日志组件标签
 
-. "$MODDIR/scripts/utils/common.sh"
+log() {
+  local level="INFO" message="$1"
+  if [ "$#" -ge 2 ]; then
+    level="$1"
+    message="$2"
+  fi
+  printf '[%s] [%s] [%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$level" "$LOG_TAG" "$message" >> "$LOG_FILE"
+}
 
 #######################################
 # 加载模块配置
-# 先设默认值，再用配置文件覆盖 (文件不存在时沿用默认)。
+# 通过 netproxy-native 读取类型化配置，文件不存在时沿用默认值。
 # 参数: 无
-# 全局: 设置 AUTO_START / GMS_FIX
+# 全局: 设置 AUTO_START
 # 返回: 无
 #######################################
 load_module_config() {
   # 开机服务相关默认值
-  AUTO_START=1
-  GMS_FIX=1
+  AUTO_START="$("$NETPROXY_NATIVE_BIN" config module-get \
+    --path "$MODULE_CONF" --key AUTO_START --format text 2> /dev/null || printf "%s" "1")"
 
   if [ -f "$MODULE_CONF" ]; then
-    . "$MODULE_CONF"
     log "INFO" "模块配置已加载"
   else
     log "WARN" "模块配置文件不存在，使用默认值"
@@ -40,7 +48,7 @@ load_module_config() {
 
 #######################################
 # 等待系统启动完成
-# 阻塞至系统开机完成且外部存储挂载就绪。
+# 阻塞至系统开机完成。
 # 参数: 无
 # 返回: 无
 #######################################
@@ -51,25 +59,6 @@ wait_for_boot() {
   resetprop -w sys.boot_completed
   log "INFO" "系统启动完成"
 
-  # 等待外部存储挂载完成
-  while [ ! -d "/sdcard/Android" ]; do
-    sleep 1
-  done
-  log "INFO" "存储挂载完成"
-}
-
-#######################################
-# 执行设备兼容性修复
-# 参数: 无
-# 全局: GMS_FIX 为 1 时才执行
-# 返回: 无
-#######################################
-check_device_specific() {
-  # 启用时执行设备兼容性修复脚本
-  if [ "$GMS_FIX" = "1" ]; then
-    log "INFO" "GMS 修复已启用，执行修复脚本"
-    sh "$MODDIR/scripts/utils/gms_fix.sh"
-  fi
 }
 
 #######################################
@@ -79,7 +68,16 @@ check_device_specific() {
 # 返回: 无
 #######################################
 start_subscription_worker() {
-  if sh "$SUBWORKER_SCRIPT" start; then
+  if "$NETPROXY_NATIVE_BIN" subworker start \
+    --root "$CATALOG_DIR" \
+    --progress-dir "/dev/netproxy/subscriptions" \
+    --pid-file "$WORKER_PID_FILE" \
+    --log-file "$MODDIR/logs/service.log" \
+    --module-conf "$MODULE_CONF" \
+    --reload-script "$MODDIR/scripts/core/service.sh" \
+    --sing-box "$MODDIR/bin/sing-box" \
+    --service-address "127.0.0.1:9090" \
+    --service-secret "singbox" > /dev/null 2>&1; then
     log "DEBUG" "订阅自动更新 worker 已就绪"
   else
     log "WARN" "订阅自动更新 worker 启动失败，可稍后手动重试"
@@ -139,17 +137,16 @@ load_module_config
 
 wait_for_boot
 
-# 订阅调度与代理核心解耦，即使禁用开机代理也保持订阅按期更新。
-start_subscription_worker
-
 # 按配置决定是否开机自启服务
 if [ "$AUTO_START" = "1" ]; then
-  su -c "sh \"$MODDIR/scripts/core/service.sh\" start"
+  if ! su -c "sh \"$MODDIR/scripts/core/service.sh\" start"; then
+    log "WARN" "代理服务开机启动失败，可在导入节点或修正配置后手动启动"
+  fi
 else
   log "INFO" "开机自启已禁用，跳过启动"
 fi
 
-# 执行设备兼容性修复
-check_device_specific
+# 订阅调度与代理核心解耦；放在核心启动之后，避免 worker 确认阻塞代理就绪。
+start_subscription_worker
 
 log "INFO" "开机服务流程结束"

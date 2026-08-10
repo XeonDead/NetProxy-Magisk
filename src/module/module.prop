@@ -1,7 +1,7 @@
 id=netproxy
 name=NetProxy
-version=v8.0.0-ru-alpha.3
-versionCode=3
+version=v8.0.0-ru-beta.2
+versionCode=5
 author=Fanju & XeonDead
 description=Android transparent proxy tool for inbound traffic based on sing-box eBPF
 updateJson=https://github.com/XeonDead/NetProxy-Magisk/releases/latest/download/update.json

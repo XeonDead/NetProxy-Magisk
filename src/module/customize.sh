@@ -18,18 +18,16 @@ readonly MODULE_ID="netproxy"                       # 模块 ID
 readonly LIVE_DIR="/data/adb/modules/$MODULE_ID"    # 已安装模块的运行目录
 readonly CONFIG_DIR="$LIVE_DIR/config"              # 运行目录下的配置目录
 readonly BACKUP_DIR="$TMPDIR/netproxy_backup"       # 配置备份临时目录
-readonly LEGACY_CORE_NAME="x""ray"                  # 旧版内核名 (用于停止旧进程)
-readonly LEGACY_WEB_DIR_NAME="web""root"            # 旧版 WebUI 目录名
 
 # 全局状态: 安装前代理服务是否处于运行状态
 PROXY_WAS_RUNNING=false
-RESET_LEGACY_CONFIG=false
 
 # 需要保留的配置文件/目录 (相对于 config/)
+readonly DATA_DIR="$LIVE_DIR/data"
+
 readonly PRESERVE_CONFIGS="
     module.conf
     ebpf/ebpf.conf
-    catalog/
     singbox/source/direct.json
     singbox/source/proxy.json
     singbox/source/block.json
@@ -39,20 +37,13 @@ readonly PRESERVE_CONFIGS="
 readonly EXECUTABLE_FILES="
     bin/sing-box
     bin/netproxy-native
+    bin/netproxyctl
     action.sh
     netproxyctl
+    service.sh
     uninstall.sh
-    scripts/netproxyctl
     scripts/core/service.sh
-    scripts/core/ebpf.sh
-    scripts/core/switch.sh
-    scripts/network/netmon.sh
-    scripts/core/subscription.sh
-    scripts/core/subworker.sh
-    scripts/utils/state.sh
-    scripts/utils/metadata.sh
-    scripts/utils/gms_fix.sh
-    scripts/utils/catalog.sh
+    bin/bpftool
 "
 
 ################################################################################
@@ -135,24 +126,31 @@ set_perm_recursive() {
 # 全局: 读取 CONFIG_DIR / PRESERVE_CONFIGS / BACKUP_DIR
 # 返回: 0 (全新安装时跳过)
 #######################################
+backup_catalog_data() {
+  [ -d "$DATA_DIR/catalog" ] || return 0
+  mkdir -p "$BACKUP_DIR/data"
+  rm -rf "$BACKUP_DIR/data/catalog" 2> /dev/null || true
+  cp -r "$DATA_DIR/catalog" "$BACKUP_DIR/data/catalog" 2> /dev/null || print_warn "Catalog 数据备份失败"
+}
+
+restore_catalog_data() {
+  [ -d "$BACKUP_DIR/data/catalog" ] || return 0
+  mkdir -p "$MODPATH/data"
+  rm -rf "$MODPATH/data/catalog" 2> /dev/null || true
+  cp -r "$BACKUP_DIR/data/catalog" "$MODPATH/data/catalog" 2> /dev/null || print_warn "Catalog 数据恢复失败"
+}
+
 backup_config() {
   print_step "检查现有配置..."
 
   # 配置目录为空视为全新安装，无需备份
-  if ! dir_not_empty "$CONFIG_DIR"; then
+  if ! dir_not_empty "$CONFIG_DIR" && ! dir_not_empty "$DATA_DIR"; then
     print_ok "全新安装，无需备份"
     return 0
   fi
 
-  # 8.x Catalog 存在时按正常升级处理，只暂存当前版本仍受支持的配置。
-  if [ ! -f "$CONFIG_DIR/catalog/default/meta.json" ] \
-    || [ ! -f "$CONFIG_DIR/catalog/default/provider.json" ]; then
-    RESET_LEGACY_CONFIG=true
-    print_warn "检测到非 Catalog 配置，将直接初始化全新配置"
-    return 0
-  fi
-
-  print_step "备份当前 Catalog 配置..."
+  backup_catalog_data
+  print_step "备份当前配置..."
   mkdir -p "$BACKUP_DIR"
 
   # 逐项备份需保留的配置
@@ -200,6 +198,8 @@ extract_module() {
 # 返回: 0 (无备份时跳过)
 #######################################
 restore_config() {
+  restore_catalog_data
+
   # 无备份则跳过
   if ! dir_not_empty "$BACKUP_DIR"; then
     return 0
@@ -242,50 +242,17 @@ stop_proxy_if_running() {
     return 0
   fi
 
-  # 订阅 worker 与代理核心独立运行，安装前单独停止旧实例。
-  if [ -f "$LIVE_DIR/scripts/core/subworker.sh" ]; then
-    sh "$LIVE_DIR/scripts/core/subworker.sh" stop > /dev/null 2>&1 || true
-  elif [ -f "$LIVE_DIR/scripts/core/subsched.sh" ]; then
-    sh "$LIVE_DIR/scripts/core/subsched.sh" stop > /dev/null 2>&1 || true
-  fi
+  # 停止 Go Worker。
+  pkill -f "netproxy-native.*subworker" 2> /dev/null || true
 
-  # 检测当前或旧版内核进程
-  if pidof -s "$LIVE_DIR/bin/sing-box" > /dev/null 2>&1 || pidof -s "$LIVE_DIR/bin/$LEGACY_CORE_NAME" > /dev/null 2>&1; then
+  # 检测当前 sing-box 进程。
+  if pidof -s "$LIVE_DIR/bin/sing-box" > /dev/null 2>&1; then
     PROXY_WAS_RUNNING=true
     print_step "检测到代理服务正在运行，停止服务..."
     sh "$LIVE_DIR/scripts/core/service.sh" stop > /dev/null 2>&1
     print_ok "服务已停止"
   fi
 
-  # 即使核心已经异常退出，也让旧脚本清理可能残留的防火墙与策略路由
-  if [ -f "$LIVE_DIR/scripts/network/tproxy.sh" ] && [ -d "$LIVE_DIR/config/tproxy" ]; then
-    sh "$LIVE_DIR/scripts/network/tproxy.sh" stop -d "$LIVE_DIR/config/tproxy" > /dev/null 2>&1 || true
-  fi
-
-  return 0
-}
-
-#######################################
-# 清理旧版 TPROXY 与 IPSET 文件
-# 参数: 无
-# 返回: 0
-#######################################
-cleanup_legacy_dataplane() {
-  print_step "清理旧版透明代理组件..."
-
-  rm -rf "$LIVE_DIR/config/tproxy" \
-    "$LIVE_DIR/bin/IPSET-LKM" \
-    "/data/adb/netfilter" \
-    2> /dev/null || true
-  rm -f "$LIVE_DIR/scripts/network/tproxy.sh" \
-    "$LIVE_DIR/scripts/utils/ipset.sh" \
-    "$LIVE_DIR/scripts/core/subsched.sh" \
-    "$LIVE_DIR/post-fs-data.sh" \
-    "/data/adb/ksu/bin/ipset" \
-    "/data/adb/ap/bin/ipset" \
-    2> /dev/null || true
-
-  print_ok "旧版透明代理组件已清理"
   return 0
 }
 
@@ -302,20 +269,6 @@ sync_to_live() {
   if [ ! -d "$LIVE_DIR" ]; then
     print_ok "首次安装，跳过同步"
     return 0
-  fi
-
-  # API 地址与密钥已固定在 sing-box 配置中，不再保留旧凭据目录。
-  rm -rf "$LIVE_DIR/config/api" 2> /dev/null || true
-
-  # 非 Catalog 配置不迁移，运行目录直接改用全新配置。
-  if [ "$RESET_LEGACY_CONFIG" = true ]; then
-    rm -rf "$LIVE_DIR/config" 2> /dev/null || true
-    if cp -r "$MODPATH/config" "$LIVE_DIR/config" 2> /dev/null; then
-      print_ok "已初始化全新 Catalog 配置"
-    else
-      print_error "初始化 Catalog 配置失败"
-      return 1
-    fi
   fi
 
   # 同步程序文件与脚本，以及需要更新的内置资源 (整目录/文件覆盖)
@@ -353,11 +306,17 @@ sync_to_live() {
 # 返回: 0
 #######################################
 restart_proxy_if_needed() {
-  # 热更新安装无需等待重启设备，先拉起新版独立订阅 worker。
-  if [ -f "$LIVE_DIR/scripts/core/subworker.sh" ]; then
-    sh "$LIVE_DIR/scripts/core/subworker.sh" start > /dev/null 2>&1 || true
+  # 热更新安装无需等待重启设备，先拉起新版 Go 订阅 Worker。
+  if [ -x "$LIVE_DIR/bin/netproxy-native" ]; then
+    "$LIVE_DIR/bin/netproxy-native" subworker start \
+      --root "$LIVE_DIR/data/catalog" \
+      --progress-dir "/dev/netproxy/subscriptions" \
+      --pid-file "/dev/netproxy/subworker.pid" \
+      --log-file "$LIVE_DIR/logs/service.log" \
+      --module-conf "$LIVE_DIR/config/module.conf" \
+      --reload-script "$LIVE_DIR/scripts/core/service.sh" \
+      --sing-box "$LIVE_DIR/bin/sing-box" > /dev/null 2>&1 || true
   fi
-
   if [ "$PROXY_WAS_RUNNING" = true ]; then
     print_step "重新启动代理服务..."
     # su 包裹：经管理器刷入时让 sing-box 迁出冻结 cgroup，避免切后台断网
@@ -380,7 +339,9 @@ restart_proxy_if_needed() {
 set_permissions() {
   print_step "设置文件权限..."
 
-  # 为可执行文件设置 0755 (同时同步运行目录中的同名文件)
+  # 先设置默认权限，再单独放开真正需要执行的入口。
+  set_perm_recursive "$MODPATH" 0 0 0755 0644
+
   local file
   for file in $EXECUTABLE_FILES; do
     local path="$MODPATH/$file"
@@ -390,18 +351,19 @@ set_permissions() {
     fi
   done
 
-  # 递归设置整个模块目录的默认属主与权限
-  set_perm_recursive "$MODPATH" 0 0 0755 0755
-
-  # Catalog 中包含节点凭据、订阅地址与自定义请求头，仅允许 root 读取。
-  [ ! -d "$MODPATH/config/catalog" ] \
-    || set_perm_recursive "$MODPATH/config/catalog" 0 0 0700 0600
-  [ ! -d "$LIVE_DIR/config/catalog" ] \
-    || set_perm_recursive "$LIVE_DIR/config/catalog" 0 0 0700 0600
-  [ ! -d "$MODPATH/config/runtime" ] \
-    || set_perm_recursive "$MODPATH/config/runtime" 0 0 0700 0600
-  [ ! -d "$LIVE_DIR/config/runtime" ] \
-    || set_perm_recursive "$LIVE_DIR/config/runtime" 0 0 0700 0600
+  # 用户配置与 Catalog 包含节点凭据、订阅地址和应用名单，仅允许 root 读取。
+  [ ! -f "$MODPATH/config/module.conf" ] || chmod 0600 "$MODPATH/config/module.conf" 2> /dev/null
+  [ ! -f "$MODPATH/config/ebpf/ebpf.conf" ] || chmod 0600 "$MODPATH/config/ebpf/ebpf.conf" 2> /dev/null
+  [ ! -f "$LIVE_DIR/config/module.conf" ] || chmod 0600 "$LIVE_DIR/config/module.conf" 2> /dev/null
+  [ ! -f "$LIVE_DIR/config/ebpf/ebpf.conf" ] || chmod 0600 "$LIVE_DIR/config/ebpf/ebpf.conf" 2> /dev/null
+  [ ! -d "$MODPATH/data/catalog" ] \
+    || set_perm_recursive "$MODPATH/data/catalog" 0 0 0700 0600
+  [ ! -d "$LIVE_DIR/data/catalog" ] \
+    || set_perm_recursive "$LIVE_DIR/data/catalog" 0 0 0700 0600
+  [ ! -d "$MODPATH/runtime" ] \
+    || set_perm_recursive "$MODPATH/runtime" 0 0 0700 0600
+  [ ! -d "$LIVE_DIR/runtime" ] \
+    || set_perm_recursive "$LIVE_DIR/runtime" 0 0 0700 0600
 
   print_ok "权限设置完成"
   return 0
@@ -510,7 +472,6 @@ if backup_config \
   && extract_module \
   && restore_config \
   && stop_proxy_if_running \
-  && cleanup_legacy_dataplane \
   && sync_to_live \
   && set_permissions \
   && restart_proxy_if_needed; then

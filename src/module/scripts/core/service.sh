@@ -1,9 +1,9 @@
 #!/system/bin/sh
 #######################################
 # 文件: service.sh
-# 功能: 构建 sing-box 运行时配置，管理核心生命周期、配置检查与就绪状态。
+# 功能: 管理 sing-box 生命周期、生成运行时配置、配置检查与就绪状态。
 # 用法: service.sh {start|stop|restart|reload|status|check}
-# 依赖: common.sh、config.sh、api.sh、state.sh、catalog.sh、runtime.sh、ebpf.sh。
+# 依赖: netproxy-native、Android 基础命令
 #######################################
 
 set -u
@@ -13,28 +13,140 @@ readonly LOG_FILE="$MODDIR/logs/service.log"
 readonly LOG_TAG="service"
 readonly SING_BOX_BIN="$MODDIR/bin/sing-box"
 readonly NETPROXY_NATIVE_BIN="$MODDIR/bin/netproxy-native"
-readonly MODULE_CONF="$MODDIR/config/module.conf"
-readonly EBPF_CONF="$MODDIR/config/ebpf/ebpf.conf"
-readonly CATALOG_DIR="$MODDIR/config/catalog"
-readonly SERVICE_STATE_DIR="$MODDIR/config/runtime"
+readonly MODULE_CONF="${NETPROXY_MODULE_CONF:-$MODDIR/config/module.conf}"
+readonly EBPF_CONF="${NETPROXY_EBPF_CONF:-$MODDIR/config/ebpf/ebpf.conf}"
+readonly CATALOG_DIR="${NETPROXY_CATALOG_DIR:-$MODDIR/data/catalog}"
+readonly SERVICE_STATE_DIR="$MODDIR/runtime"
 readonly SINGBOX_LOG_FILE="$MODDIR/logs/sing-box.log"
-readonly SINGBOX_DIR="$MODDIR/config/singbox"
+readonly SINGBOX_DIR="${NETPROXY_SINGBOX_DIR:-$MODDIR/config/singbox}"
 readonly CONFDIR="$SINGBOX_DIR/confdir"
-readonly RUNTIME_DIR="$SINGBOX_DIR/runtime"
-readonly SWITCH_SCRIPT="$MODDIR/scripts/core/switch.sh"
-readonly NETMON_SCRIPT="$MODDIR/scripts/network/netmon.sh"
+readonly RUNTIME_DIR="${NETPROXY_RUNTIME_DIR:-$MODDIR/runtime}"
 readonly KILL_TIMEOUT=10
-
-. "$MODDIR/scripts/utils/common.sh"
-. "$MODDIR/scripts/utils/config.sh"
-. "$MODDIR/scripts/utils/api.sh"
-. "$MODDIR/scripts/utils/state.sh"
-. "$MODDIR/scripts/utils/catalog.sh"
-. "$MODDIR/scripts/utils/apps.sh"
-. "$MODDIR/scripts/core/runtime.sh"
-. "$MODDIR/scripts/core/ebpf.sh"
+readonly SERVICE_LOCK_DIR="/dev/netproxy/service.lock"
 
 export PATH="$MODDIR/bin:$PATH"
+NL='
+'
+TAB="$(printf '\t')"
+SERVICE_STATE_FILE="$SERVICE_STATE_DIR/service.json"
+
+log_level_value() {
+  case "$1" in
+    DEBUG) printf '10' ;;
+    INFO) printf '20' ;;
+    WARN) printf '30' ;;
+    ERROR) printf '40' ;;
+    *) printf '20' ;;
+  esac
+}
+
+log() {
+  local level="INFO" message timestamp
+  if [ "$#" -ge 2 ]; then
+    level="$1"
+    message="$2"
+  else
+    message="$1"
+  fi
+  [ "$(log_level_value "$level")" -ge "$(log_level_value "${LOG_LEVEL:-INFO}")" ] || return 0
+  timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
+  [ -n "${LOG_FILE:-}" ] && printf '[%s] [%s] [%s] %s\n' "$timestamp" "$level" "$LOG_TAG" "$message" >> "$LOG_FILE"
+  [ "${LOG_STDERR:-1}" = "0" ] || printf '[%s] [%s] [%s] %s\n' "$timestamp" "$level" "$LOG_TAG" "$message" >&2
+}
+
+die() {
+  log "ERROR" "$1"
+  exit "${2:-1}"
+}
+
+command_exists() {
+  command -v "$1" > /dev/null 2>&1
+}
+
+detect_busybox() {
+  local path
+  for path in /data/adb/ksu/bin/busybox /data/adb/ap/bin/busybox /data/adb/magisk/busybox; do
+    if [ -x "$path" ]; then
+      printf '%s\n' "$path"
+      return 0
+    fi
+  done
+  printf '%s\n' busybox
+}
+
+require_cmds() {
+  local cmd missing=""
+  for cmd in "$@"; do
+    command_exists "$cmd" || missing="$missing $cmd"
+  done
+  [ -z "$missing" ] || die "缺少必要的命令:$missing"
+}
+
+require_file() {
+  [ -f "$1" ] || die "${2:-文件不存在: $1}"
+}
+
+require_dir() {
+  [ -d "$1" ] || die "${2:-目录不存在: $1}"
+}
+
+ensure_dir() {
+  [ -d "$1" ] || mkdir -p "$1" || die "${2:-无法创建目录: $1}"
+}
+
+get_pid() {
+  local bin="$1"
+  [ -n "$bin" ] || return 1
+  pidof -s "$bin" 2> /dev/null || pgrep -f "^$bin" 2> /dev/null | head -1 || true
+}
+
+lock_write_owner() {
+  printf '%s\n' "$$" > "$1/pid"
+  awk '{print $22}' "/proc/$$/stat" > "$1/start" 2> /dev/null || true
+}
+
+lock_owner_alive() {
+  local lock_dir="$1" pid owner_start current_start
+  pid="$(sed -n '1p' "$lock_dir/pid" 2> /dev/null || true)"
+  owner_start="$(sed -n '1p' "$lock_dir/start" 2> /dev/null || true)"
+  current_start="$(awk '{print $22}' "/proc/$pid/stat" 2> /dev/null || true)"
+  [ -n "$pid" ] && [ -n "$owner_start" ] && [ "$owner_start" = "$current_start" ] && kill -0 "$pid" 2> /dev/null
+}
+
+SERVICE_STATE_VALUE="stopped"
+SERVICE_STATE_PID_VALUE=0
+SERVICE_STATE_STARTED_AT_VALUE=0
+SERVICE_STATE_READY_AT_VALUE=0
+SERVICE_STATE_ERROR_VALUE=""
+
+write_service_state() {
+  local status="$1" pid="${2:-0}" started_at="${3:-0}" ready_at="${4:-0}" error_message="${5:-}"
+  [ -x "${NETPROXY_NATIVE_BIN:-}" ] || return 1
+  "$NETPROXY_NATIVE_BIN" module state \
+    --module-dir "$MODDIR" --state-file "$SERVICE_STATE_FILE" \
+    --state "$status" --pid "$pid" --started-at "$started_at" \
+    --ready-at "$ready_at" --error "$error_message" > /dev/null 2>&1
+}
+
+service_state_get_string() {
+  local key="$1" fallback="${2:-}" value=""
+  if [ -f "$SERVICE_STATE_FILE" ]; then
+    value="$(sed -n 's/.*"'"$key"'":"\([^"]*\)".*/\1/p' "$SERVICE_STATE_FILE")"
+  fi
+  [ -n "$value" ] && printf '%s' "$value" || printf '%s' "$fallback"
+}
+
+service_state_get_number() {
+  local key="$1" fallback="${2:-0}" value=""
+  if [ -f "$SERVICE_STATE_FILE" ]; then
+    value="$(sed -n 's/.*"'"$key"'":\([0-9][0-9]*\).*/\1/p' "$SERVICE_STATE_FILE")"
+  fi
+  case "$value" in
+    "" | *[!0-9]*) printf '%s' "$fallback" ;;
+    *) printf '%s' "$value" ;;
+  esac
+}
+
 readonly BUSYBOX="$(detect_busybox)"
 
 SERVICE_ACTION=""
@@ -44,6 +156,129 @@ SERVICE_STATE_ERROR="服务操作失败"
 SERVICE_STATE_FINALIZED=0
 SERVICE_STATE_TRACK_FAILURE=0
 VALIDATION_RUNTIME_DIR=""
+SERVICE_LOCK_HELD=0
+RUNTIME_PROVIDERS_FILE="$RUNTIME_DIR/providers.json"
+RUNTIME_OUTBOUNDS_FILE="$RUNTIME_DIR/outbounds.json"
+RUNTIME_EBPF_FILE="$RUNTIME_DIR/ebpf.json"
+RUNTIME_CATALOG_STATE_FILE="$RUNTIME_DIR/catalog.state"
+
+#######################################
+# 调用 Service API 检查核心是否就绪
+# 参数: 无
+# 返回: 就绪返回 0，否则返回 1
+#######################################
+service_api_is_ready() {
+  "$NETPROXY_NATIVE_BIN" service ready \
+    --address "127.0.0.1:9090" --secret "singbox" --timeout 2s > /dev/null 2>&1
+}
+
+#######################################
+# 读取 Service API 返回的核心启动时间
+# 参数: 无
+# 返回: 输出 Unix 毫秒时间戳
+#######################################
+service_api_started_at() {
+  "$NETPROXY_NATIVE_BIN" service started-at \
+    --address "127.0.0.1:9090" --secret "singbox" \
+    --timeout 2s --format raw 2> /dev/null
+}
+
+#######################################
+# 将 Unix 毫秒时间戳转换为秒
+# 参数: $1 毫秒时间戳
+# 返回: 输出 Unix 秒时间戳
+#######################################
+unix_millis_to_seconds() {
+  local value="${1:-}"
+
+  case "$value" in
+    "" | *[!0-9]*) return 1 ;;
+  esac
+  [ "${#value}" -gt 3 ] || { printf '0\n'; return 0; }
+  printf '%s\n' "${value%???}"
+}
+
+#######################################
+# 调用 Go 生成 Catalog、Provider、选择器和 eBPF 入站
+# 参数: $1 可选 allow-empty
+# 返回: 生成成功返回 0，否则返回 1
+#######################################
+build_runtime_catalog() {
+  local mode="${1:-strict}"
+  if [ "$mode" = "allow-empty" ]; then
+    "$NETPROXY_NATIVE_BIN" module prepare \
+      --module-dir "$MODDIR" \
+      --catalog-root "$CATALOG_DIR" \
+      --module-config "$MODULE_CONF" \
+      --ebpf-config "$EBPF_CONF" \
+      --singbox-dir "$SINGBOX_DIR" \
+      --runtime-dir "${RUNTIME_PROVIDERS_FILE%/*}" \
+      --allow-empty > /dev/null || {
+        SERVICE_STATE_ERROR="运行时配置生成失败"
+        return 1
+      }
+  elif ! "$NETPROXY_NATIVE_BIN" module prepare \
+      --module-dir "$MODDIR" \
+      --catalog-root "$CATALOG_DIR" \
+      --module-config "$MODULE_CONF" \
+      --ebpf-config "$EBPF_CONF" \
+      --singbox-dir "$SINGBOX_DIR" \
+      --runtime-dir "${RUNTIME_PROVIDERS_FILE%/*}" \
+      > /dev/null; then
+    SERVICE_STATE_ERROR="运行时配置生成失败"
+    return 1
+  fi
+  if [ ! -s "$RUNTIME_PROVIDERS_FILE" ] \
+    || [ ! -s "$RUNTIME_OUTBOUNDS_FILE" ] \
+    || [ ! -s "$RUNTIME_EBPF_FILE" ]; then
+    SERVICE_STATE_ERROR="运行时配置文件不完整"
+    return 1
+  fi
+}
+
+#######################################
+# 获取服务生命周期操作锁
+# 参数:
+#   $1  当前操作名称
+# 返回: 成功返回 0，已有操作执行时返回 1
+#######################################
+acquire_service_lock() {
+  local action="$1"
+
+  mkdir -p "${SERVICE_LOCK_DIR%/*}" || return 1
+  if mkdir "$SERVICE_LOCK_DIR" 2> /dev/null; then
+    lock_write_owner "$SERVICE_LOCK_DIR"
+    printf '%s\n' "$action" > "$SERVICE_LOCK_DIR/action"
+    SERVICE_LOCK_HELD=1
+    return 0
+  fi
+
+  # 持有者已消失则接管残锁
+  if ! lock_owner_alive "$SERVICE_LOCK_DIR"; then
+    rm -rf "$SERVICE_LOCK_DIR" 2> /dev/null || return 1
+    mkdir "$SERVICE_LOCK_DIR" 2> /dev/null || return 1
+    lock_write_owner "$SERVICE_LOCK_DIR"
+    printf '%s\n' "$action" > "$SERVICE_LOCK_DIR/action"
+    SERVICE_LOCK_HELD=1
+    return 0
+  fi
+
+  log "WARN" "已有服务操作正在执行: $(sed -n '1p' "$SERVICE_LOCK_DIR/action" 2> /dev/null || printf 'unknown')"
+  return 1
+}
+
+#######################################
+# 释放服务生命周期操作锁
+# 参数: 无
+# 返回: 无
+#######################################
+release_service_lock() {
+  [ "$SERVICE_LOCK_HELD" = "1" ] || return 0
+  if [ "$(sed -n '1p' "$SERVICE_LOCK_DIR/pid" 2> /dev/null || true)" = "$$" ]; then
+    rm -rf "$SERVICE_LOCK_DIR" 2> /dev/null || true
+  fi
+  SERVICE_LOCK_HELD=0
+}
 
 #######################################
 # 异常退出时收敛服务状态
@@ -62,6 +297,7 @@ service_exit_handler() {
         ;;
     esac
   fi
+  release_service_lock
 }
 
 trap 'service_exit_handler $?' 0
@@ -96,6 +332,7 @@ cleanup_runtime_files() {
     "$RUNTIME_DIR/providers.json" \
     "$RUNTIME_DIR/outbounds.json" \
     "$RUNTIME_DIR/ebpf.json" \
+    "$RUNTIME_DIR/catalog.state" \
     2> /dev/null || true
 }
 
@@ -105,14 +342,7 @@ cleanup_runtime_files() {
 # 返回: 成功返回 0，失败则退出
 #######################################
 build_runtime_configuration() {
-  initialize_runtime_context
-  if ! scan_catalog_groups; then
-    [ -z "$RUNTIME_BUILD_ERROR" ] || SERVICE_STATE_ERROR="$RUNTIME_BUILD_ERROR"
-    return 1
-  fi
-  write_runtime_providers > /dev/null
-  write_runtime_outbounds > /dev/null
-  write_runtime_ebpf > /dev/null
+  build_runtime_catalog
 }
 
 #######################################
@@ -122,51 +352,13 @@ build_runtime_configuration() {
 # 说明: 空 Catalog 使用临时直连占位出站，只参与 sing-box check，绝不用于启动。
 #######################################
 build_validation_configuration() {
-  local scan_status=0
-
-  initialize_runtime_context
   VALIDATION_RUNTIME_DIR="/dev/netproxy/config-check.$$"
   rm -rf "$VALIDATION_RUNTIME_DIR" 2> /dev/null || true
   ensure_dir "$VALIDATION_RUNTIME_DIR" "无法创建配置检查目录"
   RUNTIME_PROVIDERS_FILE="$VALIDATION_RUNTIME_DIR/providers.json"
   RUNTIME_OUTBOUNDS_FILE="$VALIDATION_RUNTIME_DIR/outbounds.json"
   RUNTIME_EBPF_FILE="$VALIDATION_RUNTIME_DIR/ebpf.json"
-
-  scan_catalog_groups allow-empty || scan_status=$?
-  case "$scan_status" in
-    0)
-      write_runtime_providers > /dev/null || return 1
-      write_runtime_outbounds > /dev/null || return 1
-      ;;
-    2)
-      cat > "$RUNTIME_PROVIDERS_FILE" << 'EOF'
-{
-  "providers": []
-}
-EOF
-      cat > "$RUNTIME_OUTBOUNDS_FILE" << 'EOF'
-{
-  "outbounds": [
-    {
-      "type": "direct",
-      "tag": "direct"
-    },
-    {
-      "type": "block",
-      "tag": "block"
-    },
-    {
-      "type": "direct",
-      "tag": "Proxy"
-    }
-  ]
-}
-EOF
-      ;;
-    *) return 1 ;;
-  esac
-
-  write_runtime_ebpf > /dev/null || return 1
+  build_runtime_catalog allow-empty
 }
 
 #######################################
@@ -193,13 +385,13 @@ check_runtime_configuration() {
 }
 
 #######################################
-# 等待两套控制接口与核心实例就绪
+# 等待 Service API 与核心实例就绪
 # 参数:
 #   $1  最大等待秒数
 #   $2  sing-box 进程 PID
 # 返回: 全部就绪返回 0，超时返回 1，进程提前退出返回 2
 #######################################
-wait_control_planes_ready() {
+wait_control_plane_ready() {
   local timeout="${1:-30}"
   local pid="${2:-}"
   local max_checks=$((timeout * 5))
@@ -209,7 +401,7 @@ wait_control_planes_ready() {
     if [ -n "$pid" ] && ! kill -0 "$pid" 2> /dev/null; then
       return 2
     fi
-    if service_api_is_ready && api_is_available; then
+    if service_api_is_ready; then
       return 0
     fi
     sleep 0.2
@@ -219,23 +411,13 @@ wait_control_planes_ready() {
 }
 
 #######################################
-# 同步 Catalog 节点选择到运行实例
+# 让 Go 读取持久状态并同步运行时模式和节点选择
 # 参数: 无
-# 返回: 全部选择生效返回 0，否则返回 1
-# 说明: sing-box 缓存可能恢复上次选择，因此每次启动或重新加载后都必须
-#       用 module.conf 中的活动分组与选择模式覆盖缓存状态。
+# 返回: 同步成功返回 0，否则返回 1
 #######################################
 sync_runtime_selection() {
-  local selected_tag runtime_node_ref
-
-  if [ "$CUR_SELECTOR_MODE" = "manual" ]; then
-    selected_tag="${CUR_SELECTED_NODE_REF#*/}"
-    runtime_node_ref="$CUR_ACTIVE_GROUP_TAG/$selected_tag"
-    service_api_select "Select/$CUR_ACTIVE_GROUP_TAG" "$runtime_node_ref" \
-      && service_api_select "Proxy" "Select/$CUR_ACTIVE_GROUP_TAG"
-  else
-    service_api_select "Proxy" "Auto/$CUR_ACTIVE_GROUP_TAG"
-  fi
+  "$NETPROXY_NATIVE_BIN" module sync --module-dir "$MODDIR" \
+    --skip-service-adapter > /dev/null
 }
 
 #######################################
@@ -277,7 +459,7 @@ do_start() {
 
   pid="$(get_pid "$SING_BOX_BIN")"
   if [ -n "$pid" ]; then
-    if service_api_is_ready && api_is_available; then
+    if service_api_is_ready; then
       started_millis="$(service_api_started_at 2> /dev/null || true)"
       started_seconds="$(unix_millis_to_seconds "$started_millis" 2> /dev/null || true)"
       case "$started_seconds" in
@@ -301,7 +483,7 @@ do_start() {
   write_service_state preparing 0 0 0 ""
   SERVICE_STATE_ERROR="运行时配置生成失败"
   build_runtime_configuration || return 1
-  log "INFO" "活动分组=$CUR_ACTIVE_GROUP_ID 分组=$RUNTIME_GROUP_COUNT 节点=$RUNTIME_NODE_COUNT 模式=$CUR_OUTBOUND_MODE 选择=$CUR_SELECTOR_MODE"
+  log "INFO" "运行时配置准备完成"
 
   SERVICE_STATE_ERROR="sing-box 进程启动失败"
   cd "$SINGBOX_DIR" || die "无法进入配置目录: $SINGBOX_DIR"
@@ -316,7 +498,7 @@ do_start() {
   write_service_state starting "$new_pid" "$SERVICE_STATE_STARTED_AT" 0 ""
 
   SERVICE_STATE_ERROR="核心或控制接口未在限定时间内就绪"
-  wait_control_planes_ready 30 "$new_pid" || wait_status=$?
+  wait_control_plane_ready 30 "$new_pid" || wait_status=$?
   if [ "$wait_status" -ne 0 ]; then
     [ "$wait_status" -ne 2 ] || SERVICE_STATE_ERROR="sing-box 进程启动失败"
     log "ERROR" "$SERVICE_STATE_ERROR"
@@ -330,8 +512,6 @@ do_start() {
   started_seconds="$(unix_millis_to_seconds "$started_millis" 2> /dev/null || true)"
   case "$started_seconds" in "" | 0 | *[!0-9]*) ;; *) SERVICE_STATE_STARTED_AT="$started_seconds" ;; esac
   [ "$SERVICE_STATE_STARTED_AT" -gt 0 ] || SERVICE_STATE_STARTED_AT="$(date +%s)"
-  service_api_set_mode "$CUR_OUTBOUND_MODE" \
-    || log "WARN" "运行模式同步失败，将沿用配置默认模式"
   SERVICE_STATE_ERROR="运行时节点选择同步失败"
   if ! sync_runtime_selection; then
     log "ERROR" "$SERVICE_STATE_ERROR"
@@ -339,9 +519,6 @@ do_start() {
     SERVICE_STATE_PID=0
     cleanup_runtime_files
     return 1
-  fi
-  if [ "${WIFI_AUTO_SWITCH:-0}" = "1" ]; then
-    sh "$NETMON_SCRIPT" startup > /dev/null 2>&1 || log "WARN" "WiFi 自动切换初始化失败"
   fi
   ready_at="$(date +%s)"
   write_service_state ready "$new_pid" "$SERVICE_STATE_STARTED_AT" "$ready_at" ""
@@ -359,7 +536,6 @@ do_stop() {
 
   log "INFO" "停止 sing-box 服务"
   ensure_dir "$SERVICE_STATE_DIR" "无法创建状态目录: $SERVICE_STATE_DIR"
-  sh "$NETMON_SCRIPT" stop > /dev/null 2>&1 || true
   pid="$(get_pid "$SING_BOX_BIN")"
   started_at="$(service_state_get_number started_at 0)"
   write_service_state stopping "${pid:-0}" "$started_at" 0 ""
@@ -423,12 +599,10 @@ do_reload() {
     new_started="$(service_api_started_at 2> /dev/null || true)"
     case "$new_started" in "" | *[!0-9]*) new_started="" ;; esac
     if [ -n "$new_started" ] && [ "$new_started" != "$old_started" ] \
-      && service_api_is_ready && api_is_available; then
+      && service_api_is_ready; then
       started_seconds="$(unix_millis_to_seconds "$new_started" 2> /dev/null || true)"
       case "$started_seconds" in "" | 0 | *[!0-9]*) sleep 1; count=$((count + 1)); continue ;; esac
       SERVICE_STATE_STARTED_AT="$started_seconds"
-      service_api_set_mode "$CUR_OUTBOUND_MODE" \
-        || log "WARN" "重新加载后运行模式同步失败"
       if ! sync_runtime_selection; then
         SERVICE_STATE_ERROR="重新加载后节点选择同步失败"
         log "ERROR" "$SERVICE_STATE_ERROR"
@@ -444,7 +618,7 @@ do_reload() {
     count=$((count + 1))
   done
 
-  if kill -0 "$pid" 2> /dev/null && service_api_is_ready && api_is_available; then
+  if kill -0 "$pid" 2> /dev/null && service_api_is_ready; then
     new_started="$(service_api_started_at 2> /dev/null || true)"
     case "$new_started" in
       "" | *[!0-9]*) ;;
@@ -535,6 +709,11 @@ EOF
 #######################################
 main() {
   SERVICE_ACTION="${1:-}"
+  case "$SERVICE_ACTION" in
+    start | stop | restart | reload)
+      acquire_service_lock "$SERVICE_ACTION" || return 1
+      ;;
+  esac
   case "$SERVICE_ACTION" in
     start) do_start ;;
     stop) do_stop ;;

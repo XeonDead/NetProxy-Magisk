@@ -1,6 +1,6 @@
 name: 每周更新资源、内核与依赖
 
-# 每周检查内置上游资源、sing-box 内核、npm 依赖与 GitHub Actions，
+# 每周检查内置上游资源、sing-box 内核、npm / Android 依赖与 GitHub Actions，
 # 有更新则汇总到一个 PR（人工 review 合并后由 ci.yml 重建打包）。
 # 资源清单见 .github/resources.json，新增/调整资源只改清单、无需动本文件。
 
@@ -45,7 +45,6 @@ jobs:
           pattern="$(jq -r '.singBox.tagPattern' .github/resources.json)"
           current="$(jq -r '.singBox.currentVersion' .github/resources.json)"
           target="$(jq -r '.singBox.path' .github/resources.json)"
-          go_version="$(jq -r '.singBox.goVersion' .github/resources.json)"
           ndk_version="$(jq -r '.singBox.ndkVersion' .github/resources.json)"
           build_tags="$(jq -r '.singBox.buildTags | join(",")' .github/resources.json)"
           latest="$({
@@ -70,7 +69,6 @@ jobs:
           echo "current_version=$current" >> "$GITHUB_OUTPUT"
           echo "latest_version=$latest" >> "$GITHUB_OUTPUT"
           echo "target=$target" >> "$GITHUB_OUTPUT"
-          echo "go_version=$go_version" >> "$GITHUB_OUTPUT"
           echo "ndk_version=$ndk_version" >> "$GITHUB_OUTPUT"
           echo "build_tags=$build_tags" >> "$GITHUB_OUTPUT"
 
@@ -84,11 +82,30 @@ jobs:
           persist-credentials: false
           path: .sing-box-source
 
+      - name: 确定 Go 工具链版本
+        if: steps.singbox_check.outputs.changed == 'true'
+        id: singbox_go
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          native_version="$(awk '$1 == "go" { print $2; exit }' src/native/netproxy/go.mod)"
+          singbox_version="$(awk '$1 == "go" { print $2; exit }' .sing-box-source/go.mod)"
+          selected_version="$(printf '%s\n%s\n' "$native_version" "$singbox_version" | sort -V | tail -n 1)"
+
+          if [ -z "$native_version" ] || [ -z "$singbox_version" ] || [ -z "$selected_version" ]; then
+            echo "::error::无法从 go.mod 确定 Go 工具链版本"
+            exit 1
+          fi
+
+          echo "version=$selected_version" >> "$GITHUB_OUTPUT"
+          echo "NetProxy 需要 Go $native_version，sing-box 需要 Go $singbox_version，使用 Go $selected_version"
+
       - name: 配置 sing-box Go 环境
         if: steps.singbox_check.outputs.changed == 'true'
         uses: actions/setup-go@v7
         with:
-          go-version: ${{ steps.singbox_check.outputs.go_version }}
+          go-version: ${{ steps.singbox_go.outputs.version }}
           cache-dependency-path: .sing-box-source/go.sum
 
       - name: 配置 Android NDK
@@ -107,8 +124,8 @@ jobs:
           CGO_ENABLED: '1'
           GOOS: android
           GOARCH: arm64
-          CC: ${{ steps.setup_singbox_ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android33-clang
-          BPF_CLANG: ${{ steps.setup_singbox_ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android33-clang
+          CC: ${{ steps.setup_singbox_ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android35-clang
+          BPF_CLANG: ${{ steps.setup_singbox_ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android35-clang
           SING_BOX_TARGET: ${{ steps.singbox_check.outputs.target }}
           CURRENT_VERSION: ${{ steps.singbox_check.outputs.current_version }}
           LATEST_VERSION: ${{ steps.singbox_check.outputs.latest_version }}
@@ -126,9 +143,12 @@ jobs:
           file .sing-box-source/sing-box | grep -q 'ARM aarch64'
           go version -m .sing-box-source/sing-box | grep -q "${LATEST_VERSION#v}"
           go version -m .sing-box-source/sing-box | grep -q 'with_ebpf'
+          go version -m .sing-box-source/sing-box | grep -q 'with_gvisor'
           go version -m .sing-box-source/sing-box | grep -q 'with_tailscale'
 
           install -m 0755 .sing-box-source/sing-box "$SING_BOX_TARGET"
+          install -m 0644 .sing-box-source/docs/schema.json \
+            src/android/app/src/main/assets/sing-box.schema.json
           tmpjson="$(mktemp)"
           jq --arg version "$LATEST_VERSION" \
             '.singBox.currentVersion = $version' \
@@ -171,7 +191,7 @@ jobs:
               newSize: $newSize,
               sha256: $sha256,
               buildTags: $buildTags,
-              checks: ["ARM64 架构", "版本信息匹配", "包含 eBPF", "包含 Tailscale"]
+              checks: ["ARM64 架构", "版本信息匹配", "包含 eBPF", "包含 Tailscale", "已同步 JSON Schema"]
             }' > "$UPDATE_REPORT_DIR/sing-box.json"
 
           echo "sing-box SHA-256: $binary_sha256"
@@ -230,6 +250,7 @@ jobs:
             ref="$(jq -r '.ref' <<< "$item")"
             source_path="$(jq -r '.sourcePath' <<< "$item")"
             metadata_path="$(jq -r '.metadataPath // empty' <<< "$item")"
+            kind="$(jq -r '.kind // "data"' <<< "$item")"
             current_commit="$(jq -r '.currentCommit // empty' <<< "$item")"
 
             echo "检查: $path ← $url"
@@ -243,6 +264,14 @@ jobs:
               echo "::warning::内容为空，跳过: $url"
               rm -f "$tmp"
               continue
+            fi
+            if [ "$kind" = "android-arm64-executable" ]; then
+              if ! file "$tmp" | grep -q 'ELF 64-bit.*ARM aarch64'; then
+                echo "::warning::目标不是 Android arm64 ELF，跳过: $url"
+                rm -f "$tmp"
+                continue
+              fi
+              chmod 0755 "$tmp"
             fi
 
             if [ ! -f "$path" ] || ! cmp -s "$tmp" "$path"; then
@@ -261,6 +290,7 @@ jobs:
 
               mkdir -p "$(dirname "$path")"
               mv "$tmp" "$path"
+              [ "$kind" != "android-arm64-executable" ] || chmod 0755 "$path"
               new_size="$(stat -c '%s' "$path")"
               new_sha256="$(sha256sum "$path" | cut -d ' ' -f 1)"
               old_rule_count="$(count_rules "$repo" "$current_commit" "$metadata_path")"
@@ -273,6 +303,7 @@ jobs:
               entry="$(jq -n \
                 --arg name "$name" \
                 --arg path "$path" \
+                --arg kind "$kind" \
                 --arg repo "$repo" \
                 --arg currentCommit "$current_commit" \
                 --arg latestCommit "$latest_commit" \
@@ -289,6 +320,7 @@ jobs:
                 '{
                   name: $name,
                   path: $path,
+                  kind: $kind,
                   repo: $repo,
                   currentCommit: $currentCommit,
                   latestCommit: $latestCommit,
@@ -307,8 +339,9 @@ jobs:
 
               if [ -n "$latest_commit" ]; then
                 tmpjson="$(mktemp)"
-                jq --arg path "$path" --arg commit "$latest_commit" \
-                  '(.raw[] | select(.path == $path).currentCommit) = $commit' \
+                jq --arg path "$path" --arg commit "$latest_commit" --arg sha256 "$new_sha256" \
+                  '(.raw[] | select(.path == $path).currentCommit) = $commit
+                   | (.raw[] | select(.path == $path).currentSha256) = $sha256' \
                   .github/resources.json > "$tmpjson"
                 mv "$tmpjson" .github/resources.json
               fi
@@ -584,6 +617,43 @@ jobs:
 
           jq . <<< "$report" > "$UPDATE_REPORT_DIR/npm.json"
 
+      - name: 更新 Android 依赖
+        id: android
+        shell: bash
+        run: |
+          set -euo pipefail
+          node .github/scripts/update-android-dependencies.mjs \
+            --report "$UPDATE_REPORT_DIR/android.json" \
+            --output "$GITHUB_OUTPUT"
+
+      - name: 配置 Android 验证 JDK
+        if: steps.android.outputs.changed == 'true'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: 配置 Android 验证 Gradle
+        if: steps.android.outputs.changed == 'true'
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: 配置 Android SDK
+        if: steps.android.outputs.changed == 'true'
+        uses: android-actions/setup-android@v4
+
+      - name: 安装 Android SDK 37
+        if: steps.android.outputs.changed == 'true'
+        shell: bash
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0' --channel=1
+
+      - name: 验证 Android 依赖更新
+        if: steps.android.outputs.changed == 'true'
+        working-directory: src/android
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew testDebugUnitTest lintDebug --no-daemon
+
       - name: 更新 GitHub Actions
         id: actions
         env:
@@ -666,7 +736,7 @@ jobs:
 
           jq . <<< "$report" > "$UPDATE_REPORT_DIR/actions.json"
 
-      - name: 验证 npm 项目
+      - name: 验证项目与更新脚本
         run: |
           set -euo pipefail
 
@@ -676,13 +746,22 @@ jobs:
           npm run build --prefix src/webui
           git diff --check
           node --check .github/scripts/render-update-report.mjs
+          node --check .github/scripts/update-android-dependencies.mjs
+          node --test .github/scripts/*.test.mjs
 
-          jq -n '[
-            "文档站构建通过",
-            "WebUI 构建通过",
-            "Git 差异检查通过",
-            "PR 更新报告脚本检查通过"
-          ]' > "$UPDATE_REPORT_DIR/verification.json"
+          jq -n --arg android "${{ steps.android.outputs.changed }}" '
+            [
+              "文档站构建通过",
+              "WebUI 构建通过",
+              "Git 差异检查通过",
+              "依赖与 PR 报告脚本检查通过"
+            ] + (
+              if $android == "true"
+              then ["Android 单元测试与 Lint 通过（未构建或发布 APK）"]
+              else []
+              end
+            )
+          ' > "$UPDATE_REPORT_DIR/verification.json"
 
       - name: 生成 Pull Request 说明
         id: update_report
@@ -700,6 +779,7 @@ jobs:
       - name: 开启 / 更新 Pull Request
         uses: peter-evans/create-pull-request@v8
         with:
+          token: ${{ secrets.SYNC_PAT }}
           branch: chore/update-resources
           delete-branch: true
           base: main
