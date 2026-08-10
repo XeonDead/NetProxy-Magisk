@@ -8,19 +8,7 @@ import (
 
 func TestModuleArgsKeepsOperationBeforeFlags(t *testing.T) {
 	command := &cli{
-		moduleDir:      "/module",
-		catalogRoot:    "/module/data/catalog",
-		moduleConfig:   "/module/config/module.conf",
-		ebpfConfig:     "/module/config/ebpf/ebpf.conf",
-		singBoxPath:    "/module/bin/sing-box",
-		singBoxDir:     "/module/config/singbox",
-		serviceScript:  "/module/scripts/core/service.sh",
-		serviceAddress: "127.0.0.1:9090",
-		serviceSecret:  "singbox",
-		logDir:         "/module/logs",
-		stateFile:      "/module/runtime/service.json",
-		progressDir:    "/dev/netproxy/subscriptions",
-		workerPIDFile:  "/dev/netproxy/subworker.pid",
+		moduleDir: "/module",
 	}
 
 	got := command.moduleArgs("node", "add", "socks://example.com:1080#node")
@@ -50,7 +38,7 @@ func TestModuleArgsKeepsOperationBeforeFlags(t *testing.T) {
 }
 
 func TestParseCommandArgsSupportsMixedOptions(t *testing.T) {
-	args, timeout, outputJSON, err := parseCommandArgs([]string{
+	args, timeout, err := parseCommandArgs([]string{
 		"service", "status", "--json", "--timeout=45s",
 	})
 	if err != nil {
@@ -61,9 +49,6 @@ func TestParseCommandArgsSupportsMixedOptions(t *testing.T) {
 	}
 	if timeout != 45*time.Second {
 		t.Fatalf("timeout = %s, want 45s", timeout)
-	}
-	if !outputJSON {
-		t.Fatal("--json was not parsed")
 	}
 }
 

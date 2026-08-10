@@ -32,9 +32,8 @@ class DashboardSnapshotReducerTest {
     }
 
     @Test
-    fun `uses local ready time until the process changes`() {
+    fun `uses service ready time as the only startup time`() {
         val reducer = DashboardSnapshotReducer(totalMemoryBytes = 1)
-        reducer.markStarted(100)
 
         val first = reducer.reduce(
             CatalogDashboardUiState(),
@@ -49,10 +48,24 @@ class DashboardSnapshotReducerTest {
             "--"
         )
 
-        assertEquals(100, first.readyAt)
-        assertEquals(1, first.uptimeSeconds)
+        assertEquals(95, first.readyAt)
+        assertEquals(6, first.uptimeSeconds)
         assertEquals(105, restarted.readyAt)
         assertEquals(1, restarted.uptimeSeconds)
+    }
+
+    @Test
+    fun `shows the effective runtime outbound mode`() {
+        val reducer = DashboardSnapshotReducer(totalMemoryBytes = 1)
+
+        val state = reducer.reduce(
+            CatalogDashboardUiState(),
+            service(outboundMode = "direct", configuredOutboundMode = "rule"),
+            1_000,
+            "--"
+        )
+
+        assertEquals("direct", state.outboundMode)
     }
 
     private fun service(
@@ -62,7 +75,9 @@ class DashboardSnapshotReducerTest {
         upload: Long = 0,
         processTicks: Long = 10,
         systemTicks: Long = 100,
-        memory: Long = 0
+        memory: Long = 0,
+        outboundMode: String = "rule",
+        configuredOutboundMode: String = outboundMode
     ) = ServiceStatusSnapshot(
         state = "ready",
         pid = pid,
@@ -73,6 +88,8 @@ class DashboardSnapshotReducerTest {
         systemCpuTicks = systemTicks,
         cpuCount = 2,
         memoryBytes = memory,
-        activeGroupNodeCount = 1
+        activeGroupNodeCount = 1,
+        outboundMode = outboundMode,
+        configuredOutboundMode = configuredOutboundMode
     )
 }

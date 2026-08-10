@@ -138,11 +138,11 @@ func showUsage() {
   %s catalog <groups|snapshot|group|show|runtime|schedule> --root <catalog>
   %s subscription update|edit --root <catalog> --group <group-id>
   %s service <ready|started-at|snapshot|groups|mode|select|urltest|close-all>
-  netproxy-native module <prepare|sync|select|mode|app|node|sub|config|logs|state|service> ...
+  netproxy-native module <boot|prepare|sync|select|mode|app|node|sub|config|logs|state|service> ...
   control <status|nodes|snapshot|selection|groups|mode|runtime-mode|set-mode|delay|close-all> ...
   netproxy-native ebpf runtime --config <ebpf.conf> --output <ebpf.json>
   netproxy-native ebpf status --config <ebpf.conf> --sing-box <sing-box> [--mode <configured|all|local|shared>] [--raw]
-  %s subworker <start|stop|restart|wake|status|once|run> --root <catalog> --module-conf <module.conf>
+  %s subworker <start|stop|restart|wake|status|once|run> --module-dir <模块目录>
   netproxy-native version
 
 转换选项：

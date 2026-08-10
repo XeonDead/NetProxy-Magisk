@@ -31,13 +31,14 @@
 - `EBPF_CGROUP_ENABLED=0` 时只允许 shared-network 数据路径，运行时不得输出 cgroup 路径、IPv6 模式、应用/UID 策略或本机 Map 配置。
 - Service API 与 Clash API 的固定监听和密钥位于 `02_experimental.json`、`08_services.json`。不要重新引入运行时随机 bootstrap，现有 WebUI 依赖固定入口。
 - 服务状态只允许 `stopped/preparing/starting/ready/stopping/failed`。`ready_at` 只能在 sing-box API 与 eBPF 入站均就绪后写入。
+- `service status` 的 `outbound_mode` 表示核心当前实际生效模式；用户在 `module.conf` 中保存的基础模式由 `configured_outbound_mode` 表示。Wi-Fi 自动切换不得覆盖基础模式。
 
 ## 命令入口与脚本布局
 
 - `src/module/netproxyctl` 只负责定位 `bin/netproxyctl`；公共实现位于 `src/native/netproxy/cmd/netproxyctl`。Shell 不再保留公共命令 dispatcher。
 - 命令组权威清单：`service catalog node sub mode network app ebpf config logs`。新增命令组必须同时更新 Go CLI、Android `NetProxyCtlClient`、WebUI `src/exec.ts` 和契约测试。
-- `scripts/utils/` 不承载运行时业务；配置、Catalog、状态和 Service API 业务统一由 Go 实现。
-- `scripts/core/` 只保留 `service.sh`；运行时配置、节点切换、订阅事务和调度由 `netproxy-native` 负责。
+- `scripts/` 不承载运行时业务；配置、Catalog、状态和 Service API 业务统一由 Go 实现。
+- 根目录 `service.sh` 只保留 Magisk/KernelSU/APatch 开机桥接；运行时配置、服务生命周期、节点切换、订阅事务和调度由 `netproxy-native` 负责。
 - Go Worker 负责 Android 网络变化采集、Wi-Fi 状态读取和策略评估。
 - 设备上的调用形式是 `su -c /data/adb/modules/netproxy/netproxyctl [--json] <命令组> <命令>`；文档和排查步骤按此形式给出，不要写成裸 `netproxyctl`，它不在 PATH 里。
 
@@ -46,7 +47,7 @@
 模块运行时只保留以下 Shell：
 
 ```text
-src/module/scripts/core/service.sh
+src/module/service.sh
 ```
 
 以下旧业务脚本已从运行时删除，不得重新添加：`subscription.sh`、`subworker.sh`、`ebpf.sh`、`switch.sh`、`runtime.sh`、`utils/api.sh`、`utils/catalog.sh`、`utils/metadata.sh`、`network/tproxy.sh`、`utils/ipset.sh` 和 `core/subsched.sh`。`customize.sh` 中仍可保留一次性的旧 Worker/TPROXY 清理分支，但这些分支只用于安装时清理残留，不属于当前运行时兼容层。
@@ -55,13 +56,13 @@ src/module/scripts/core/service.sh
 
 - 运行时脚本面向 Android `/system/bin/sh`，只写 POSIX/mksh 可执行语法，不使用 Bash 数组、`[[ ]]`、进程替换或 Bash 专属选项。
 - 参数和路径始终双引号包裹；跨进程传递复杂数据时使用文件或 JSON，不使用 `eval` 拼装命令。
-- 公共业务能力统一放在 Go；Shell 只保留 `scripts/core/service.sh` 生命周期编排，不要在 `netproxyctl`、service 和 worker 中复制配置、Catalog 或 API 解析器。
+- 公共业务能力统一放在 Go；Shell 只保留根目录 `service.sh` 的 Magisk 开机桥接，不要在 `netproxyctl`、service 和 worker 中复制配置、Catalog、API 或进程管理逻辑。
 - 配置写入使用候选文件、校验和原子替换。订阅更新失败必须保留上一版有效 Provider。
 - 新增可执行文件时同步检查 `customize.sh` 权限列表和模块打包结果。
 
 ## Go 组件
 
-- `src/native/netproxy` 是 Catalog、Provider、订阅事务、配置、eBPF 运行时和 Service API 的业务事实源；Shell 只负责模块生命周期与 Android 平台编排。
+- `src/native/netproxy` 是 Catalog、Provider、订阅事务、配置、eBPF 运行时、Service API 与 sing-box 生命周期的业务事实源；Shell 只负责模块 service 阶段进入 Go 的平台桥接。
 - 允许且仅允许一个 Go Worker。它承载订阅调度和可选的 Android 网络监听，不能演变为通用控制守护进程、REST 服务或第二个代理核心。
 - 使用 reF1nd sing-box 的类型定义解析、生成和校验 Provider，不通过字符串替换拼接协议配置。
 - reF1nd 依赖版本必须与打包的 sing-box 内核兼容；升级时同时验证转换 fixtures、Provider 和 Service API。
@@ -177,17 +178,17 @@ Android Root、开机启动、模块命令、快捷设置磁贴、eBPF、热点�
 
 ```text
 Android Manager ─┐
-WebUI ───────────┼─> netproxyctl ─> Go 业务层 ─> Shell 编排 ─> sing-box
-终端用户 ───────┘        │              │              │
-                         │              │              ├─> eBPF 入站运行时
-                         │              │              └─> 网络事件采集
+WebUI ───────────┼─> netproxyctl ─> Go 业务层 ─> sing-box
+终端用户 ───────┘        │              │          │
+                         │              │          ├─> eBPF 入站运行时
+                         │              │          └─> 网络事件采集
                          │              ├─> 节点、订阅、Provider、配置
                          │              ├─> eBPF runtime 与 Service API
                          │              └─> 订阅 Worker
                          └─> schema=1 JSON 契约
 ```
 
-NetProxy 不维护通用独立控制守护进程。唯一长期 Go 进程是模块启动的 Worker，负责订阅调度、Android 网络事件和策略评估；Shell 负责 Android 模块生命周期与 sing-box 进程，Go 负责类型化配置、网络事务、Provider 与业务状态。
+NetProxy 不维护通用独立控制守护进程。唯一长期 Go 进程是模块启动的 Worker，负责订阅调度、Android 网络事件和策略评估；`service.sh` 仅在模块 service 阶段通过 `su -c` 进入 Go，Go 负责 sing-box 生命周期、类型化配置、网络事务、Provider 与业务状态。
 
 ## 事实源
 
@@ -199,7 +200,7 @@ NetProxy 不维护通用独立控制守护进程。唯一长期 Go 进程是模�
 | 节点与订阅 | `src/module/data/catalog/<group-id>/` | `meta.json` + `provider.json` |
 | sing-box 静态配置 | `src/module/config/singbox/confdir/` | 按编号组合加载 |
 | sing-box 运行时配置 | `src/module/runtime/` | 启动或检查时生成，不由客户端编辑 |
-| 服务状态 | `src/module/runtime/service.json` | `netproxyctl service status` 的状态源之一 |
+| 服务状态 | `/dev/netproxy/service.json` | 本次启动周期的状态快照；缺失时按 stopped 处理 |
 | 实时核心状态 | Service API / Clash API | 连接、流量、测速和实际选择 |
 
 Android 和 WebUI 不建立另一份节点数据库，也不直接修改这些文件。持久状态通过 `netproxyctl` 读取和变更，运行状态通过固定的 sing-box API 补充。
@@ -298,7 +299,7 @@ eBPF 只负责透明代理入站。停止服务由 sing-box 关闭并清理其 e
 
 ## sing-box 配置组合
 
-`service.sh` 通过 `-C config/singbox/confdir` 加载静态配置，并追加运行时文件：
+Go 生命周期控制器通过 `-C config/singbox/confdir` 加载静态配置，并追加运行时文件：
 
 - `providers.json`：Catalog Local Provider 投影。
 - `outbounds.json`：Auto/Select/Proxy 出站图。
@@ -314,7 +315,7 @@ eBPF 只负责透明代理入站。停止服务由 sing-box 关闭并清理其 e
 | Clash API | `127.0.0.1:9999` | zashboard 与第三方 Clash 客户端 |
 | 模块 WebUI | 模块管理器 WebView | 持久管理与状态展示 |
 
-静态配置当前监听 `0.0.0.0`，本机客户端统一通过 `127.0.0.1` 访问；配置文件使用固定密钥 `singbox`，用于 WebUI 自动进入面板。改变监听、路径或鉴权方式属于安全及跨 Android、WebUI、面板和文档的契约变更，不能只改一端。
+静态配置默认只监听 `127.0.0.1`，本机客户端统一通过 loopback 访问；配置文件使用固定密钥 `singbox`，用于 WebUI 自动进入面板。需要 LAN 控制时必须显式修改监听范围并同步评估鉴权和网络安全影响，不能只改一端。
 
 ## 管理接口
 

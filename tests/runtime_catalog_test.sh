@@ -15,7 +15,6 @@ EBPF_CONF="$TMP_ROOT/ebpf.conf"
 RUNTIME_PROVIDERS_FILE="$RUNTIME_DIR/providers.json"
 RUNTIME_OUTBOUNDS_FILE="$RUNTIME_DIR/outbounds.json"
 RUNTIME_EBPF_FILE="$RUNTIME_DIR/ebpf.json"
-RUNTIME_CATALOG_STATE_FILE="$RUNTIME_DIR/catalog.state"
 
 mkdir -p "$CATALOG_DIR/default" "$CATALOG_DIR/secondary" "$CATALOG_DIR/staging" "$RUNTIME_DIR"
 cp "$MODDIR/config/module.conf" "$MODULE_CONF"
@@ -57,15 +56,12 @@ json_contains() {
 }
 
 prepare_runtime
-[ -s "$RUNTIME_CATALOG_STATE_FILE" ]
-grep -q '^group_count[[:space:]]*2' "$RUNTIME_CATALOG_STATE_FILE"
-grep -q '^node_count[[:space:]]*2' "$RUNTIME_CATALOG_STATE_FILE"
 grep -q '"tag": "本地配置"' "$RUNTIME_PROVIDERS_FILE"
 grep -q '"tag": "备用配置"' "$RUNTIME_PROVIDERS_FILE"
 grep -q '"default": "Auto/本地配置"' "$RUNTIME_OUTBOUNDS_FILE"
 ! grep -q '"default": "direct"' "$RUNTIME_OUTBOUNDS_FILE"
-grep -q '"external_controller": "0.0.0.0:9999"' "$SINGBOX_DIR/confdir/02_experimental.json"
-grep -q '"listen": "0.0.0.0"' "$SINGBOX_DIR/confdir/08_services.json"
+grep -q '"external_controller": "127.0.0.1:9999"' "$SINGBOX_DIR/confdir/02_experimental.json"
+grep -q '"listen": "127.0.0.1"' "$SINGBOX_DIR/confdir/08_services.json"
 grep -q '"secret": "singbox"' "$SINGBOX_DIR/confdir/02_experimental.json"
 grep -q '"secret": "singbox"' "$SINGBOX_DIR/confdir/08_services.json"
 json_contains '"cgroup_enabled":true'
@@ -80,7 +76,7 @@ set_conf "$EBPF_CONF" "EBPF_BYPASS_RULE_SETS" '""'
 prepare_runtime
 json_contains '"bypass_rule_set":\[\]'
 
-set_conf_values "$EBPF_CONF"   "APP_PROXY_MODE" '"blacklist"'   "APP_ANDROID_USERS" '"0 999"'   "BYPASS_APPS_LIST" '"com.android.chrome org.telegram.messenger"'   "EBPF_SHARED_INCLUDE_SOURCE_CIDRS" '"192.168.43.0/24 fd00::/64"'   "EBPF_SHARED_EXCLUDE_SOURCE_CIDRS" '"192.168.43.10/32"'   "EBPF_SHARED_INCLUDE_MAC_ADDRESSES" '"02:11:22:33:44:55 AA:BB:CC:DD:EE:FF"'   "EBPF_SHARED_EXCLUDE_MAC_ADDRESSES" '"12:34:56:78:9A:BC"'
+set_conf_values "$EBPF_CONF"   "APP_PROXY_MODE" '"blacklist"'   "APP_ANDROID_USERS" '"0,999"'   "BYPASS_APPS_LIST" '"com.android.chrome,org.telegram.messenger"'   "EBPF_SHARED_INCLUDE_SOURCE_CIDRS" '"192.168.43.0/24,fd00::/64"'   "EBPF_SHARED_EXCLUDE_SOURCE_CIDRS" '"192.168.43.10/32"'   "EBPF_SHARED_INCLUDE_MAC_ADDRESSES" '"02:11:22:33:44:55,AA:BB:CC:DD:EE:FF"'   "EBPF_SHARED_EXCLUDE_MAC_ADDRESSES" '"12:34:56:78:9A:BC"'
 prepare_runtime
 json_contains '"include_android_user":\[0,999\]'
 json_contains '"exclude_package":\["com.android.chrome","org.telegram.messenger"\]'

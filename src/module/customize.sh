@@ -42,7 +42,6 @@ readonly EXECUTABLE_FILES="
     netproxyctl
     service.sh
     uninstall.sh
-    scripts/core/service.sh
     bin/bpftool
 "
 
@@ -242,14 +241,17 @@ stop_proxy_if_running() {
     return 0
   fi
 
-  # 停止 Go Worker。
-  pkill -f "netproxy-native.*subworker" 2> /dev/null || true
+  # 通过 Worker PID 文件停止订阅调度，不按进程名误杀其他实例。
+  if [ -x "$LIVE_DIR/bin/netproxy-native" ]; then
+    "$LIVE_DIR/bin/netproxy-native" subworker stop \
+      --module-dir "$LIVE_DIR" > /dev/null 2>&1 || true
+  fi
 
   # 检测当前 sing-box 进程。
   if pidof -s "$LIVE_DIR/bin/sing-box" > /dev/null 2>&1; then
     PROXY_WAS_RUNNING=true
     print_step "检测到代理服务正在运行，停止服务..."
-    sh "$LIVE_DIR/scripts/core/service.sh" stop > /dev/null 2>&1
+    "$LIVE_DIR/netproxyctl" service stop > /dev/null 2>&1
     print_ok "服务已停止"
   fi
 
@@ -272,7 +274,9 @@ sync_to_live() {
   fi
 
   # 同步程序文件与脚本，以及需要更新的内置资源 (整目录/文件覆盖)
-  local sync_dirs="bin scripts netproxyctl action.sh service.sh uninstall.sh module.prop config/ebpf config/singbox/confdir config/singbox/source"
+  rm -rf "$LIVE_DIR/scripts" 2> /dev/null
+
+  local sync_dirs="bin netproxyctl action.sh service.sh uninstall.sh module.prop webroot config/ebpf config/singbox/confdir config/singbox/source"
 
   for item in $sync_dirs; do
     local src="$MODPATH/$item"
@@ -309,18 +313,12 @@ restart_proxy_if_needed() {
   # 热更新安装无需等待重启设备，先拉起新版 Go 订阅 Worker。
   if [ -x "$LIVE_DIR/bin/netproxy-native" ]; then
     "$LIVE_DIR/bin/netproxy-native" subworker start \
-      --root "$LIVE_DIR/data/catalog" \
-      --progress-dir "/dev/netproxy/subscriptions" \
-      --pid-file "/dev/netproxy/subworker.pid" \
-      --log-file "$LIVE_DIR/logs/service.log" \
-      --module-conf "$LIVE_DIR/config/module.conf" \
-      --reload-script "$LIVE_DIR/scripts/core/service.sh" \
-      --sing-box "$LIVE_DIR/bin/sing-box" > /dev/null 2>&1 || true
+      --module-dir "$LIVE_DIR" > /dev/null 2>&1 || true
   fi
   if [ "$PROXY_WAS_RUNNING" = true ]; then
     print_step "重新启动代理服务..."
     # su 包裹：经管理器刷入时让 sing-box 迁出冻结 cgroup，避免切后台断网
-    if su -c "sh \"$LIVE_DIR/scripts/core/service.sh\" start" > /dev/null 2>&1; then
+    if su -c "\"$LIVE_DIR/netproxyctl\" service start" > /dev/null 2>&1; then
       print_ok "服务已启动"
     else
       print_warn "服务未启动，请先导入可用节点"

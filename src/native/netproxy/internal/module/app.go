@@ -36,13 +36,12 @@ type Options struct {
 	StateFile          string
 	ProgressDir        string
 	LogDir             string
-	ServiceScript      string
 	ServiceAddress     string
 	ServiceSecret      string
 	WorkerPIDFile      string
 	WorkerLogFile      string
 	WiFiStateFile      string
-	SkipServiceAdapter bool
+	SkipServiceReload  bool
 	RequestTimeout     time.Duration
 }
 
@@ -60,13 +59,12 @@ func NewOptions(moduleDir string) Options {
 		SingBoxPath:    filepath.Join(moduleDir, "bin", "sing-box"),
 		SingBoxDir:     singBoxDir,
 		RuntimeDir:     runtimeDir,
-		StateFile:      filepath.Join(runtimeDir, "service.json"),
+		StateFile:      filepath.Join("/dev/netproxy", "service.json"),
 		ProgressDir:    "/dev/netproxy/subscriptions",
 		LogDir:         filepath.Join(moduleDir, "logs"),
-		ServiceScript:  filepath.Join(moduleDir, "scripts", "core", "service.sh"),
 		ServiceAddress: "127.0.0.1:9090",
 		ServiceSecret:  "singbox",
-		WorkerPIDFile:  "/dev/netproxy/worker.pid",
+		WorkerPIDFile:  "/dev/netproxy/subworker.pid",
 		WorkerLogFile:  filepath.Join(moduleDir, "logs", "service.log"),
 		WiFiStateFile:  "/dev/netproxy/wifi_state",
 		RequestTimeout: 8 * time.Second,
@@ -94,19 +92,13 @@ func Prepare(ctx context.Context, options Options, allowEmpty bool) (PrepareResu
 	providers := filepath.Join(options.RuntimeDir, "providers.json")
 	outbounds := filepath.Join(options.RuntimeDir, "outbounds.json")
 	ebpfPath := filepath.Join(options.RuntimeDir, "ebpf.json")
-	statePath := filepath.Join(options.RuntimeDir, "catalog.state")
 	runtime, err := catalog.BuildRuntime(ctx, catalog.RuntimeOptions{
 		Root: options.CatalogRoot, ModuleConfig: options.ModuleConfig,
-		ProvidersOutput: providers, OutboundsOutput: outbounds, StateOutput: statePath,
+		ProvidersOutput: providers, OutboundsOutput: outbounds,
 		AllowEmpty: allowEmpty,
 	})
 	if err != nil {
 		return PrepareResult{}, err
-	}
-	if !allowEmpty {
-		if err := syncRuntimeSelection(options.ModuleConfig, runtime); err != nil {
-			return PrepareResult{}, err
-		}
 	}
 	config, err := ebpf.Load(options.EBPFConfig)
 	if err != nil {
@@ -255,10 +247,11 @@ func syncRuntimeSelector(ctx context.Context, options Options, active, inner str
 			return nil
 		}
 	}
-	if options.SkipServiceAdapter {
+	if options.SkipServiceReload {
 		return fmt.Errorf("Service API 切换失败，跳过嵌套服务 reload: %w", err)
 	}
-	return runServiceAdapter(ctx, options, "reload")
+	_, reloadErr := ManageService(ctx, options, "reload")
+	return reloadErr
 }
 
 // retryRuntimeSelection 等待 reload 后的 selector 完成注册，再同步组内与顶层选择器。
@@ -315,10 +308,11 @@ func ApplyMode(ctx context.Context, options Options, mode string) error {
 			return nil
 		}
 	}
-	if options.SkipServiceAdapter {
+	if options.SkipServiceReload {
 		return fmt.Errorf("Service API 模式切换失败，跳过嵌套服务 reload: %w", err)
 	}
-	return runServiceAdapter(ctx, options, "reload")
+	_, reloadErr := ManageService(ctx, options, "reload")
+	return reloadErr
 }
 
 // UpdateApp 按类型化 eBPF 配置修改分应用策略。
@@ -348,17 +342,17 @@ func UpdateApp(options Options, action, value, users string) (map[string]any, er
 			return nil, err
 		}
 		if config.AppProxyMode == "whitelist" {
-			updates["PROXY_APPS_LIST"] = moduleconfig.Quote(addWord(strings.Join(config.ProxyPackages, " "), value))
+			updates["PROXY_APPS_LIST"] = moduleconfig.Quote(addWord(strings.Join(config.ProxyPackages, ","), value))
 		} else {
-			updates["BYPASS_APPS_LIST"] = moduleconfig.Quote(addWord(strings.Join(config.BypassPackages, " "), value))
+			updates["BYPASS_APPS_LIST"] = moduleconfig.Quote(addWord(strings.Join(config.BypassPackages, ","), value))
 		}
 		updates["APP_PROXY_ENABLE"] = "1"
 	case "remove":
 		if err := validatePackage(value); err != nil {
 			return nil, err
 		}
-		updates["PROXY_APPS_LIST"] = moduleconfig.Quote(removeWord(strings.Join(config.ProxyPackages, " "), value))
-		updates["BYPASS_APPS_LIST"] = moduleconfig.Quote(removeWord(strings.Join(config.BypassPackages, " "), value))
+		updates["PROXY_APPS_LIST"] = moduleconfig.Quote(removeWord(strings.Join(config.ProxyPackages, ","), value))
+		updates["BYPASS_APPS_LIST"] = moduleconfig.Quote(removeWord(strings.Join(config.BypassPackages, ","), value))
 	case "enable", "disable":
 		updates["APP_PROXY_ENABLE"] = map[string]string{"enable": "1", "disable": "0"}[action]
 	default:
@@ -379,8 +373,8 @@ func UpdateApp(options Options, action, value, users string) (map[string]any, er
 
 func appData(config ebpf.Config) map[string]any {
 	return map[string]any{"enabled": config.AppProxyEnable, "mode": config.AppProxyMode,
-		"android_users": joinUint(config.AndroidUsers), "proxy_apps": strings.Join(config.ProxyPackages, " "),
-		"bypass_apps": strings.Join(config.BypassPackages, " ")}
+		"android_users": joinUint(config.AndroidUsers), "proxy_apps": strings.Join(config.ProxyPackages, ","),
+		"bypass_apps": strings.Join(config.BypassPackages, ",")}
 }
 
 // NodeAppend 将节点加入本地分组并处理活动状态与运行时 reload。
@@ -501,7 +495,7 @@ func RemoveSubscription(ctx context.Context, options Options, query, replacement
 				return err
 			}
 			if service.ProcessRunning(options.SingBoxPath) {
-				if err := runServiceAdapter(ctx, options, "stop"); err != nil {
+				if _, err := ManageService(ctx, options, "stop"); err != nil {
 					return err
 				}
 			}
@@ -511,7 +505,8 @@ func RemoveSubscription(ctx context.Context, options Options, query, replacement
 		return err
 	}
 	if service.ProcessRunning(options.SingBoxPath) {
-		return runServiceAdapter(ctx, options, "reload")
+		_, reloadErr := ManageService(ctx, options, "reload")
+		return reloadErr
 	}
 	return nil
 }
@@ -544,7 +539,8 @@ func syncCatalogChange(ctx context.Context, options Options, groupID string, str
 		}
 	}
 	if structureChanged && service.ProcessRunning(options.SingBoxPath) {
-		return runServiceAdapter(ctx, options, "reload")
+		_, reloadErr := ManageService(ctx, options, "reload")
+		return reloadErr
 	}
 	return nil
 }
@@ -581,20 +577,6 @@ func splitReference(reference string) (string, string, error) {
 	return group, tag, nil
 }
 
-func runServiceAdapter(ctx context.Context, options Options, action string) error {
-	shell := "/system/bin/sh"
-	if _, err := os.Stat(shell); err != nil {
-		shell = "sh"
-	}
-	command := exec.CommandContext(ctx, shell, options.ServiceScript, action)
-	command.Stdout = os.Stderr
-	command.Stderr = os.Stderr
-	if err := command.Run(); err != nil {
-		return fmt.Errorf("服务 %s 适配失败: %w", action, err)
-	}
-	return nil
-}
-
 func (options Options) validate() error {
 	for name, value := range map[string]string{"模块配置": options.ModuleConfig, "Catalog": options.CatalogRoot, "eBPF 配置": options.EBPFConfig} {
 		if strings.TrimSpace(value) == "" {
@@ -627,7 +609,7 @@ func validatePackage(value string) error {
 }
 
 func validateWords(value string, numeric bool) error {
-	for _, word := range strings.Fields(value) {
+	for _, word := range ebpf.CommaSeparated(value) {
 		if numeric {
 			for _, char := range word {
 				if char < '0' || char > '9' {
@@ -640,7 +622,7 @@ func validateWords(value string, numeric bool) error {
 }
 
 func addWord(current, value string) string {
-	for _, word := range strings.Fields(current) {
+	for _, word := range ebpf.CommaSeparated(current) {
 		if word == value {
 			return current
 		}
@@ -648,17 +630,17 @@ func addWord(current, value string) string {
 	if strings.TrimSpace(current) == "" {
 		return value
 	}
-	return strings.TrimSpace(current) + " " + value
+	return strings.TrimSpace(current) + "," + value
 }
 
 func removeWord(current, value string) string {
 	items := make([]string, 0)
-	for _, word := range strings.Fields(current) {
+	for _, word := range ebpf.CommaSeparated(current) {
 		if word != value {
 			items = append(items, word)
 		}
 	}
-	return strings.Join(items, " ")
+	return strings.Join(items, ",")
 }
 
 func joinUint(values []uint64) string {
@@ -666,7 +648,7 @@ func joinUint(values []uint64) string {
 	for _, value := range values {
 		items = append(items, fmt.Sprintf("%d", value))
 	}
-	return strings.Join(items, " ")
+	return strings.Join(items, ",")
 }
 
 // SubscriptionOptions 描述订阅业务的公共路径和 Service 适配器。
@@ -742,7 +724,24 @@ func UpdateAllSubscriptions(ctx context.Context, options Options) (worker.Summar
 }
 
 func workerOptions(options Options) worker.Options {
-	return worker.Options{Root: options.CatalogRoot, ProgressDir: options.ProgressDir, PIDFile: options.WorkerPIDFile, LogFile: options.WorkerLogFile, ModuleConf: options.ModuleConfig, ReloadScript: options.ServiceScript, SingBoxPath: options.SingBoxPath, ServiceAddress: options.ServiceAddress, ServiceSecret: options.ServiceSecret, Now: time.Now}
+	workerOptions := worker.Options{
+		Root:                options.CatalogRoot,
+		ProgressDir:         options.ProgressDir,
+		PIDFile:             options.WorkerPIDFile,
+		LogFile:             options.WorkerLogFile,
+		ModuleConf:          options.ModuleConfig,
+		NativePath:          filepath.Join(options.ModuleDir, "bin", "netproxy-native"),
+		SingBoxPath:         options.SingBoxPath,
+		ServiceAddress:      options.ServiceAddress,
+		ServiceSecret:       options.ServiceSecret,
+		NetworkWatchEnabled: true,
+		Now:                 time.Now,
+	}
+	workerOptions.NetworkEvaluate = func(ctx context.Context, networkType, ssid string) error {
+		_, err := EvaluateNetwork(ctx, options, networkType, ssid)
+		return err
+	}
+	return workerOptions
 }
 
 func hostName(rawURL string) string {

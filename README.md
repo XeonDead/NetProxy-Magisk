@@ -60,11 +60,11 @@ Android 管理器与模块共用 `netproxyctl` JSON 契约，但保持独立的�
 
 Clash API 默认配置：
 
-- Controller：`http://<设备IP>:9999`
-- zashboard：`http://<设备IP>:9999/ui/`
+- Controller：`http://127.0.0.1:9999`
+- zashboard：`http://127.0.0.1:9999/ui/`
 - Secret：`singbox`
 
-控制器默认监听所有网络接口，请仅在可信网络中使用，并按需修改访问密钥。
+控制器默认只监听本机。需要从其他设备访问时，请显式配置监听地址，并同时调整访问控制和密钥。
 
 ## 界面预览
 
@@ -232,7 +232,7 @@ su -c '/data/adb/modules/netproxy/netproxyctl help'
 | `EBPF_DNS_MODE` | `hijack` | 在 eBPF 入站劫持 TCP / UDP 53 |
 | `EBPF_CGROUP_IPV6_MODE` | `always` | 本机 IPv6 接管策略，支持始终、自动和关闭 |
 | `EBPF_BYPASS_PRIVATE_ADDRESS` | `1` | 默认绕过私网与特殊用途地址 |
-| `EBPF_BYPASS_RULE_SETS` | `direct ChinaIP` | 在内核侧提前绕过可提取 CIDR 的规则集 |
+| `EBPF_BYPASS_RULE_SETS` | `direct,ChinaIP` | 在内核侧提前绕过可提取 CIDR 的规则集，多个规则集使用英文逗号分隔 |
 | `EBPF_SHARED_NETWORK` | `0` | 默认关闭热点与共享网络代理 |
 | `WIFI_AUTO_SWITCH` | `0` | 默认关闭 WiFi SSID 自动切换 |
 

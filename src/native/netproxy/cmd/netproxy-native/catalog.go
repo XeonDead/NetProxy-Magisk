@@ -22,6 +22,7 @@ func runCatalog(ctx context.Context, args []string) error {
 	}
 	action := args[0]
 	flags := newFlagSet("catalog " + action)
+	moduleDir := flags.String("module-dir", defaultModuleDir(), "模块根目录")
 	input := flags.String("input", "", "输入路径或内容")
 	value := flags.String("value", "", "元数据字段值")
 	root := flags.String("root", "", "Catalog 根目录")
@@ -48,7 +49,6 @@ func runCatalog(ctx context.Context, args []string) error {
 	timeout := flags.Int64("timeout", 60, "订阅请求超时秒数")
 	providersOutput := flags.String("providers-output", "", "运行时 Provider 配置输出")
 	outboundsOutput := flags.String("outbounds-output", "", "运行时出站配置输出")
-	stateOutput := flags.String("state-output", "", "运行时状态输出")
 	selector := flags.String("selector", "urltest", "选择模式")
 	selected := flags.String("selected", "", "手动节点引用")
 	allowEmpty := flags.Bool("allow-empty", false, "允许空 Catalog")
@@ -56,6 +56,21 @@ func runCatalog(ctx context.Context, args []string) error {
 	format := flags.String("format", "json", "输出格式")
 	if err := flags.Parse(args[1:]); err != nil {
 		return err
+	}
+	if strings.TrimSpace(*root) == "" {
+		*root = filepath.Join(*moduleDir, "data", "catalog")
+	}
+	if strings.TrimSpace(*moduleConfig) == "" {
+		candidate := filepath.Join(*moduleDir, "config", "module.conf")
+		if _, err := os.Stat(candidate); err == nil {
+			*moduleConfig = candidate
+		}
+	}
+	if strings.TrimSpace(*progressDir) == "" {
+		*progressDir = os.Getenv("SUB_RUNTIME_DIR")
+		if *progressDir == "" {
+			*progressDir = "/dev/netproxy/subscriptions"
+		}
 	}
 	if action == "duration" {
 		seconds, err := subscription.DurationToSeconds(*value)
@@ -374,7 +389,7 @@ func runCatalog(ctx context.Context, args []string) error {
 		return nil
 	case "runtime":
 		data, err := catalog.BuildRuntime(ctx, catalog.RuntimeOptions{
-			Root: *root, ModuleConfig: *moduleConfig, ProvidersOutput: *providersOutput, OutboundsOutput: *outboundsOutput, StateOutput: *stateOutput,
+			Root: *root, ModuleConfig: *moduleConfig, ProvidersOutput: *providersOutput, OutboundsOutput: *outboundsOutput,
 			ActiveGroup: *active, SelectorMode: *selector, SelectedNodeRef: *selected,
 			AllowEmpty: *allowEmpty,
 		})

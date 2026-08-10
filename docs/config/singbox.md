@@ -44,10 +44,8 @@ runtime/           # 启动时生成的运行时配置
 - `providers.json`
 - `outbounds.json`
 - `ebpf.json`
-- `catalog.state`
-- `service.json`
 
-停止服务时前三个运行时配置和 Catalog 状态会清理。运行时目录不应由用户编辑。
+运行时目录只包含启动或检查时生成的 sing-box 配置，不应由用户编辑。
 
 ## 配置组合
 
@@ -62,7 +60,7 @@ runtime/           # 启动时生成的运行时配置
 ## 控制接口
 
 - Service API：`127.0.0.1:9090`，供 Android 管理器和模块控制使用。
-- Clash API：`0.0.0.0:9999`，供 zashboard 和第三方 Clash 客户端使用。
+- Clash API：`127.0.0.1:9999`，供本机 zashboard 和第三方 Clash 客户端使用。
 - 默认密钥：`singbox`。
 
 ## 检查配置

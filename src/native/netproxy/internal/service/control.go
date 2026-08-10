@@ -32,29 +32,30 @@ type Options struct {
 
 // Status 是仪表盘使用的服务状态快照，字段与 netproxyctl schema=1 保持一致。
 type Status struct {
-	State                 string `json:"state"`
-	PID                   *int   `json:"pid"`
-	StartedAt             int64  `json:"started_at"`
-	ReadyAt               int64  `json:"ready_at"`
-	UptimeSeconds         int64  `json:"uptime_seconds"`
-	Error                 string `json:"error"`
-	OutboundMode          string `json:"outbound_mode"`
-	SelectorMode          string `json:"selector_mode"`
-	ActiveGroupID         string `json:"active_group_id"`
-	ActiveGroupName       string `json:"active_group_name"`
-	ActiveGroupNodeCount  int    `json:"active_group_node_count"`
-	SelectedNodeRef       string `json:"selected_node_ref"`
-	RuntimeSelected       string `json:"runtime_selected"`
-	MemoryBytes           uint64 `json:"memory_bytes"`
-	ProcessCPUTicks       uint64 `json:"process_cpu_ticks"`
-	SystemCPUTicks        uint64 `json:"system_cpu_ticks"`
-	CPUCount              int    `json:"cpu_count"`
-	ConnectionsIn         int32  `json:"connections_in"`
-	ConnectionsOut        int32  `json:"connections_out"`
-	UploadTotal           int64  `json:"upload_total"`
-	DownloadTotal         int64  `json:"download_total"`
-	SubscriptionWorker    string `json:"subscription_worker"`
-	SubscriptionWorkerPID *int   `json:"subscription_worker_pid"`
+	State                  string `json:"state"`
+	PID                    *int   `json:"pid"`
+	StartedAt              int64  `json:"started_at"`
+	ReadyAt                int64  `json:"ready_at"`
+	UptimeSeconds          int64  `json:"uptime_seconds"`
+	Error                  string `json:"error"`
+	OutboundMode           string `json:"outbound_mode"`
+	ConfiguredOutboundMode string `json:"configured_outbound_mode"`
+	SelectorMode           string `json:"selector_mode"`
+	ActiveGroupID          string `json:"active_group_id"`
+	ActiveGroupName        string `json:"active_group_name"`
+	ActiveGroupNodeCount   int    `json:"active_group_node_count"`
+	SelectedNodeRef        string `json:"selected_node_ref"`
+	RuntimeSelected        string `json:"runtime_selected"`
+	MemoryBytes            uint64 `json:"memory_bytes"`
+	ProcessCPUTicks        uint64 `json:"process_cpu_ticks"`
+	SystemCPUTicks         uint64 `json:"system_cpu_ticks"`
+	CPUCount               int    `json:"cpu_count"`
+	ConnectionsIn          int32  `json:"connections_in"`
+	ConnectionsOut         int32  `json:"connections_out"`
+	UploadTotal            int64  `json:"upload_total"`
+	DownloadTotal          int64  `json:"download_total"`
+	SubscriptionWorker     string `json:"subscription_worker"`
+	SubscriptionWorkerPID  *int   `json:"subscription_worker_pid"`
 }
 
 // DelayResult 是一次节点测速请求及其最新分组状态。
@@ -102,16 +103,17 @@ func ReadStatus(ctx context.Context, options Options) (Status, error) {
 	options = normalizeOptions(options)
 	state := readState(options.StateFile)
 	status := Status{
-		State:              state.State,
-		StartedAt:          state.StartedAt,
-		ReadyAt:            state.ReadyAt,
-		Error:              state.Error,
-		OutboundMode:       readConfig(options.ModuleConfig, "OUTBOUND_MODE", "rule"),
-		SelectorMode:       readConfig(options.ModuleConfig, "SELECTOR_MODE", "urltest"),
-		ActiveGroupID:      readConfig(options.ModuleConfig, "ACTIVE_GROUP_ID", ""),
-		SelectedNodeRef:    readConfig(options.ModuleConfig, "SELECTED_NODE_REF", ""),
-		CPUCount:           1,
-		SubscriptionWorker: "stopped",
+		State:                  state.State,
+		StartedAt:              state.StartedAt,
+		ReadyAt:                state.ReadyAt,
+		Error:                  state.Error,
+		OutboundMode:           readConfig(options.ModuleConfig, "OUTBOUND_MODE", "rule"),
+		ConfiguredOutboundMode: readConfig(options.ModuleConfig, "OUTBOUND_MODE", "rule"),
+		SelectorMode:           readConfig(options.ModuleConfig, "SELECTOR_MODE", "urltest"),
+		ActiveGroupID:          readConfig(options.ModuleConfig, "ACTIVE_GROUP_ID", ""),
+		SelectedNodeRef:        readConfig(options.ModuleConfig, "SELECTED_NODE_REF", ""),
+		CPUCount:               1,
+		SubscriptionWorker:     "stopped",
 	}
 
 	_, active := readActiveGroup(ctx, options)
@@ -123,7 +125,7 @@ func ReadStatus(ctx context.Context, options Options) (Status, error) {
 		status.ActiveGroupName = status.ActiveGroupID
 	}
 
-	pid := findProcess(options.SingBoxPath, state.PID)
+	pid := FindProcess(options.SingBoxPath, state.PID)
 	if pid <= 0 {
 		status.PID = nil
 		if state.State == "preparing" || state.State == "starting" || state.State == "ready" || state.State == "stopping" {
@@ -313,7 +315,7 @@ func normalizeOptions(options Options) Options {
 		options.ProgressDir = "/dev/netproxy/subscriptions"
 	}
 	if options.WorkerPIDFile == "" {
-		options.WorkerPIDFile = "/dev/netproxy/worker.pid"
+		options.WorkerPIDFile = "/dev/netproxy/subworker.pid"
 	}
 	return options
 }
@@ -522,6 +524,29 @@ func readActiveGroup(ctx context.Context, options Options) ([]catalog.GroupSnaps
 }
 
 func mergeRuntimeStatus(ctx context.Context, options Options, status *Status, active *catalog.GroupSnapshot) {
+	client, requestContext, cancel, err := newClient(ctx, options)
+	if err != nil {
+		return
+	}
+	defer cancel()
+	defer client.Close()
+	modeContext, modeCancel := context.WithTimeout(requestContext, 500*time.Millisecond)
+	mode, modeErr := client.Mode(modeContext)
+	modeCancel()
+	if modeErr == nil {
+		if runtimeMode, mapErr := serviceModeToModuleMode(mode.Current); mapErr == nil {
+			status.OutboundMode = runtimeMode
+		}
+	}
+	apiStatus, err := client.Status(requestContext)
+	if err != nil {
+		return
+	}
+	status.MemoryBytes = apiStatus.Memory
+	status.ConnectionsIn = apiStatus.ConnectionsIn
+	status.ConnectionsOut = apiStatus.ConnectionsOut
+	status.UploadTotal = apiStatus.UplinkTotal
+	status.DownloadTotal = apiStatus.DownlinkTotal
 	if active == nil {
 		return
 	}
@@ -537,21 +562,6 @@ func mergeRuntimeStatus(ctx context.Context, options Options, status *Status, ac
 	if selector == "manual" {
 		runtimeGroup = "Select/" + runtimeTag
 	}
-	client, requestContext, cancel, err := newClient(ctx, options)
-	if err != nil {
-		return
-	}
-	defer cancel()
-	defer client.Close()
-	apiStatus, err := client.Status(requestContext)
-	if err != nil {
-		return
-	}
-	status.MemoryBytes = apiStatus.Memory
-	status.ConnectionsIn = apiStatus.ConnectionsIn
-	status.ConnectionsOut = apiStatus.ConnectionsOut
-	status.UploadTotal = apiStatus.UplinkTotal
-	status.DownloadTotal = apiStatus.DownlinkTotal
 	groups, err := client.Groups(requestContext)
 	if err != nil {
 		return
@@ -626,7 +636,8 @@ func readWorkerStatus(options Options) (worker.Status, error) {
 	return worker.ReadStatus(workerOptions)
 }
 
-func findProcess(executable string, statePID int) int {
+// FindProcess 返回与指定可执行文件匹配的进程；statePID 可减少 /proc 扫描。
+func FindProcess(executable string, statePID int) int {
 	selfPID := os.Getpid()
 	if statePID > 0 && statePID != selfPID && processExists(statePID) && (executable == "" || processMatches(statePID, executable)) {
 		return statePID
@@ -652,7 +663,7 @@ func findProcess(executable string, statePID int) int {
 
 // ProcessRunning 判断指定可执行文件是否正在运行。
 func ProcessRunning(executable string) bool {
-	return findProcess(executable, 0) > 0
+	return FindProcess(executable, 0) > 0
 }
 
 func processExists(pid int) bool {
@@ -686,7 +697,7 @@ func executableMatches(candidate, target string) bool {
 	if candidate == target {
 		return true
 	}
-	return filepath.Base(candidate) == filepath.Base(target)
+	return false
 }
 
 func processCPUTicks(pid int) uint64 {

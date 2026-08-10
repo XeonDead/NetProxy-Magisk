@@ -9,7 +9,6 @@ trap 'rm -rf "$TMP_ROOT"' EXIT INT TERM
 
 MODULE="$TMP_ROOT/module"
 mkdir -p "$MODULE/bin" "$MODULE/logs"
-cp -R "$ROOT/src/module/scripts" "$MODULE/"
 cp -R "$ROOT/src/module/config" "$MODULE/"
 cp -R "$ROOT/src/module/data" "$MODULE/"
 mkdir -p "$MODULE/runtime"
@@ -74,7 +73,7 @@ esac
 
 result="$(sh "$MODULE/netproxyctl" --json app users 0 999)"
 run_json "$result"
-grep -q '^APP_ANDROID_USERS="0 999"$' "$MODULE/config/ebpf/ebpf.conf"
+grep -q '^APP_ANDROID_USERS="0,999"$' "$MODULE/config/ebpf/ebpf.conf"
 result="$(sh "$MODULE/netproxyctl" --json app add com.android.chrome)"
 run_json "$result"
 grep -q '^BYPASS_APPS_LIST="com.android.chrome"$' "$MODULE/config/ebpf/ebpf.conf"

@@ -1,6 +1,6 @@
 id=netproxy
 name=NetProxy
-version=v8.0.0-ru-beta.2
+version=v8.0.0-ru-beta.3
 versionCode=5
 author=Fanju & XeonDead
 description=Android transparent proxy tool for inbound traffic based on sing-box eBPF

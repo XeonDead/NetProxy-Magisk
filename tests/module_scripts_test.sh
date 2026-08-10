@@ -19,6 +19,18 @@ check_shell_syntax() {
 }
 
 #######################################
+# 确认仅保留根目录开机桥接脚本
+#######################################
+check_service_bridge() {
+  [ -f "$MODULE_DIR/service.sh" ] || {
+    printf '%s\n' "缺少模块开机桥接脚本: $MODULE_DIR/service.sh" >&2
+    return 1
+  }
+  grep -q 'module boot' "$MODULE_DIR/service.sh"
+  ! grep -q 'setuidgid\|nohup\|service_main' "$MODULE_DIR/service.sh"
+}
+
+#######################################
 # 确认已删除的旧业务脚本没有重新进入模块
 #######################################
 check_removed_scripts() {
@@ -33,6 +45,7 @@ check_removed_scripts() {
     "$MODULE_DIR/scripts/utils/api.sh" \
     "$MODULE_DIR/scripts/utils/catalog.sh" \
     "$MODULE_DIR/scripts/utils/metadata.sh" \
+    "$MODULE_DIR/scripts/core/service.sh" \
     "$MODULE_DIR/scripts/network/netmon.sh" \
     "$MODULE_DIR/scripts/network/tproxy.sh"; do
     if [ -e "$script" ]; then
@@ -42,6 +55,20 @@ check_removed_scripts() {
   done
 }
 
+#######################################
+# 确认升级/卸载只通过 PID 感知的 Worker 入口操作
+#######################################
+check_worker_lifecycle() {
+  ! grep -q 'pkill -f.*subworker' "$MODULE_DIR/customize.sh"
+  grep -q 'subworker stop' "$MODULE_DIR/customize.sh"
+  grep -q -- '--module-dir' "$MODULE_DIR/customize.sh"
+  grep -q 'subworker stop' "$MODULE_DIR/uninstall.sh"
+  grep -q -- '--module-dir' "$MODULE_DIR/uninstall.sh"
+  grep -q 'webroot' "$MODULE_DIR/customize.sh"
+}
+
 check_shell_syntax
+check_service_bridge
 check_removed_scripts
+check_worker_lifecycle
 printf '%s\n' 'module scripts test passed'

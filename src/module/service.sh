@@ -1,152 +1,23 @@
 #!/system/bin/sh
 #######################################
 # 文件: service.sh
-# 功能: Magisk service 阶段入口，在系统启动完成后记录运行环境，
-#       加载模块配置并按需开机自启 sing-box 服务。
-# 用法: 由 Magisk/KernelSU/APatch 在 service 阶段自动调用。
-# 依赖: scripts/core/service.sh、netproxy-native
+# 功能: Magisk/KernelSU/APatch service 阶段启动桥接。
+# 用法: 由模块框架无参数调用。
+# 依赖: su、netproxy-native
 #######################################
 
-set -e  # 命令失败立即退出
+readonly MODDIR="$(cd "$(dirname "$0")" && pwd)"
+readonly NETPROXY_NATIVE_BIN="$MODDIR/bin/netproxy-native"
 
-# 模块根目录与关键路径
-readonly MODDIR="${0%/*}"                          # 模块根目录 (脚本所在目录)
-readonly MODULE_CONF="$MODDIR/config/module.conf"  # 模块配置
-readonly CATALOG_DIR="$MODDIR/data/catalog"        # Catalog 根目录
-readonly NETPROXY_NATIVE_BIN="$MODDIR/bin/netproxy-native"  # Go 原生组件
-readonly WORKER_PID_FILE="/dev/netproxy/subworker.pid"     # Worker PID 文件
-readonly LOG_FILE="$MODDIR/logs/service.log"       # 服务日志
-readonly LOG_TAG="boot"                            # 日志组件标签
-
-log() {
-  local level="INFO" message="$1"
-  if [ "$#" -ge 2 ]; then
-    level="$1"
-    message="$2"
-  fi
-  printf '[%s] [%s] [%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$level" "$LOG_TAG" "$message" >> "$LOG_FILE"
+[ "$#" -eq 0 ] || {
+  printf '%s\n' 'service.sh 仅供模块 service 阶段调用；请使用 netproxyctl service 管理服务。' >&2
+  exit 2
 }
 
-#######################################
-# 加载模块配置
-# 通过 netproxy-native 读取类型化配置，文件不存在时沿用默认值。
-# 参数: 无
-# 全局: 设置 AUTO_START
-# 返回: 无
-#######################################
-load_module_config() {
-  # 开机服务相关默认值
-  AUTO_START="$("$NETPROXY_NATIVE_BIN" config module-get \
-    --path "$MODULE_CONF" --key AUTO_START --format text 2> /dev/null || printf "%s" "1")"
+[ -x "$NETPROXY_NATIVE_BIN" ] || exit 1
 
-  if [ -f "$MODULE_CONF" ]; then
-    log "INFO" "模块配置已加载"
-  else
-    log "WARN" "模块配置文件不存在，使用默认值"
-  fi
-}
-
-#######################################
-# 等待系统启动完成
-# 阻塞至系统开机完成。
-# 参数: 无
-# 返回: 无
-#######################################
-wait_for_boot() {
-  log "INFO" "等待系统启动完成..."
-
-  # 等待系统开机完成属性置位
-  resetprop -w sys.boot_completed
-  log "INFO" "系统启动完成"
-
-}
-
-#######################################
-# 启动独立订阅更新 worker
-# worker 不依赖 sing-box 是否启用，启动失败也不阻断代理服务。
-# 参数: 无
-# 返回: 无
-#######################################
-start_subscription_worker() {
-  if "$NETPROXY_NATIVE_BIN" subworker start \
-    --root "$CATALOG_DIR" \
-    --progress-dir "/dev/netproxy/subscriptions" \
-    --pid-file "$WORKER_PID_FILE" \
-    --log-file "$MODDIR/logs/service.log" \
-    --module-conf "$MODULE_CONF" \
-    --reload-script "$MODDIR/scripts/core/service.sh" \
-    --sing-box "$MODDIR/bin/sing-box" \
-    --service-address "127.0.0.1:9090" \
-    --service-secret "singbox" > /dev/null 2>&1; then
-    log "DEBUG" "订阅自动更新 worker 已就绪"
-  else
-    log "WARN" "订阅自动更新 worker 启动失败，可稍后手动重试"
-  fi
-}
-
-#######################################
-# 记录运行环境信息 (Root 方案、版本、模块版本等)
-# 参数: 无
-# 返回: 无
-#######################################
-log_env_info() {
-  log "DEBUG" "环境信息检测"
-
-  # KernelSU 环境
-  if [ "$KSU" = "true" ]; then
-    log "DEBUG" "环境: KernelSU"
-    log "DEBUG" "KernelSU 版本: ${KSU_VER:-未知}"
-    log "DEBUG" "KernelSU 版本号: ${KSU_VER_CODE:-未知}"
-    log "DEBUG" "KernelSU 内核版本号: ${KSU_KERNEL_VER_CODE:-未知}"
-  fi
-
-  # APatch / KernelPatch 环境
-  if [ "$APATCH" = "true" ] || [ "$KERNELPATCH" = "true" ]; then
-    log "DEBUG" "环境: APatch / KernelPatch"
-    log "DEBUG" "APatch 版本: ${APATCH_VER:-未知}"
-    log "DEBUG" "APatch 版本号: ${APATCH_VER_CODE:-未知}"
-    log "DEBUG" "内核版本: ${KERNEL_VERSION:-未知}"
-    log "DEBUG" "KernelPatch 版本: ${KERNELPATCH_VERSION:-未知}"
-  fi
-
-  # Magisk 环境
-  if [ -n "$MAGISK_VER" ]; then
-    log "DEBUG" "环境: Magisk"
-    log "DEBUG" "Magisk 版本: $MAGISK_VER"
-    log "DEBUG" "Magisk 版本号: $MAGISK_VER_CODE"
-  fi
-
-  # 模块版本信息 (从 module.prop 提取，保留为单行 INFO)
-  if [ -f "$MODDIR/module.prop" ]; then
-    local version line versionCode
-    line=$(grep "^version=" "$MODDIR/module.prop")
-    version="${line#*=}"
-    line=$(grep "^versionCode=" "$MODDIR/module.prop")
-    versionCode="${line#*=}"
-    log "INFO" "模块版本: ${version:-未知} (${versionCode:-未知})"
-  fi
-}
-
-# 确保日志目录存在 (须在首次写日志前完成)
-mkdir -p "$MODDIR/logs"
-
-# ========== 主流程 ==========
-log "INFO" "NetProxy 开机服务启动 (service 阶段)"
-log_env_info
-load_module_config
-
-wait_for_boot
-
-# 按配置决定是否开机自启服务
-if [ "$AUTO_START" = "1" ]; then
-  if ! su -c "sh \"$MODDIR/scripts/core/service.sh\" start"; then
-    log "WARN" "代理服务开机启动失败，可在导入节点或修正配置后手动启动"
-  fi
-else
-  log "INFO" "开机自启已禁用，跳过启动"
+# 通过 su 启动原生进程，避免模块 service cgroup 在后台冻结时连带终止 Worker 或 sing-box。
+if command -v su > /dev/null 2>&1; then
+  exec su -c "\"$NETPROXY_NATIVE_BIN\" module boot --module-dir \"$MODDIR\""
 fi
-
-# 订阅调度与代理核心解耦；放在核心启动之后，避免 worker 确认阻塞代理就绪。
-start_subscription_worker
-
-log "INFO" "开机服务流程结束"
+exec "$NETPROXY_NATIVE_BIN" module boot --module-dir "$MODDIR"

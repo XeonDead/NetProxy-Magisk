@@ -43,7 +43,8 @@ func TestReadStatusWithoutService(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status.State != "stopped" || status.OutboundMode != "global" || status.ActiveGroupID != "default" {
+	if status.State != "stopped" || status.OutboundMode != "global" ||
+		status.ConfiguredOutboundMode != "global" || status.ActiveGroupID != "default" {
 		t.Fatalf("unexpected status: %#v", status)
 	}
 	if status.PID != nil || status.SubscriptionWorker != "stopped" {
@@ -66,6 +67,12 @@ func TestProcessMatchingDoesNotMatchControlCommand(t *testing.T) {
 	}
 	if executableMatches("/data/adb/modules/netproxy/bin/netproxy-native", "/data/adb/modules/netproxy/bin/sing-box") {
 		t.Fatal("不同的可执行文件不应匹配")
+	}
+	if executableMatches("/data/adb/modules/other/bin/sing-box", "/data/adb/modules/netproxy/bin/sing-box") {
+		t.Fatal("不同目录中的同名 sing-box 不应匹配")
+	}
+	if !executableMatches("/data/adb/modules/netproxy/bin/sing-box (deleted)", "/data/adb/modules/netproxy/bin/sing-box") {
+		t.Fatal("已删除但路径相同的进程应保持可识别")
 	}
 }
 
