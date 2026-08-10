@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/reF1nd/sing-box/reF1nd-testing-next/docs/schema.json",
   "log": {
     "disabled": false,
-    "level": "info",
+    "level": "warn",
     "output": "/data/adb/modules/netproxy/logs/sing-box.log",
     "timestamp": true
   },
@@ -16,7 +16,7 @@
       "external_controller": "127.0.0.1:9999",
       "secret": "singbox",
       "external_ui": "/data/adb/modules/netproxy/webroot/zashboard",
-      "external_ui_download_url": "https://github.com/Zephyruso/zashboard/releases/download/v3.22.0/dist-cdn-fonts.zip"
+      "external_ui_download_url": "https://github.com/MetaCubeX/metacubexd/releases/download/latest/compressed-dist.tgz"
     }
   },
   "services": [
@@ -44,29 +44,26 @@
         "tag": "dns-proxy",
         "type": "group",
         "servers": [
-          "cloudflare",
-          "google"
+          "ali",
+          "google",
+          "adguard"
         ]
       },
       {
         "tag": "dns-direct",
         "type": "group",
         "servers": [
-          "ali",
-          "tencent"
+          "yandex",
+          "adguard"
         ]
       },
       {
         "type": "hosts",
         "tag": "hosts",
         "predefined": {
-          "doh.pub": [
-            "120.53.53.53",
-            "1.12.12.12"
-          ],
-          "cloudflare-dns.com": [
-            "1.1.1.1",
-            "1.0.0.1"
+          "dns.yandex": [
+            "77.88.8.8",
+            "77.88.8.1"
           ],
           "dns.google": [
             "8.8.8.8",
@@ -75,15 +72,18 @@
           "dns.alidns.com": [
             "223.5.5.5",
             "223.6.6.6"
+          ],
+          "dns.adguard.com": [
+            "94.140.14.14",
+            "94.140.15.15"
           ]
         }
       },
       {
-        "tag": "cloudflare",
+        "tag": "yandex",
         "type": "https",
-        "server": "cloudflare-dns.com",
-        "domain_resolver": "hosts",
-        "detour": "Proxy"
+        "server": "dns.yandex",
+        "domain_resolver": "hosts"
       },
       {
         "tag": "google",
@@ -99,19 +99,42 @@
         "domain_resolver": "hosts"
       },
       {
-        "tag": "tencent",
+        "tag": "adguard",
         "type": "https",
-        "server": "doh.pub",
+        "server": "dns.adgaurd.com",
         "domain_resolver": "hosts"
+      },
+      {
+        "tag": "malw-hosts",
+        "type": "hosts",
+        "path": [
+          "./rules/local/malw-dns.hosts"
+        ]
       }
     ],
     "rules": [
-      { "clash_mode": "Global", "action": "route", "server": "dns-proxy" },
-      { "clash_mode": "Direct", "action": "route", "server": "dns-direct" },
+      {
+        "action": "evaluate",
+        "server": "malw-hosts"
+      },
+      {
+        "match_response": true,
+        "ip_accept_any": true,
+        "action": "respond"
+      },
+      {
+        "clash_mode": "Direct",
+        "action": "route",
+        "server": "dns-direct"
+      },
+      {
+        "clash_mode": "Global",
+        "action": "route",
+        "server": "dns-proxy"
+      },
       {
         "rule_set": [
-          "direct",
-          "geosite/apple-cn"
+          "direct"
         ],
         "action": "route",
         "server": "dns-direct"
@@ -127,69 +150,74 @@
         "type": "logical",
         "mode": "and",
         "rules": [
-          { "clash_mode": "AllowAds", "invert": true },
-          { "rule_set": ["block", "Ads_AWAvenue", "geosite/category-ads-all"] }
+          {
+            "clash_mode": "AllowAds",
+            "invert": true
+          },
+          {
+            "rule_set": [
+              "block",
+              "hagezi-pro-adlist"
+            ]
+          }
         ],
         "action": "reject"
       },
       {
-        "rule_set": [
-          "geosite/category-ai-!cn",
-          "geosite/google"
+        "query_type": [
+          "A",
+          "AAAA"
         ],
         "action": "route",
-        "server": "dns-proxy"
-      },
-      {
-        "rule_set": [
-          "geosite/cn"
-        ],
-        "action": "route",
-        "server": "dns-direct"
-      },
-      {
-        "rule_set": [
-          "geosite/geolocation-!cn"
-        ],
-        "action": "route",
-        "server": "dns-proxy"
+        "server": "remote"
       }
     ],
     "final": "dns-proxy",
     "optimistic": true,
     "strategy": "prefer_ipv4"
   },
-  "inbounds": [
-    {
-      "type": "mixed",
-      "tag": "mixed-in",
-      "listen": "127.0.0.1",
-      "listen_port": 7080
-    }
-  ],
+  "inbounds": [],
   "route": {
+    "default_http_client": "s-download",
     "default_domain_resolver": "dns-direct",
     "rule_set": [
-      { "type": "local", "tag": ["block", "direct", "proxy"], "format": "source", "path": "./rules/local/{tag}.json" },
       {
-        "type": "remote",
-        "tag": "Ads_AWAvenue",
+        "tag": [
+          "block",
+          "direct",
+          "proxy"
+        ],
+        "type": "local",
         "format": "source",
-        "url": "https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Singbox.json",
-        "update_interval": "24h",
-        "path": "./rules/remote/Ads_AWAvenue.json"
+        "path": "./rules/local/{tag}.json"
       },
       {
         "type": "remote",
-        "tag": ["geosite/category-ads-all", "geosite/apple-cn", "geosite/category-ai-!cn", "geosite/google", "geosite/geolocation-!cn", "geosite/cn", "geoip/cn", "geoip/telegram"],
+        "tag": ["geoip/ru"],
         "format": "binary",
         "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/{tag}.srs",
         "update_interval": "24h",
         "path": "./rules/remote/{tag}.srs"
+      },
+      {
+        "tag": "zapret-ru",
+        "type": "local",
+        "format": "binary",
+        "path": "./rules/local/zapret-ru-domains.srs"
       }
     ],
     "rules": [
-      { "action": "sniff" },
+      {
+        "action": "resolve",
+        "strategy": "prefer_ipv4"
+      },
+      {
+        "action": "sniff",
+        "timeout": "1s"
+      },
+      {
+        "action": "sniff-override-destination"
+      },
       {
         "type": "logical",
         "mode": "or",
@@ -204,52 +232,32 @@
       { "rule_set": "proxy", "action": "route", "outbound": "Proxy" },
       { "rule_set": "direct", "action": "route", "outbound": "direct" },
       {
-        "type": "logical",
-        "mode": "and",
-        "rules": [
-          { "clash_mode": "AllowAds", "invert": true },
-          { "rule_set": ["block", "Ads_AWAvenue", "geosite/category-ads-all"] }
-        ],
-        "action": "reject"
-      },
-      {
-        "rule_set": [
-          "geosite/category-ai-!cn",
-          "geosite/google"
-        ],
-        "action": "route",
-        "outbound": "Proxy"
-      },
-      {
-        "rule_set": [
-          "geosite/apple-cn",
-          "geosite/cn"
+        "protocol": [
+          "bittorrent"
         ],
         "action": "route",
         "outbound": "direct"
       },
       {
-        "rule_set": [
-          "geosite/geolocation-!cn"
+        "domain_suffix": [
+          "local",
+          "lan"
         ],
-        "action": "route",
-        "outbound": "Proxy"
+        "outbound": "direct-out"
       },
       {
         "action": "resolve",
-        "match_only": true
-      },
-      {
-        "rule_set": "geoip/cn",
-        "action": "route",
-        "outbound": "direct"
+        "match_only": true,
+        "strategy": "prefer_ipv4",
+        "server": "agh-local"
       },
       {
         "rule_set": [
-          "geoip/telegram"
+          "geoip/ru",
+          "zapret-ru"
         ],
         "action": "route",
-        "outbound": "Proxy"
+        "outbound": "direct"
       },
       {
         "ip_is_private": true,
