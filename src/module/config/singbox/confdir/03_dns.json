@@ -62,7 +62,7 @@
       },
       {
         "rule_set": [
-          "Proxy"
+          "proxy"
         ],
         "action": "route",
         "server": "google"
