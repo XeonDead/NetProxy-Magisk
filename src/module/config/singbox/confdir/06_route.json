@@ -1,7 +1,7 @@
 {
   "route": {
-    "default_domain_resolver": "dns-direct",
     "default_http_client": "rule-set-download",
+    "default_domain_resolver": "yandex",
     "rule_set": [
       {
         "tag": [
@@ -14,24 +14,35 @@
         "path": "./rules/local/{tag}.json"
       },
       {
-        "tag": [
-          "Ads_AWAvenue",
-          "AppleCN",
-          "ChinaDomain",
-          "ChinaIP",
-          "Proxy"
-        ],
+        "tag": "hagezi-pro-adlist",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/Repcz/Tool/X/sing-box/Rules/{tag}.srs",
+        "url": "https://github.com/zxc-rv/ad-filter/releases/latest/download/adlist.srs",
+        "http_client": "rule-set-download",
         "update_interval": "24h",
-        "path": "./rules/remote/{tag}.srs"
+        "path": "./rules/remote/hagezi-pro-adlist.srs"
+      },
+      {
+        "tag": "geoip-ru",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/refs/heads/rule-set/geoip-ru.srs",
+        "http_client": "rule-set-download",
+        "update_interval": "24h",
+        "path": "./rules/remote/geoip-ru.srs"
+      },
+      {
+        "tag": "geosite-ru",
+        "type": "local",
+        "format": "binary",
+        "path": "./rules/local/zapret-ru-domains.srs"
       }
     ],
     "rules": [
       {
-        "action": "sniff",
-        "timeout": "1s"
+        "ip_is_private": true,
+        "action": "route",
+        "outbound": "direct"
       },
       {
         "action": "sniff-override-destination"
@@ -50,16 +61,6 @@
         "action": "hijack-dns"
       },
       {
-        "clash_mode": "Direct",
-        "action": "route",
-        "outbound": "direct"
-      },
-      {
-        "clash_mode": "Global",
-        "action": "route",
-        "outbound": "Proxy"
-      },
-      {
         "ip_cidr": [
           "198.18.0.0/15",
           "fc00::/18"
@@ -68,9 +69,13 @@
         "outbound": "Proxy"
       },
       {
+        "clash_mode": "Global",
+        "action": "route",
+        "outbound": "Proxy"
+      },
+      {
         "rule_set": [
-          "direct",
-          "AppleCN"
+          "direct"
         ],
         "action": "route",
         "outbound": "direct"
@@ -83,6 +88,13 @@
         "outbound": "Proxy"
       },
       {
+        "protocol": [
+          "bittorrent"
+        ],
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
         "type": "logical",
         "mode": "and",
         "rules": [
@@ -93,39 +105,31 @@
           {
             "rule_set": [
               "block",
-              "Ads_AWAvenue"
+              "hagezi-pro-adlist"
             ]
           }
         ],
         "action": "reject"
       },
       {
-        "rule_set": [
-          "ChinaDomain"
+        "domain_suffix": [
+          "local",
+          "lan"
         ],
-        "action": "route",
-        "outbound": "direct"
-      },
-      {
-        "rule_set": [
-          "Proxy"
-        ],
-        "action": "route",
-        "outbound": "Proxy"
+        "outbound": "direct-out"
       },
       {
         "action": "resolve",
         "match_only": true,
         "strategy": "prefer_ipv4",
-        "server": "cloudflare"
+        "server": "google"
       },
       {
-        "rule_set": "ChinaIP",
+        "rule_set": [
+          "geoip-ru",
+          "geosite-ru"
+        ],
         "action": "route",
-        "outbound": "direct"
-      },
-      {
-        "ip_is_private": true,
         "outbound": "direct"
       }
     ],

@@ -2,108 +2,70 @@
   "dns": {
     "servers": [
       {
-        "type": "hosts",
-        "tag": "hosts",
-        "predefined": {
-          "doh.pub": [
-            "120.53.53.53",
-            "1.12.12.12"
-          ],
-          "cloudflare-dns.com": [
-            "1.1.1.1",
-            "1.0.0.1"
-          ],
-          "dns.google": [
-            "8.8.8.8",
-            "8.8.4.4"
-          ],
-          "dns.alidns.com": [
-            "223.5.5.5",
-            "223.6.6.6"
-          ]
-        }
-      },
-      {
-        "tag": "dns-proxy",
-        "type": "group",
-        "servers": [
-          "cloudflare",
-          "google"
-        ]
-      },
-      {
-        "tag": "dns-direct",
-        "type": "group",
-        "servers": [
-          "ali",
-          "tencent"
-        ]
-      },
-      {
-        "tag": "cloudflare",
-        "type": "https",
-        "server": "cloudflare-dns.com",
-        "domain_resolver": "hosts",
-        "detour": "Proxy"
+        "tag": "yandex",
+        "type": "udp",
+        "server": "77.88.8.8"
       },
       {
         "tag": "google",
-        "type": "https",
-        "server": "dns.google",
-        "domain_resolver": "hosts",
+        "type": "udp",
+        "server": "8.8.4.4",
         "detour": "Proxy"
-      },
-      {
-        "tag": "ali",
-        "type": "https",
-        "server": "dns.alidns.com",
-        "domain_resolver": "hosts"
-      },
-      {
-        "tag": "tencent",
-        "type": "https",
-        "server": "doh.pub",
-        "domain_resolver": "hosts"
       },
       {
         "tag": "remote",
         "type": "fakeip",
         "inet4_range": "198.18.0.0/15",
         "inet6_range": "fc00::/18"
+      },
+      {
+        "tag": "malw-hosts",
+        "type": "hosts",
+        "path": [
+          "./rules/local/malw-dns.hosts"
+        ]
       }
     ],
     "rules": [
       {
+        "action": "evaluate",
+        "server": "malw-hosts"
+      },
+      {
+        "match_response": true,
+        "ip_accept_any": true,
+        "action": "respond"
+      },
+      {
         "clash_mode": "Direct",
         "action": "route",
-        "server": "dns-direct"
+        "server": "yandex"
       },
       {
         "clash_mode": "Global",
         "action": "route",
-        "server": "dns-proxy"
+        "server": "google"
       },
       {
         "domain": [
           "cloudflare-ech.com"
         ],
         "action": "route",
-        "server": "dns-direct"
+        "server": "google"
       },
       {
         "rule_set": [
-          "direct",
-          "AppleCN"
+          "direct"
         ],
         "action": "route",
-        "server": "dns-direct"
+        "server": "yandex"
       },
       {
         "rule_set": [
           "proxy"
         ],
         "action": "route",
-        "server": "dns-proxy"
+        "server": "google"
       },
       {
         "type": "logical",
@@ -116,18 +78,11 @@
           {
             "rule_set": [
               "block",
-              "Ads_AWAvenue"
+              "hagezi-pro-adlist"
             ]
           }
         ],
         "action": "reject"
-      },
-      {
-        "rule_set": [
-          "ChinaDomain"
-        ],
-        "action": "route",
-        "server": "dns-direct"
       },
       {
         "query_type": [
@@ -138,8 +93,6 @@
         "server": "remote"
       }
     ],
-    "final": "dns-direct",
-    "optimistic": true,
     "strategy": "prefer_ipv4"
   }
 }
