@@ -5,13 +5,9 @@
         "type": "hosts",
         "tag": "hosts",
         "predefined": {
-          "doh.pub": [
-            "120.53.53.53",
-            "1.12.12.12"
-          ],
-          "cloudflare-dns.com": [
-            "1.1.1.1",
-            "1.0.0.1"
+          "dns.yandex": [
+            "77.88.8.8",
+            "77.88.8.1"
           ],
           "dns.google": [
             "8.8.8.8",
@@ -27,7 +23,7 @@
         "tag": "dns-proxy",
         "type": "group",
         "servers": [
-          "cloudflare",
+          "ali",
           "google"
         ]
       },
@@ -35,16 +31,14 @@
         "tag": "dns-direct",
         "type": "group",
         "servers": [
-          "ali",
-          "tencent"
+          "yandex"
         ]
       },
       {
-        "tag": "cloudflare",
+        "tag": "yandex",
         "type": "https",
-        "server": "cloudflare-dns.com",
-        "domain_resolver": "hosts",
-        "detour": "Proxy"
+        "server": "dns.yandex",
+        "domain_resolver": "hosts"
       },
       {
         "tag": "google",
@@ -60,17 +54,22 @@
         "domain_resolver": "hosts"
       },
       {
-        "tag": "tencent",
-        "type": "https",
-        "server": "doh.pub",
-        "domain_resolver": "hosts"
+        "tag": "malw-hosts",
+        "type": "hosts",
+        "path": [
+          "./rules/local/malw-dns.hosts"
+        ]
       }
     ],
     "rules": [
       {
-        "clash_mode": "Global",
-        "action": "route",
-        "server": "dns-proxy"
+        "action": "evaluate",
+        "server": "malw-hosts"
+      },
+      {
+        "match_response": true,
+        "ip_accept_any": true,
+        "action": "respond"
       },
       {
         "clash_mode": "Direct",
@@ -78,9 +77,13 @@
         "server": "dns-direct"
       },
       {
+        "clash_mode": "Global",
+        "action": "route",
+        "server": "dns-proxy"
+      },
+      {
         "rule_set": [
-          "direct",
-          "apple-cn"
+          "direct"
         ],
         "action": "route",
         "server": "dns-direct"
@@ -103,26 +106,19 @@
           {
             "rule_set": [
               "block",
-              "Ads_AWAvenue",
-              "category-ads-all"
+              "hagezi-pro-adlist"
             ]
           }
         ],
         "action": "reject"
       },
       {
-        "rule_set": [
-          "google"
+        "query_type": [
+          "A",
+          "AAAA"
         ],
         "action": "route",
-        "server": "dns-proxy"
-      },
-      {
-        "rule_set": [
-          "cn"
-        ],
-        "action": "route",
-        "server": "dns-direct"
+        "server": "remote"
       }
     ],
     "final": "dns-proxy",
