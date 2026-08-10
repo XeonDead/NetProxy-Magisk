@@ -1,60 +1,6 @@
 {
   "raw": [
     {
-      "name": "Ads_AWAvenue",
-      "path": "src/module/config/singbox/source/Ads_AWAvenue.srs",
-      "url": "https://raw.githubusercontent.com/Repcz/Tool/X/sing-box/Rules/Ads_AWAvenue.srs",
-      "repo": "Repcz/Tool",
-      "ref": "X",
-      "sourcePath": "sing-box/Rules/Ads_AWAvenue.srs",
-      "metadataPath": "sing-box/Rules/Ads_AWAvenue.json",
-      "currentCommit": "b275db41d70338b937f354972e9328f786028b9f"
-    },
-    {
-      "name": "AppleCN",
-      "path": "src/module/config/singbox/source/AppleCN.srs",
-      "url": "https://raw.githubusercontent.com/Repcz/Tool/X/sing-box/Rules/AppleCN.srs",
-      "repo": "Repcz/Tool",
-      "ref": "X",
-      "sourcePath": "sing-box/Rules/AppleCN.srs",
-      "metadataPath": "sing-box/Rules/AppleCN.json",
-      "currentCommit": "8e0987c5e1894a70cc2c4c3e2ffbfbcf0a36aeac",
-      "currentSha256": "c2f4c5bc86bb1faaf14f0ce692b0af8ad4765c6a36785da80066ade328ecf724"
-    },
-    {
-      "name": "ChinaDomain",
-      "path": "src/module/config/singbox/source/ChinaDomain.srs",
-      "url": "https://raw.githubusercontent.com/Repcz/Tool/X/sing-box/Rules/ChinaDomain.srs",
-      "repo": "Repcz/Tool",
-      "ref": "X",
-      "sourcePath": "sing-box/Rules/ChinaDomain.srs",
-      "metadataPath": "sing-box/Rules/ChinaDomain.json",
-      "currentCommit": "8e0987c5e1894a70cc2c4c3e2ffbfbcf0a36aeac",
-      "currentSha256": "45c67bd6edb6cde6bea06039f2ff70824ac3f29488a739f01ac6e05ed3518a43"
-    },
-    {
-      "name": "ChinaIP",
-      "path": "src/module/config/singbox/source/ChinaIP.srs",
-      "url": "https://raw.githubusercontent.com/Repcz/Tool/X/sing-box/Rules/ChinaIP.srs",
-      "repo": "Repcz/Tool",
-      "ref": "X",
-      "sourcePath": "sing-box/Rules/ChinaIP.srs",
-      "metadataPath": "sing-box/Rules/ChinaIP.json",
-      "currentCommit": "eee40d30f48a5e527aae11f1047677294a3ca147",
-      "currentSha256": "ae0d2d01e35429647bf9387616badfbc3bf382adb431d8e5d636f307ae748a3c"
-    },
-    {
-      "name": "Proxy",
-      "path": "src/module/config/singbox/source/Proxy.srs",
-      "url": "https://raw.githubusercontent.com/Repcz/Tool/X/sing-box/Rules/Proxy.srs",
-      "repo": "Repcz/Tool",
-      "ref": "X",
-      "sourcePath": "sing-box/Rules/Proxy.srs",
-      "metadataPath": "sing-box/Rules/Proxy.json",
-      "currentCommit": "8e0987c5e1894a70cc2c4c3e2ffbfbcf0a36aeac",
-      "currentSha256": "d2397b031e1761373fdabdc86193a21de14a253cdf937019855fe09888582061"
-    },
-    {
       "name": "bpftool 5.16.0",
       "path": "src/module/bin/bpftool",
       "url": "https://raw.githubusercontent.com/bnsmb/binaries-for-Android/main/binaries/bpftool_static_5.16.0",

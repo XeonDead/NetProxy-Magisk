@@ -10,7 +10,7 @@
         "tag": "google",
         "type": "udp",
         "server": "8.8.4.4",
-        "detour": "proxy"
+        "detour": "Proxy"
       },
       {
         "tag": "remote",
@@ -62,7 +62,7 @@
       },
       {
         "rule_set": [
-          "proxy"
+          "Proxy"
         ],
         "action": "route",
         "server": "google"

@@ -1,13 +1,8 @@
 {
   "http_clients": [
     {
-      "engine": "go",
-      "tag": "default-http-client",
-      "tls": {
-        "enabled": true,
-        "disable_sni": false
-      },
-      "detour": "proxy"
+      "tag": "rule-set-download",
+      "detour": "Proxy"
     }
   ]
 }

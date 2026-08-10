@@ -1,6 +1,6 @@
 {
   "route": {
-    "default_http_client": "default-http-client",
+    "default_http_client": "rule-set-download",
     "default_domain_resolver": "yandex",
     "rule_set": [
       {
@@ -18,7 +18,7 @@
         "type": "remote",
         "format": "binary",
         "url": "https://github.com/zxc-rv/ad-filter/releases/latest/download/adlist.srs",
-        "http_client": "default-http-client",
+        "http_client": "rule-set-download",
         "update_interval": "24h",
         "path": "./source/hagezi-pro-adlist.srs"
       },
@@ -27,7 +27,7 @@
         "type": "remote",
         "format": "binary",
         "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/refs/heads/rule-set/geoip-ru.srs",
-        "http_client": "default-http-client",
+        "http_client": "rule-set-download",
         "update_interval": "24h",
         "path": "./source/geoip-ru.srs"
       },
@@ -66,12 +66,12 @@
           "fc00::/18"
         ],
         "action": "route",
-        "outbound": "proxy"
+        "outbound": "Proxy"
       },
       {
         "clash_mode": "Global",
         "action": "route",
-        "outbound": "proxy"
+        "outbound": "Proxy"
       },
       {
         "rule_set": [
@@ -85,7 +85,7 @@
           "proxy"
         ],
         "action": "route",
-        "outbound": "proxy"
+        "outbound": "Proxy"
       },
       {
         "protocol": [
@@ -135,6 +135,6 @@
       }
     ],
     "find_process": true,
-    "final": "proxy"
+    "final": "Proxy"
   }
 }
