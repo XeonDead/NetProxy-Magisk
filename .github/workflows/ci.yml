@@ -128,7 +128,7 @@ jobs:
 
       - name: 设置构建元信息
         run: |
-          echo "TIMESTAMP=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')" >> "$GITHUB_ENV"
+          echo "TIMESTAMP=$(TZ='Europe/Moscow' date +'%Y-%m-%d %H:%M:%S')" >> "$GITHUB_ENV"
           echo "SHORT_HASH=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
           echo "COMMIT_MESSAGE=$(git log -1 --format=%s "$GITHUB_SHA")" >> "$GITHUB_ENV"
 
